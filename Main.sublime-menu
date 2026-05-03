@@ -1,0 +1,33 @@
+[
+    {
+        "caption": "Preferences",
+        "mnemonic": "n",
+        "id": "preferences",
+        "children": [
+            {
+                "caption": "Package Settings",
+                "mnemonic": "P",
+                "id": "package-settings",
+                "children":
+                [
+                    {
+                        "caption": "ArenaForge / \u7ade\u8d5b\u5de5\u4f5c\u53f0",
+                        "command": "arena_forge_open_settings"
+                    },
+                    {
+                        "caption": "ArenaForge Run History / \u8fd0\u884c\u5386\u53f2",
+                        "command": "arena_forge_run_history"
+                    },
+                    {
+                        "caption": "ArenaForge Open History Source / \u6253\u5f00\u5386\u53f2\u6e90\u6587\u4ef6",
+                        "command": "arena_forge_open_history_source"
+                    },
+                    {
+                        "caption": "ArenaForge Clear All Tests / \u6e05\u7a7a\u5168\u90e8\u6d4b\u8bd5",
+                        "command": "arena_forge_clear_all_tests"
+                    }
+                ]
+            }
+        ]
+    }
+]

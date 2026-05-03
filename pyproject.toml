@@ -1,0 +1,41 @@
+[project]
+name = "arena-forge"
+version = "3.0.0"
+description = "ArenaForge competitive-programming workbench for Sublime Text"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+  "keyring>=25.6.0",
+]
+
+[dependency-groups]
+dev = [
+  "pytest>=8.4.0",
+  "ruff>=0.11.0",
+]
+
+[build-system]
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["arena_forge"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+python_classes = ["*Tests"]
+addopts = ["-p", "no:cacheprovider"]
+
+[tool.ruff]
+target-version = "py314"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+
+[tool.ruff.lint.per-file-ignores]
+"arena_forge/adapters/sublime/*.py" = ["E401"]
+"arena_forge/adapters/sublime/run_panel_commands.py" = ["E501", "E701", "E722", "F401", "F841", "I001"]
+"arena_forge/adapters/sublime/template_commands.py" = ["E501", "F401", "I001"]
+"arena_forge/adapters/sublime/test_editor_commands.py" = ["E722", "F401", "F841", "I001"]

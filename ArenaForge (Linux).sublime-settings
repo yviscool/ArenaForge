@@ -1,0 +1,22 @@
+{
+	// Portable defaults are provided at runtime. This file documents the
+	// recommended Linux profile and is opened side-by-side with your user file.
+
+	"tests_relative_dir": ".arena-forge/tests",
+	"session_relative_dir": ".arena-forge/sessions",
+	"tests_file_suffix": ".tests.json",
+	"contests_root": "~/Contests/ArenaForge",
+	"preferred_locale": "en",
+	"ui_variant": "refined",
+	"ui_density": "comfortable",
+	"credential_backend": "keyring",
+	"run_settings": [
+		{
+			"name": "C++",
+			"extensions": ["cpp"],
+			"compile_cmd": "g++ \"{source_file}\" -std=gnu++17 -O2 -pipe -o \"{file_name}\"",
+			"run_cmd": "./{file_name} {args}",
+			"lint_compile_cmd": "g++ -std=gnu++17 \"{source_file}\" -I \"{source_file_dir}\""
+		}
+	]
+}

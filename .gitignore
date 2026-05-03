@@ -1,0 +1,14 @@
+*.out
+*.pyc
+__pycache__/
+.venv/
+.pytest_cache/
+.ruff_cache/
+.test-workdir/
+.arena-forge/
+pytest-cache-files-*/
+.DS_Store
+Thumbs.db
+cmp_sense/amin.cpp
+debuggers/LLDB.framework
+debuggers/DebugodPy3Ejector.py

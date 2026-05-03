@@ -1,0 +1,50 @@
+[
+	{
+		"caption": "ArenaForge: Open Settings / \u6253\u5f00\u8bbe\u7f6e",
+		"command": "arena_forge_open_settings"
+	},
+	{
+		"caption": "ArenaForge: Make Stress / \u5f00\u59cb\u5bf9\u62cd",
+		"command": "arena_forge_make_stress"
+	},
+	{
+		"caption": "ArenaForge: Stop Stress / \u505c\u6b62\u5bf9\u62cd",
+		"command": "arena_forge_stop_stress"
+	},
+	{
+		"caption": "ArenaForge: Select Frame / \u9009\u62e9\u6808\u5e27",
+		"command": "arena_forge_select_frame"
+	},
+	{
+		"caption": "ArenaForge: Run / \u8fd0\u884c",
+		"command": "arena_forge_run"
+	},
+	{
+		"caption": "ArenaForge: Auto / \u6a21\u677f\u63d2\u5165",
+		"command": "arena_forge_auto"
+	},
+	{
+		"caption": "ArenaForge: Setup Contest / \u521d\u59cb\u5316\u6bd4\u8d5b",
+		"command": "arena_forge_setup_contest"
+	},
+	{
+		"caption": "ArenaForge: Submit / \u63d0\u4ea4",
+		"command": "arena_forge_submit"
+	},
+	{
+		"caption": "ArenaForge: Configure Credentials / \u914d\u7f6e\u51ed\u636e",
+		"command": "arena_forge_configure_credentials"
+	},
+	{
+		"caption": "ArenaForge: Run History / \u8fd0\u884c\u5386\u53f2",
+		"command": "arena_forge_run_history"
+	},
+	{
+		"caption": "ArenaForge: Open History Source / \u6253\u5f00\u5386\u53f2\u6e90\u6587\u4ef6",
+		"command": "arena_forge_open_history_source"
+	},
+	{
+		"caption": "ArenaForge: Clear All Tests / \u6e05\u7a7a\u5168\u90e8\u6d4b\u8bd5",
+		"command": "arena_forge_clear_all_tests"
+	}
+]

@@ -1,0 +1,78 @@
+html {
+	--action-color: color(var(--bluish) alpha(1));
+	--panel-color: color(var(--foreground) alpha(0.18));
+	--chip-color: color(var(--foreground) alpha(0.28));
+	--muted-color: color(var(--foreground) alpha(0.78));
+	padding: 0px;
+}
+
+a {
+	line-height: none;
+	border-radius: var(--af-chip-radius);
+	box-shadow: var(--af-chip-shadow);
+	font-family: var(--af-font-family);
+}
+
+.panel {
+	background-color: var(--panel-color);
+	padding: var(--af-gap);
+	margin: 0px;
+	border-radius: var(--af-chip-radius);
+}
+
+.test {
+	color: color(var(--foreground));	
+	text-decoration: none;
+	background-color: var(--chip-color);
+	padding: var(--af-chip-padding);
+}
+
+.test-accept {
+	background-color: color(var(--greenish) alpha(0.2));
+}
+
+.test-decline {
+	background-color: color(var(--redish) alpha(0.3));
+}
+
+.sep {
+	text-decoration: none;
+}
+
+.config {
+	color: color(var(--foreground));	
+	text-decoration: none;
+	background-color: var(--chip-color);
+	padding: var(--af-chip-padding);
+}
+
+.config-run {
+	background-color: var(--action-color);
+}
+
+.config-action {
+	background-color: var(--action-color);
+}
+
+.config-stop {
+	background-color: color(var(--redish) alpha(0.3));
+}
+
+.config-next {
+	padding: var(--af-chip-padding);
+	color: color(var(--foreground));	
+	text-decoration: none;
+	background-color: color(var(--foreground) alpha(0.5));
+}
+.panel-inline {
+	display: inline;
+}
+.meta-label {
+	color: var(--muted-color);
+	margin-right: 4px;
+}
+.meta-value {
+	padding: 0px;
+	position: relative;
+	font-style: normal;
+}
