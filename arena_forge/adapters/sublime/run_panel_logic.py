@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import List, Optional, Protocol, Tuple, Union
 
+from arena_forge.core.domain import Verdict
+
 _BLOCKED_TEST_EVENTS = frozenset({"test-click", "test-edit", "test-run"})
 
 
@@ -79,13 +81,15 @@ def normalize_finished_output(output_text: str, running_new: bool) -> str:
     return output
 
 
-def should_clear_finished_input(running_new: bool, check_result: Optional[bool]) -> bool:
-    return running_new and check_result is True
+def should_clear_finished_input(running_new: bool, verdict: Verdict) -> bool:
+    return running_new and verdict == Verdict.ACCEPTED
 
 
-def history_verdict_from_check(check_result: Optional[bool]) -> str:
-    return "accepted" if check_result else "unknown"
+def history_verdict_from_result(verdict: Verdict) -> str:
+    return verdict.value
 
 
-def should_queue_follow_up_test(return_code: Union[int, str], *, running_new: bool, have_pretests: bool) -> bool:
-    return str(return_code) == "0" and running_new and have_pretests
+def should_queue_follow_up_test(
+    return_code: Union[int, str], *, verdict: Verdict, running_new: bool, have_pretests: bool
+) -> bool:
+    return str(return_code) == "0" and verdict != Verdict.REJECTED and running_new and have_pretests

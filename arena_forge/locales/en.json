@@ -10,6 +10,10 @@
   "command.submit": "Submit",
   "command.configure_credentials": "Configure Credentials",
   "command.run_history": "Run History",
+  "result.matches_expected": "matches expected output",
+  "result.matches_rejected": "matches known rejected output",
+  "result.first_mismatch": "first mismatch at line {line}, column {column}",
+  "result.no_expected_output": "no expected output configured",
   "prompt.contest_url": "Contest URL",
   "prompt.credential_username": "{provider} username",
   "prompt.credential_secret": "{provider} password or token",
@@ -58,7 +62,10 @@
   "ui.save": "save",
   "ui.delete": "delete",
   "ui.time": "time",
+  "ui.result": "result",
   "ui.accept": "accept",
   "ui.decline": "decline",
+  "ui.expected": "expected",
+  "ui.actual": "actual",
   "ui.run_history": "Run History"
 }

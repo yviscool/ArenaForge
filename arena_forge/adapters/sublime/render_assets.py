@@ -18,6 +18,7 @@ TEMPLATE_LABELS = {
         "edit_label": "ui.edit",
         "run_label": "ui.run",
         "time_label": "ui.time",
+        "result_label": "ui.result",
     },
     "test_running.html": {
         "test_label": "ui.test",

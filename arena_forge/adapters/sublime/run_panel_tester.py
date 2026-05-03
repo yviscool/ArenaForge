@@ -4,6 +4,8 @@ from time import time
 
 import sublime
 
+from arena_forge.core.services import evaluate_output_result
+
 from .messages import status_message
 
 
@@ -179,6 +181,9 @@ class RunPanelTester(object):
 
     def check_test(self, nth):
         return self.tests[nth].is_correct_answer(self.prog_out[nth])
+
+    def evaluate_test(self, nth):
+        return evaluate_output_result(self.tests[nth].to_core_test_case(nth + 1), self.prog_out[nth])
 
     def terminate(self):
         self.process_manager.terminate()

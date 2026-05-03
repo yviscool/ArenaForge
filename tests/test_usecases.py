@@ -1,6 +1,13 @@
 import unittest
 
-from arena_forge.core.domain import CommandExecution, SessionSnapshot, TestCase, TestRunResult, Verdict
+from arena_forge.core.domain import (
+    CommandExecution,
+    OutputReferenceKind,
+    SessionSnapshot,
+    TestCase,
+    TestRunResult,
+    Verdict,
+)
 from arena_forge.core.usecases import RunSessionService
 
 
@@ -47,6 +54,8 @@ class UsecaseTests(unittest.TestCase):
         report = service.run_all_tests(session)
         self.assertTrue(report.compile_succeeded)
         self.assertEqual(report.test_results[0].verdict, Verdict.ACCEPTED)
+        self.assertIsNotNone(report.test_results[0].evaluation)
+        self.assertEqual(report.test_results[0].evaluation.reference_kind, OutputReferenceKind.ACCEPTED)
 
 
 if __name__ == "__main__":

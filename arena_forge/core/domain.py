@@ -22,6 +22,12 @@ class DiagnosticSeverity(str, Enum):
     INFO = "info"
 
 
+class OutputReferenceKind(str, Enum):
+    NONE = "none"
+    ACCEPTED = "accepted"
+    REJECTED = "rejected"
+
+
 class ProviderWorkspaceKind(str, Enum):
     CONTEST = "contest"
     PROBLEM = "problem"
@@ -52,6 +58,7 @@ class TestCase:
     input_text: str
     accepted_outputs: Tuple[str, ...] = ()
     rejected_outputs: Tuple[str, ...] = ()
+    checker_name: str = "normalized_text"
     runtime_ms: Optional[int] = None
     return_code: Optional[int] = None
 
@@ -62,6 +69,7 @@ class TestCase:
             input_text=str(payload.get("test", "")),
             accepted_outputs=tuple(str(item) for item in payload.get("correct_answers", ())),
             rejected_outputs=tuple(str(item) for item in payload.get("uncorrect_answers", ())),
+            checker_name=str(payload.get("checker_name") or "normalized_text"),
             runtime_ms=payload.get("runtime_ms"),
             return_code=payload.get("return_code"),
         )
@@ -72,11 +80,72 @@ class TestCase:
             payload["correct_answers"] = list(self.accepted_outputs)
         if self.rejected_outputs:
             payload["uncorrect_answers"] = list(self.rejected_outputs)
+        if self.checker_name != "normalized_text":
+            payload["checker_name"] = self.checker_name
         if self.runtime_ms is not None:
             payload["runtime_ms"] = self.runtime_ms
         if self.return_code is not None:
             payload["return_code"] = self.return_code
         return payload
+
+
+@dataclass(frozen=True)
+class OutputMismatch:
+    line: int
+    column: int
+    expected_excerpt: str
+    actual_excerpt: str
+
+    def to_mapping(self) -> Dict[str, Any]:
+        return {
+            "line": self.line,
+            "column": self.column,
+            "expected_excerpt": self.expected_excerpt,
+            "actual_excerpt": self.actual_excerpt,
+        }
+
+    @classmethod
+    def from_mapping(cls, payload: dict[str, Any]) -> "OutputMismatch":
+        return cls(
+            line=int(payload["line"]),
+            column=int(payload["column"]),
+            expected_excerpt=str(payload.get("expected_excerpt", "")),
+            actual_excerpt=str(payload.get("actual_excerpt", "")),
+        )
+
+
+@dataclass(frozen=True)
+class OutputEvaluation:
+    checker_name: str
+    verdict: Verdict
+    reference_kind: OutputReferenceKind = OutputReferenceKind.NONE
+    normalized_actual: str = ""
+    normalized_expected: str = ""
+    mismatch: Optional[OutputMismatch] = None
+
+    def to_mapping(self) -> Dict[str, Any]:
+        payload: Dict[str, Any] = {
+            "checker_name": self.checker_name,
+            "verdict": self.verdict.value,
+            "reference_kind": self.reference_kind.value,
+            "normalized_actual": self.normalized_actual,
+            "normalized_expected": self.normalized_expected,
+        }
+        if self.mismatch is not None:
+            payload["mismatch"] = self.mismatch.to_mapping()
+        return payload
+
+    @classmethod
+    def from_mapping(cls, payload: dict[str, Any]) -> "OutputEvaluation":
+        mismatch_payload = payload.get("mismatch")
+        return cls(
+            checker_name=str(payload.get("checker_name") or "normalized_text"),
+            verdict=Verdict(str(payload["verdict"])),
+            reference_kind=OutputReferenceKind(str(payload.get("reference_kind") or OutputReferenceKind.NONE.value)),
+            normalized_actual=str(payload.get("normalized_actual", "")),
+            normalized_expected=str(payload.get("normalized_expected", "")),
+            mismatch=OutputMismatch.from_mapping(mismatch_payload) if isinstance(mismatch_payload, dict) else None,
+        )
 
 
 @dataclass(frozen=True)
@@ -87,6 +156,7 @@ class TestRunResult:
     verdict: Verdict
     command: Tuple[str, ...] = ()
     message: str = ""
+    evaluation: Optional[OutputEvaluation] = None
 
 
 @dataclass(frozen=True)
@@ -135,6 +205,7 @@ class RunHistoryEntry:
     verdict: Verdict
     runtime_ms: int
     return_code: int
+    evaluation: Optional[OutputEvaluation] = None
 
 
 def _utc_timestamp() -> str:
@@ -167,6 +238,7 @@ class SessionSnapshot:
                     "verdict": item.verdict.value,
                     "runtime_ms": item.runtime_ms,
                     "return_code": item.return_code,
+                    "evaluation": item.evaluation.to_mapping() if item.evaluation is not None else None,
                 }
                 for item in self.run_history
             ],
@@ -185,6 +257,9 @@ class SessionSnapshot:
                 verdict=Verdict(str(item["verdict"])),
                 runtime_ms=int(item["runtime_ms"]),
                 return_code=int(item["return_code"]),
+                evaluation=OutputEvaluation.from_mapping(item["evaluation"])
+                if isinstance(item.get("evaluation"), dict)
+                else None,
             )
             for item in payload.get("run_history", ())
         )

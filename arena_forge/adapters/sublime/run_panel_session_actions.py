@@ -5,10 +5,12 @@ from os import path
 import sublime
 from sublime import Region
 
+from arena_forge.core.domain import Verdict
+
 from .messages import product_log_message, translate
 from .root_bridge import get_debugger_info_module
 from .run_panel_logic import (
-    history_verdict_from_check,
+    history_verdict_from_result,
     normalize_finished_output,
     should_clear_finished_input,
     should_queue_follow_up_test,
@@ -25,8 +27,14 @@ def handle_process_stop(command, rtcode, runtime, crash_line=None) -> None:
 
     test_id = tester.running_test
     input_text = tester.tests[test_id].test_string
-    check = tester.check_test(test_id)
     output_text = normalize_finished_output(tester.prog_out[test_id], tester.running_new)
+    evaluation = None
+    if str(rtcode) == "0":
+        evaluation = tester.evaluate_test(test_id)
+        tester.tests[test_id].set_last_evaluation(evaluation)
+    else:
+        tester.tests[test_id].set_last_evaluation(None)
+    verdict = evaluation.verdict if evaluation is not None else Verdict.RUNTIME_ERROR
 
     tester.tests[test_id].set_cur_runtime(runtime)
     tester.tests[test_id].set_cur_rtcode(rtcode)
@@ -35,7 +43,7 @@ def handle_process_stop(command, rtcode, runtime, crash_line=None) -> None:
     line = view.line(command.state.input_start)
     input_end = view.line(Region(command.state.delta_input)).end()
 
-    if should_clear_finished_input(tester.running_new, check):
+    if should_clear_finished_input(tester.running_new, verdict):
         view.run_command(
             "test_manager",
             {"action": "replace", "region": (command.state.input_start, input_end), "text": ""},
@@ -71,11 +79,17 @@ def handle_process_stop(command, rtcode, runtime, crash_line=None) -> None:
         command.state.dbg_file,
         "Test %d" % (test_id + 1),
         output_text,
-        history_verdict_from_check(check),
+        history_verdict_from_result(verdict),
         runtime,
         int(string_rtcode) if string_rtcode.lstrip("-").isdigit() else -1,
+        evaluation=evaluation,
     )
-    if should_queue_follow_up_test(string_rtcode, running_new=tester.running_new, have_pretests=tester.have_pretests()):
+    if should_queue_follow_up_test(
+        string_rtcode,
+        verdict=verdict,
+        running_new=tester.running_new,
+        have_pretests=tester.have_pretests(),
+    ):
         command.update_configs(update_last=True)
         sublime.set_timeout(lambda: view.run_command("test_manager", {"action": "new_test"}), 10)
     else:

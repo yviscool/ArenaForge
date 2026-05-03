@@ -24,7 +24,14 @@ class HistoryCommandTests(unittest.TestCase):
 
     def test_build_history_report_renders_latest_first(self) -> None:
         from arena_forge.adapters.sublime.history_commands import build_history_report
-        from arena_forge.core.domain import RunHistoryEntry, SessionSnapshot, Verdict
+        from arena_forge.core.domain import (
+            OutputEvaluation,
+            OutputMismatch,
+            OutputReferenceKind,
+            RunHistoryEntry,
+            SessionSnapshot,
+            Verdict,
+        )
 
         snapshot = SessionSnapshot(
             source_file="main.cpp",
@@ -40,12 +47,26 @@ class HistoryCommandTests(unittest.TestCase):
                 RunHistoryEntry(
                     test_name="Test 2",
                     output_text="newer",
-                    verdict=Verdict.ACCEPTED,
+                    verdict=Verdict.REJECTED,
                     runtime_ms=12,
                     return_code=0,
+                    evaluation=OutputEvaluation(
+                        checker_name="normalized_text",
+                        verdict=Verdict.REJECTED,
+                        reference_kind=OutputReferenceKind.ACCEPTED,
+                        normalized_actual="newer",
+                        normalized_expected="expected",
+                        mismatch=OutputMismatch(
+                            line=1,
+                            column=2,
+                            expected_excerpt="expected",
+                            actual_excerpt="newer",
+                        ),
+                    ),
                 ),
             ),
         )
         report = build_history_report("main.cpp", snapshot, product_name="ArenaForge")
         self.assertLess(report.index("Test 2"), report.index("Test 1"))
         self.assertIn("newer", report)
+        self.assertIn("first mismatch at line 1, column 2", report)

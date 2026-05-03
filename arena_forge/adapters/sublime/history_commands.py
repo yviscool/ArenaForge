@@ -6,6 +6,7 @@ import sublime
 import sublime_plugin
 
 from .messages import translate
+from .result_display import format_output_evaluation_detail, format_output_evaluation_summary
 from .settings_bridge import get_session_repository
 
 HISTORY_SOURCE_FILE_KEY = "arena_forge.history_source_file"
@@ -25,6 +26,12 @@ def build_history_report(source_file: str, snapshot, *, product_name: str) -> st
                 return_code=item.return_code,
             )
         )
+        summary = format_output_evaluation_summary(item.evaluation)
+        detail = format_output_evaluation_detail(item.evaluation)
+        if summary:
+            lines.append(summary)
+        if detail:
+            lines.append(detail)
         if item.output_text.strip():
             lines.append(item.output_text.rstrip())
         lines.append("")

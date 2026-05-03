@@ -13,7 +13,7 @@ from .domain import (
     Verdict,
 )
 from .ports import Runner, SessionRepository
-from .services import evaluate_output, infer_language
+from .services import evaluate_output_result, infer_language
 
 
 class SessionService:
@@ -39,10 +39,10 @@ class SessionService:
         if self.runner is None:
             raise RuntimeError("No runner configured")
         result = self.runner.run(session.source_file, session.language, test_case.input_text)
-        verdict = result.verdict
-        if verdict == Verdict.UNKNOWN:
-            verdict = evaluate_output(test_case, result.output_text)
-        return replace(result, verdict=verdict)
+        if result.verdict != Verdict.UNKNOWN:
+            return result
+        evaluation = evaluate_output_result(test_case, result.output_text)
+        return replace(result, verdict=evaluation.verdict, evaluation=evaluation)
 
 
 class RunSessionService:
@@ -61,7 +61,7 @@ class RunSessionService:
 
     def _run_test(self, session: SessionSnapshot, test_case: TestCase) -> TestRunResult:
         result = self.runner.run(session.source_file, session.language, test_case.input_text)
-        verdict = result.verdict
-        if verdict == Verdict.UNKNOWN:
-            verdict = evaluate_output(test_case, result.output_text)
-        return replace(result, verdict=verdict)
+        if result.verdict != Verdict.UNKNOWN:
+            return result
+        evaluation = evaluate_output_result(test_case, result.output_text)
+        return replace(result, verdict=evaluation.verdict, evaluation=evaluation)

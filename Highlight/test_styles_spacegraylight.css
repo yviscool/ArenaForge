@@ -76,3 +76,25 @@ a {
 	position: relative;
 	font-style: normal;
 }
+.result-summary {
+	margin-top: var(--af-gap);
+	padding: var(--af-chip-padding);
+	background-color: color(var(--bluish) alpha(0.08));
+	border-radius: var(--af-chip-radius);
+	font-family: var(--af-font-family);
+}
+.summary-accept {
+	background-color: color(rgb(192, 208, 176) alpha(0.7));
+}
+.summary-decline {
+	background-color: color(var(--redish) alpha(0.18));
+}
+.summary-unknown {
+	background-color: color(var(--foreground) alpha(0.08));
+}
+.result-detail {
+	display: block;
+	margin-top: 4px;
+	color: var(--muted-color);
+	white-space: normal;
+}

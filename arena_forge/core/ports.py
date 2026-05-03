@@ -6,8 +6,10 @@ from .domain import (
     CommandExecution,
     ContestDescriptor,
     CredentialRecord,
+    OutputEvaluation,
     ProviderCapabilities,
     SessionSnapshot,
+    TestCase,
     TestRunResult,
 )
 
@@ -61,6 +63,13 @@ class CredentialStore(Protocol):
 
 class Translator(Protocol):
     def translate(self, key: str, locale: Optional[str] = None, **kwargs: str) -> str:
+        ...
+
+
+class OutputChecker(Protocol):
+    checker_name: str
+
+    def evaluate(self, test_case: TestCase, output_text: str) -> OutputEvaluation:
         ...
 
 

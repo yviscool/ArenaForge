@@ -56,6 +56,7 @@ def handle_accdec_event(command, test_id, event: str) -> None:
         tester.accept_out(test_id)
     elif event == "click-decline":
         tester.decline_out(test_id)
+    tester.tests[test_id].set_last_evaluation(tester.evaluate_test(test_id))
     command.update_configs()
     command.memorize_tests()
 
@@ -88,6 +89,8 @@ def set_test_status(command, test_id, accept=True, call_tester=True) -> None:
     else:
         prop = command.REGION_UNKNOWN_PROP
     view.add_regions(begin_key, [region], *prop)
+    if call_tester:
+        command.state.tester.tests[test_id].set_last_evaluation(command.state.tester.evaluate_test(test_id))
 
 
 def set_tests_status(command, accept=True) -> None:

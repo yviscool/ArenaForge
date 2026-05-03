@@ -46,6 +46,10 @@ _FALLBACKS = {
     "command.configure_credentials": "Configure Credentials",
     "command.doctor": "Doctor",
     "command.run_history": "Run History",
+    "result.matches_expected": "matches expected output",
+    "result.matches_rejected": "matches known rejected output",
+    "result.first_mismatch": "first mismatch at line {line}, column {column}",
+    "result.no_expected_output": "no expected output configured",
     "ui.test": "test",
     "ui.edit": "edit",
     "ui.run": "run",
@@ -54,8 +58,11 @@ _FALLBACKS = {
     "ui.save": "save",
     "ui.delete": "delete",
     "ui.time": "time",
+    "ui.result": "result",
     "ui.accept": "accept",
     "ui.decline": "decline",
+    "ui.expected": "expected",
+    "ui.actual": "actual",
     "ui.run_history": "Run History",
 }
 

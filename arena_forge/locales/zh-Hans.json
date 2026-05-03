@@ -10,6 +10,10 @@
   "command.submit": "\u63d0\u4ea4",
   "command.configure_credentials": "\u914d\u7f6e\u51ed\u636e",
   "command.run_history": "\u8fd0\u884c\u5386\u53f2",
+  "result.matches_expected": "\u8f93\u51fa\u4e0e\u9884\u671f\u4e00\u81f4",
+  "result.matches_rejected": "\u8f93\u51fa\u547d\u4e2d\u5df2\u77e5\u9519\u8bef\u7ed3\u679c",
+  "result.first_mismatch": "\u9996\u4e2a\u5dee\u5f02\u5728\u7b2c {line} \u884c\u7b2c {column} \u5217",
+  "result.no_expected_output": "\u672a\u914d\u7f6e\u9884\u671f\u8f93\u51fa",
   "prompt.contest_url": "\u6bd4\u8d5b URL",
   "prompt.credential_username": "{provider} \u7528\u6237\u540d",
   "prompt.credential_secret": "{provider} \u5bc6\u7801\u6216\u4ee4\u724c",
@@ -58,7 +62,10 @@
   "ui.save": "\u4fdd\u5b58",
   "ui.delete": "\u5220\u9664",
   "ui.time": "\u8017\u65f6",
+  "ui.result": "\u7ed3\u679c",
   "ui.accept": "\u63a5\u53d7",
   "ui.decline": "\u62d2\u7edd",
+  "ui.expected": "\u9884\u671f",
+  "ui.actual": "\u5b9e\u9645",
   "ui.run_history": "\u8fd0\u884c\u5386\u53f2"
 }

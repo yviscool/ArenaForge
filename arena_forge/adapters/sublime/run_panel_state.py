@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sublime
 
-from arena_forge.core.domain import RunHistoryEntry, SessionSnapshot, TestCase
+from arena_forge.core.domain import OutputEvaluation, RunHistoryEntry, SessionSnapshot, TestCase
 
 from .run_history import coerce_verdict
 from .run_panel_rendering import build_accdec_phantom, build_test_config_phantom
@@ -19,6 +19,7 @@ class PanelTestState(object):
             self.test_string = prop["test"]
             self.correct_answers = set(prop.get("correct_answers", set()))
             self.uncorrect_answers = set(prop.get("uncorrect_answers", set()))
+        self.checker_name = prop.get("checker_name", "normalized_text") if isinstance(prop, dict) else "normalized_text"
 
         self.start = start
         self.fold = True
@@ -26,6 +27,7 @@ class PanelTestState(object):
         self.runtime = "-"
         self.rtcode = 0
         self.tie_pos = 0
+        self.last_evaluation = None
 
     def add_correct_answer(self, answer):
         self.correct_answers.add(answer.strip())
@@ -63,6 +65,9 @@ class PanelTestState(object):
     def set_cur_rtcode(self, rtcode):
         self.rtcode = rtcode
 
+    def set_last_evaluation(self, evaluation: OutputEvaluation | None):
+        self.last_evaluation = evaluation
+
     def get_nice_runtime(self):
         runtime = self.runtime
         if runtime < 5000:
@@ -81,6 +86,8 @@ class PanelTestState(object):
             payload["correct_answers"] = list(self.correct_answers)
         if self.uncorrect_answers:
             payload["uncorrect_answers"] = list(self.uncorrect_answers)
+        if self.checker_name != "normalized_text":
+            payload["checker_name"] = self.checker_name
         return payload
 
     def to_core_test_case(self, index):
@@ -102,7 +109,16 @@ def persist_panel_tests(source_file, tests, repository, infer_language_name, tes
     )
 
 
-def append_run_history(repository, source_file, test_name, output_text, verdict, runtime_ms, return_code):
+def append_run_history(
+    repository,
+    source_file,
+    test_name,
+    output_text,
+    verdict,
+    runtime_ms,
+    return_code,
+    evaluation=None,
+):
     snapshot = repository.load(source_file)
     if snapshot is None:
         return
@@ -114,6 +130,7 @@ def append_run_history(repository, source_file, test_name, output_text, verdict,
             verdict=coerce_verdict(verdict),
             runtime_ms=runtime_ms,
             return_code=return_code,
+            evaluation=evaluation,
         )
     )
     repository.save(

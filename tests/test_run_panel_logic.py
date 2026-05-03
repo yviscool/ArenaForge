@@ -4,12 +4,13 @@ from typing import Optional
 
 from arena_forge.adapters.sublime.run_panel_logic import (
     build_panel_render_entries,
-    history_verdict_from_check,
+    history_verdict_from_result,
     normalize_finished_output,
     should_block_test_action,
     should_clear_finished_input,
     should_queue_follow_up_test,
 )
+from arena_forge.core.domain import Verdict
 
 
 @dataclass
@@ -52,12 +53,19 @@ class RunPanelLogicTests(unittest.TestCase):
         self.assertEqual(normalize_finished_output("42\n", False), "42")
 
     def test_stop_helpers_capture_follow_up_rules(self) -> None:
-        self.assertTrue(should_clear_finished_input(True, True))
-        self.assertFalse(should_clear_finished_input(True, None))
-        self.assertEqual(history_verdict_from_check(True), "accepted")
-        self.assertEqual(history_verdict_from_check(False), "unknown")
-        self.assertTrue(should_queue_follow_up_test(0, running_new=True, have_pretests=True))
-        self.assertFalse(should_queue_follow_up_test(1, running_new=True, have_pretests=True))
+        self.assertTrue(should_clear_finished_input(True, Verdict.ACCEPTED))
+        self.assertFalse(should_clear_finished_input(True, Verdict.UNKNOWN))
+        self.assertEqual(history_verdict_from_result(Verdict.ACCEPTED), "accepted")
+        self.assertEqual(history_verdict_from_result(Verdict.REJECTED), "rejected")
+        self.assertTrue(
+            should_queue_follow_up_test(0, verdict=Verdict.ACCEPTED, running_new=True, have_pretests=True)
+        )
+        self.assertFalse(
+            should_queue_follow_up_test(0, verdict=Verdict.REJECTED, running_new=True, have_pretests=True)
+        )
+        self.assertFalse(
+            should_queue_follow_up_test(1, verdict=Verdict.ACCEPTED, running_new=True, have_pretests=True)
+        )
 
 
 if __name__ == "__main__":
