@@ -11,6 +11,7 @@ from .result_display import (
     format_output_evaluation_summary,
     result_summary_css_class,
 )
+from .run_panel_logic import display_test_number
 
 
 def _build_result_block(state) -> str:
@@ -36,8 +37,9 @@ def _build_result_block(state) -> str:
 
 def build_test_config_phantom(state, test_id, point, callback, output_text, view, running=False):
     styles = build_styles(view)
+    display_number = display_test_number(test_id)
     if running:
-        content = render_template("test_running.html", test_id=test_id)
+        content = render_template("test_running.html", test_id=display_number)
     else:
         test_type = ""
         evaluation = getattr(state, "last_evaluation", None)
@@ -49,7 +51,7 @@ def build_test_config_phantom(state, test_id, point, callback, output_text, view
             test_type = "test-decline"
         content = render_template(
             "test_config.html",
-            test_id=test_id,
+            test_id=display_number,
             runtime=state.get_nice_runtime(),
             test_type=test_type,
             result_block=_build_result_block(state),
@@ -91,5 +93,8 @@ def build_compile_bar_phantom(view, cmd, type=""):
 
 def build_test_edit_header_phantom(view, test_id, callback):
     styles = build_styles(view)
-    content = "<style>" + styles + "</style>" + render_template("test_edit.html", test_id=test_id)
+    content = "<style>" + styles + "</style>" + render_template(
+        "test_edit.html",
+        test_id=display_test_number(test_id),
+    )
     return Phantom(Region(0), content, LAYOUT_BLOCK, callback)

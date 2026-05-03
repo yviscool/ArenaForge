@@ -3,6 +3,7 @@ from sublime import Region, PhantomSet
 
 from .messages import translate_status_code
 from .package_resources import ARROW_LEFT_ICON_RESOURCE, ARROW_RIGHT_ICON_RESOURCE, TEST_SYNTAX_RESOURCE
+from .run_panel_logic import display_test_number
 from .test_editor_dispatch import dispatch_test_editor_action
 from .test_editor_controller_state import TestEditorControllerState
 from .run_panel_rendering import build_test_edit_header_phantom
@@ -115,7 +116,7 @@ class TestEditCommand(sublime_plugin.TextCommand):
 		self.state.source_view_id = source_view_id
 
 		v.set_scratch(True)
-		v.set_name('test ' + str(test_id) + ' -edit')
+		v.set_name('test ' + str(display_test_number(test_id)) + ' -edit')
 		v.run_command('toggle_setting', {'setting': 'line_numbers'})
 		v.run_command('set_setting', {'setting': 'fold_buttons', 'value': False})
 		v.settings().set('edit_mode', True)

@@ -101,6 +101,10 @@ def history_verdict_from_result(verdict: Verdict) -> str:
     return verdict.value
 
 
+def display_test_number(test_id: int) -> int:
+    return test_id + 1
+
+
 def coerce_history_return_code(return_code: Union[int, str]) -> int:
     string_rtcode = str(return_code)
     if string_rtcode.lstrip("-").isdigit():

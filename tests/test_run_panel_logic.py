@@ -6,6 +6,7 @@ from arena_forge.adapters.sublime.run_panel_logic import (
     build_run_panel_stop_plan,
     build_panel_render_entries,
     coerce_history_return_code,
+    display_test_number,
     history_verdict_from_result,
     normalize_finished_output,
     should_block_test_action,
@@ -57,6 +58,8 @@ class RunPanelLogicTests(unittest.TestCase):
     def test_stop_helpers_capture_follow_up_rules(self) -> None:
         self.assertTrue(should_clear_finished_input(True, Verdict.ACCEPTED))
         self.assertFalse(should_clear_finished_input(True, Verdict.UNKNOWN))
+        self.assertEqual(display_test_number(0), 1)
+        self.assertEqual(display_test_number(4), 5)
         self.assertEqual(history_verdict_from_result(Verdict.ACCEPTED), "accepted")
         self.assertEqual(history_verdict_from_result(Verdict.REJECTED), "rejected")
         self.assertEqual(coerce_history_return_code(7), 7)
