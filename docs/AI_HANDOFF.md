@@ -166,7 +166,7 @@ Still true:
 Run from repo root:
 
 - `uv run pytest -q`
-  - expected result during this handoff: `71 passed`
+  - expected result during this handoff: `91 passed`
 - `python -m compileall arena_forge tests test_manager.py test_edit.py settings.py ContestHandler.py stress_manager.py Cpp_Intellij_Sense.py olympic_funcs.py Modules/ProcessManager.py`
   - expected result: passing
 
@@ -182,19 +182,29 @@ Run from repo root:
 - keep the inner Python package named `arena_forge/`; the outer Sublime package
   folder can now be either `ArenaForge` or `arena_forge`
 
-### 2. Diagnostics scratch file
+### 2. Sublime host Python version
+
+- this package must keep `.python-version` at `3.8` for Sublime Text package
+  loading
+- changing `.python-version` to a project runtime such as `3.14` breaks command
+  registration in Sublime because the package will no longer load under the
+  expected plugin host
+- project tooling may use newer interpreters externally, but the package host
+  target is `3.8`
+
+### 3. Diagnostics scratch file
 
 - `cmp_sense/amin.cpp` is a runtime scratch file
 - it is intentionally git-ignored
 - `diagnostics_commands.py` rewrites it on each lint pass
 
-### 3. Sublime-dependent imports in tests
+### 4. Sublime-dependent imports in tests
 
 - `arena_forge/adapters/runners/__init__.py` intentionally uses optional import
   for `ProcessManager`
 - this keeps plain Python tests from requiring `sublime`
 
-### 4. Run panel controller size
+### 5. Run panel controller size
 
 - `arena_forge/adapters/sublime/run_panel_commands.py` is still too large
 - do not move extracted logic back into it

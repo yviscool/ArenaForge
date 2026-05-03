@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from importlib import import_module
+from typing import Optional
 
 
-def resolve_root_package_name(module_name: str) -> str | None:
+def resolve_root_package_name(module_name: str) -> Optional[str]:
     parts = module_name.split(".")
     if len(parts) >= 5 and parts[1] == "arena_forge":
         return parts[0]
@@ -12,7 +13,7 @@ def resolve_root_package_name(module_name: str) -> str | None:
     return None
 
 
-def _root_package_name() -> str | None:
+def _root_package_name() -> Optional[str]:
     return resolve_root_package_name(__name__)
 
 

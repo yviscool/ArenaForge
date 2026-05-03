@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Optional
 
 from .domain import (
     LanguageProfile,
@@ -22,7 +22,7 @@ def normalize_text(text: str) -> str:
     return "\n".join(lines)
 
 
-def find_first_mismatch(expected_text: str, actual_text: str) -> OutputMismatch | None:
+def find_first_mismatch(expected_text: str, actual_text: str) -> Optional[OutputMismatch]:
     if expected_text == actual_text:
         return None
 

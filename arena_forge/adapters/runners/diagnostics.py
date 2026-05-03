@@ -4,7 +4,7 @@ import re
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
 from arena_forge.core.domain import CompilerIssue, DiagnosticSeverity
 
@@ -28,7 +28,7 @@ def _parse_severity(raw_value: str) -> DiagnosticSeverity:
     return DiagnosticSeverity.INFO
 
 
-def parse_compiler_issues(output: str, source_file: str | Path) -> tuple[CompilerIssue, ...]:
+def parse_compiler_issues(output: str, source_file: Union[str, Path]) -> tuple[CompilerIssue, ...]:
     normalized_source = _normalize_source_label(str(source_file))
     issues: list[CompilerIssue] = []
     for line in output.splitlines():

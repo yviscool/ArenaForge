@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+from typing import Optional
+
 from arena_forge.core.domain import OutputEvaluation, OutputReferenceKind, Verdict
 
 from .messages import translate
 
 
-def format_output_evaluation_summary(evaluation: OutputEvaluation | None) -> str:
+def format_output_evaluation_summary(evaluation: Optional[OutputEvaluation]) -> str:
     if evaluation is None:
         return ""
     if evaluation.verdict == Verdict.ACCEPTED and evaluation.reference_kind == OutputReferenceKind.ACCEPTED:
@@ -23,7 +25,7 @@ def format_output_evaluation_summary(evaluation: OutputEvaluation | None) -> str
     return evaluation.verdict.value
 
 
-def format_output_evaluation_detail(evaluation: OutputEvaluation | None) -> str:
+def format_output_evaluation_detail(evaluation: Optional[OutputEvaluation]) -> str:
     if evaluation is None or evaluation.mismatch is None:
         return ""
     expected_label = translate("ui.expected")
@@ -33,7 +35,7 @@ def format_output_evaluation_detail(evaluation: OutputEvaluation | None) -> str:
     return f"{expected_label}: {expected_excerpt} | {actual_label}: {actual_excerpt}"
 
 
-def result_summary_css_class(evaluation: OutputEvaluation | None) -> str:
+def result_summary_css_class(evaluation: Optional[OutputEvaluation]) -> str:
     if evaluation is None:
         return ""
     if evaluation.verdict == Verdict.ACCEPTED:

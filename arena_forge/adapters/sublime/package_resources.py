@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
+from typing import Optional
 
 _REPO_ROOT_SENTINELS = ("pyproject.toml", "TestSyntax.sublime-syntax", "Default.sublime-commands")
 
@@ -57,7 +58,7 @@ STRESS_SYNTAX_RESOURCE = build_package_resource_path("StressSyntax.sublime-synta
 TEST_SYNTAX_RESOURCE = build_package_resource_path("TestSyntax.sublime-syntax")
 
 
-def remap_package_syntax_resource(current_syntax: str | None) -> str | None:
+def remap_package_syntax_resource(current_syntax: Optional[str]) -> Optional[str]:
     if not current_syntax or not current_syntax.startswith("Packages/"):
         return None
     package_name = get_plugin_package_name()

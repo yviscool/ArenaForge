@@ -114,7 +114,7 @@ The default UI profile now uses a more terminal-like look:
 
 ## Development
 
-- Python runtime: `3.14`
+- Python runtime: `3.8+`
 - Project tooling: `uv`, `pytest`, `ruff`
 - Bootstrap locally: `uv sync --group dev`
 - Run tests: `uv run pytest`

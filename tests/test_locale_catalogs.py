@@ -2,16 +2,17 @@ import json
 import re
 import unittest
 from pathlib import Path
+from typing import Dict, Set
 
 LOCALE_ROOT = Path("arena_forge/locales")
 PLACEHOLDER_PATTERN = re.compile(r"\{([a-zA-Z0-9_]+)\}")
 
 
-def _load_locale(name: str) -> dict[str, str]:
+def _load_locale(name: str) -> Dict[str, str]:
     return json.loads((LOCALE_ROOT / f"{name}.json").read_text(encoding="utf-8"))
 
 
-def _extract_placeholders(value: str) -> set[str]:
+def _extract_placeholders(value: str) -> Set[str]:
     return set(PLACEHOLDER_PATTERN.findall(value))
 
 

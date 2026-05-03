@@ -1,4 +1,5 @@
 import unittest
+from typing import Dict
 
 from arena_forge.adapters.providers.luogu import LuoguProvider, extract_luogu_problem
 
@@ -17,7 +18,7 @@ PAYLOAD = {
 
 
 class _FakeLuoguProvider(LuoguProvider):
-    def _fetch_payload(self, problem_id: str) -> dict[str, object]:
+    def _fetch_payload(self, problem_id: str) -> Dict[str, object]:
         return PAYLOAD
 
 

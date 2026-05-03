@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Optional
+
 import sublime
 
 from arena_forge.core.domain import OutputEvaluation, RunHistoryEntry, SessionSnapshot, TestCase
@@ -65,7 +67,7 @@ class PanelTestState(object):
     def set_cur_rtcode(self, rtcode):
         self.rtcode = rtcode
 
-    def set_last_evaluation(self, evaluation: OutputEvaluation | None):
+    def set_last_evaluation(self, evaluation: Optional[OutputEvaluation]):
         self.last_evaluation = evaluation
 
     def get_nice_runtime(self):

@@ -81,7 +81,7 @@ class DebuggerBackend(Protocol):
     def is_runnable() -> bool:
         ...
 
-    def compile(self) -> tuple[int, str] | None:
+    def compile(self) -> Optional[tuple[int, str]]:
         ...
 
     def run(self, args: str = "") -> None:
@@ -101,7 +101,7 @@ class DebuggerBackend(Protocol):
     def has_var_view_api(self) -> bool:
         ...
 
-    def get_var_value(self, var_name: str, frame_id: int | None = None) -> str | None:
+    def get_var_value(self, var_name: str, frame_id: Optional[int] = None) -> Optional[str]:
         ...
 
     def get_frames(self) -> list[dict[str, object]]:

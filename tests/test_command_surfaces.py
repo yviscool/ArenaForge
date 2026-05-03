@@ -43,14 +43,8 @@ class CommandSurfaceTests(unittest.TestCase):
         captions = {item["caption"] for item in arena_forge["children"]}
         self.assertIn("Settings - Default", captions)
         self.assertIn("Settings - User", captions)
-        self.assertIn("Commands", captions)
-
-        commands_group = next(item for item in arena_forge["children"] if item["caption"] == "Commands")
-        command_ids = {item["command"] for item in commands_group["children"] if "command" in item}
-        self.assertIn("arena_forge_open_settings", command_ids)
-        self.assertIn("arena_forge_doctor", command_ids)
-        self.assertIn("arena_forge_run_history", command_ids)
-        self.assertIn("arena_forge_clear_all_tests", command_ids)
+        self.assertIn("README", captions)
+        self.assertNotIn("Commands", captions)
 
 
 if __name__ == "__main__":
