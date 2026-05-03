@@ -1,126 +1,143 @@
-ArenaForge for Sublime Text
-===============================
+[中文说明](README.zh-CN.md)
 
-ArenaForge is a competitive-programming workbench with a typed core, portable storage,
-safer process execution, and a path toward multi-editor reuse.
+# ArenaForge
 
-## What changed
+ArenaForge is a competitive-programming toolkit for Sublime Text.
+It is built for the day-to-day loop of solving problems: open a file, run it quickly, keep sample tests in order, and create a clean workspace from a problem or contest URL.
 
-- New editor-agnostic core under `arena_forge/`
-- Portable test-session storage under `.arena-forge/tests/`
-- Rich session snapshots under `.arena-forge/sessions/`
-- Structured Codeforces sample parsing
-- Provider-owned contest submission entry points
-- Locale catalog foundation for future full i18n
-- Safer subprocess command tokenization instead of broad shell execution
-- Provider registry and workspace scaffolding for contest bootstrap
+The package keeps that workflow inside the editor.
+Run history, stress testing, diagnostics, template insertion, contest setup, and Codeforces submission are all part of the same working surface.
 
-## Current feature set
+## What It Does
 
-- Compile and run inside a dedicated test panel
-- Persist interactive tests per source file
-- Stress testing with `__Good` and `__Generator`
-- Snippet-style template expansion for contest code
-- Realtime C++ diagnostics
-- OSX LLDB debugger support
-- Contest bootstrap and submission hooks
+- Run the current file in a dedicated test panel.
+- Store sample tests and richer session snapshots as JSON files near your source tree.
+- Compare output with expected answers and show the first mismatch position.
+- Keep interactive input history and basic terminal-style editing inside the run panel.
+- Open a dedicated test editor and a separate run-history view for the current source file.
+- Bootstrap contest or problem workspaces from Codeforces, AtCoder, Luogu, and AcWing URLs.
+- Submit Codeforces solutions from inside Sublime Text, with credentials stored through `keyring`.
+- Run stress tests with `<task>__Good` and `<task>__Generator`.
+- Insert local algorithm templates and provide lightweight C++ completion helpers.
+- Run C++ diagnostics from `lint_compile_cmd`.
+- Show a simple `Doctor` report for package files, resources, run profiles, and credential backend availability.
 
-## Key bindings
+## Current Provider Support
 
-- `ctrl+alt+b` on Windows/Linux: compile and run
-- `ctrl+enter`: append a new test
-- `ctrl+c`: terminate the active process in the run panel
-- `ctrl+l`: clear all tests in the run panel
-- `ctrl+u`: clear the current unsent input in the run panel
-- `ctrl+w`: delete the previous word in the run panel input
-- `ctrl+a`: move to the start of the current run panel input
-- `ctrl+e`: move to the end of the current run panel input
-- `alt+b`: move backward by one word in the current run panel input
-- `alt+f`: move forward by one word in the current run panel input
-- `ctrl+up`: recall the previous input from panel history
-- `ctrl+down`: move forward in panel input history or restore the current draft
-- `ctrl+x`: kill the active process
-- `ctrl+d`: delete selected tests
-- `ctrl+shift+up` / `ctrl+shift+down`: reorder tests
-- `ctrl+k`, `ctrl+p`: toggle the right-side run panel
+| Provider | Workspace bootstrap | Submission |
+| --- | --- | --- |
+| Codeforces | Contest workspace with parsed samples | Yes |
+| AtCoder | Contest workspace with parsed samples | No |
+| Luogu | Single problem workspace | No |
+| AcWing | Single problem workspace | No |
 
-## Usage guide
+Codeforces submission needs `requests` and a working `keyring` backend.
+The repository declares `requests` in `dependencies.json`.
 
-### 1. Install and open
+## Project Layout
 
-- Install the package into Sublime Text as a normal package folder.
-- Open any supported source file such as `*.cpp`, `*.py`, or `*.java`.
-- Run `ArenaForge: Open Settings` from the command palette if you want to customize paths, locale, UI density, or run profiles.
+- `arena_forge/core`: typed domain models, output checking, and session use cases
+- `arena_forge/adapters`: Sublime integration, providers, storage, runners, i18n, workspace scaffolding, and credential storage
+- `tests`: pytest coverage for providers, storage, settings, run-panel behavior, and command surfaces
+- `docs`: architecture, migration, and i18n notes
+- repo root: Sublime package resources such as keymaps, syntax files, HTML render assets, icons, debuggers, and thin wrapper commands
 
-### 2. First-time setup
+## Installation
 
-- Check `contests_root` if you want contest workspaces to be created outside the default `~/Contests/ArenaForge`.
-- Check `run_settings` if your compiler or runtime command differs from the defaults.
-- `credential_backend` defaults to `keyring`. Submission credentials are no longer stored in `ArenaForge.sublime-settings`.
+1. Put this folder under your Sublime Text `Packages/` directory.
+2. If you install it manually, rename the outer package folder to `ArenaForge`.
+3. Restart Sublime Text.
+4. Open the command palette and run `ArenaForge: Open Settings`.
 
-### 3. Daily run workflow
+You still need local toolchains for the languages you want to run, such as `g++`, `python`, or `javac`.
 
-- Press `ctrl+alt+b` in a source file to open the run panel and compile/run the current file.
-- Use `ctrl+enter` to append a new test in the run panel.
-- Use `enter` to send input to an active interactive process.
-- Use `ctrl+c` to stop the current process with terminal-style behavior.
-- Use `ctrl+l` to clear all tests and reset the panel to a fresh input slot.
-- Use `ctrl+u` to clear the current unsent input line.
-- Use `ctrl+w` to delete the previous word in the current input line.
-- Use `ctrl+a` / `ctrl+e` to move to the start or end of the current input line.
-- Use `alt+b` / `alt+f` to move backward or forward by one word.
-- Use `ctrl+up` / `ctrl+down` to navigate previously submitted inputs, similar to shell history recall.
-- Use `ctrl+x` to terminate the current process.
-- Use `ctrl+d` to delete selected tests.
-- Use `ctrl+shift+up` / `ctrl+shift+down` to reorder selected tests.
-- Use `ctrl+k`, `ctrl+p` to collapse or restore the right-side run panel.
+## Basic Workflow
 
-The default UI profile now uses a more terminal-like look:
+1. Open a source file such as `A.cpp` or `main.py`.
+2. Run `ArenaForge: Run`.
+3. Add or edit tests in the run panel.
+4. Use `ArenaForge: Setup Contest` when you want to create a contest or problem workspace from a URL.
+5. Use `ArenaForge: Configure Credentials` once before your first Codeforces submission.
+6. Use `ArenaForge: Submit` from a file inside a contest workspace.
 
-- `ui_variant: "terminal"`
-- `ui_density: "compact"`
+Common shortcuts:
 
-### 4. Test editing and history
+- Run current file: `Ctrl+Alt+B` on Windows/Linux, `Ctrl+B` on macOS
+- Add a new test: `Ctrl+Enter`
+- Stop the current process: `Ctrl+C` on all platforms, `Ctrl+X` on Windows/Linux
 
-- Click `edit` in a test row to open the dedicated test editor view.
-- Run `ArenaForge: Run History` to inspect recent runs for the current source file.
-- Run `ArenaForge: Open History Source` from a history view to jump back to its source file.
-- Run `ArenaForge: Clear All Tests` from the command palette if you want the same reset action without using the key binding.
+For the full list, see:
 
-### 5. Contest workflow
+- `Default (Windows).sublime-keymap`
+- `Default (Linux).sublime-keymap`
+- `Default (OSX).sublime-keymap`
 
-- Run `ArenaForge: Setup Contest`.
-- Paste a supported contest or problem URL. Current built-in providers include Codeforces, AtCoder, Luogu, and AcWing.
-- ArenaForge creates a workspace, source files, contest metadata, and sample tests under the configured contests root.
+## Configuration
 
-### 6. Submission and credentials
+The main settings file is `ArenaForge.sublime-settings`.
+The repository also includes recommended per-platform defaults in:
 
-- Run `ArenaForge: Configure Credentials` inside a contest workspace before your first submission.
-- Credentials are stored through the system keyring backend when available.
-- Run `ArenaForge: Submit` from the current source file to submit it through the active provider.
-- At the moment, full submission support is implemented for Codeforces. Other providers are scaffolded and capability-checked explicitly.
+- `ArenaForge (Windows).sublime-settings`
+- `ArenaForge (Linux).sublime-settings`
+- `ArenaForge (OSX).sublime-settings`
 
-### 7. Stress testing and diagnostics
+The settings you will most likely touch are:
 
-- Use `ArenaForge: Make Stress` to start stress testing with `<task>__Good` and `<task>__Generator`.
-- Use `ArenaForge: Stop Stress` to stop an active stress session.
-- C++ diagnostics run through the configured `lint_compile_cmd` and annotate the current buffer with warning/error regions.
+- `run_settings`: language profiles, file extensions, compile commands, run commands, and optional `lint_compile_cmd`
+- `contests_root`: where generated contest or problem workspaces are created
+- `tests_relative_dir`, `session_relative_dir`, `tests_file_suffix`: where test indexes and session snapshots are stored
+- `preferred_locale`: `en` or `zh-Hans`
+- `credential_backend`: currently `keyring`
+- `stress_time_limit_seconds`: timeout used by stress tests
+- `algorithms_base`: base directory for local C++ templates or snippets
+- `cpp_complete_enabled` and `cpp_complete_settings`: lightweight C++ completion behavior
+- `submission_language_ids`: per-provider language id mapping for submission
+- `ui_variant` and `ui_density`: basic run-panel presentation
 
-## Architecture
+Example:
 
-- Core design: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
-- Migration notes: [docs/MIGRATION.md](docs/MIGRATION.md)
-- Internationalization: [docs/I18N.md](docs/I18N.md)
+```json
+{
+  "preferred_locale": "en",
+  "contests_root": "~/Contests/ArenaForge",
+  "tests_relative_dir": ".arena-forge/tests",
+  "session_relative_dir": ".arena-forge/sessions",
+  "stress_time_limit_seconds": 2,
+  "credential_backend": "keyring",
+  "algorithms_base": "Algorithms",
+  "run_settings": [
+    {
+      "name": "C++",
+      "extensions": ["cpp", "cc", "cxx"],
+      "compile_cmd": "g++ \"{source_file}\" -std=gnu++17 -O2 -pipe -o \"{file_name}\"",
+      "run_cmd": "./{file_name} {args}",
+      "lint_compile_cmd": "g++ -std=gnu++17 \"{source_file}\" -I \"{source_file_dir}\""
+    },
+    {
+      "name": "Python",
+      "extensions": ["py"],
+      "compile_cmd": null,
+      "run_cmd": "python \"{source_file}\"",
+      "lint_compile_cmd": null
+    }
+  ]
+}
+```
+
+Tests and session data are stored as normal JSON files next to your working source tree.
+The exact locations depend on your `tests_relative_dir` and `session_relative_dir` settings.
+The shipped settings files use slightly different layouts by platform, so treat the example above as a template, not a required literal copy.
 
 ## Development
 
-- Python runtime: `3.8+`
-- Project tooling: `uv`, `pytest`, `ruff`
-- Bootstrap locally: `uv sync --group dev`
-- Run tests: `uv run pytest`
-- Run lint: `uv run ruff check arena_forge tests`
+- Python: `3.8+`
+- Dependency manager: `uv`
+- Runtime dependency: `keyring`
+- Test command: `uv run pytest`
+- Lint command: `uv run ruff check arena_forge tests`
 
-## Product stance
+## Thanks
 
-ArenaForge is treated as a clean-slate product. Storage, settings, and package naming are
-all ArenaForge-native.
+This project builds on ideas and workflow from [FastOlympicCoding](https://github.com/Jatana/FastOlympicCoding) by Jatana.
+
+The current codebase keeps the same competitive-programming focus, but reorganizes the implementation around a typed core, portable JSON storage, and cleaner Sublime adapters.
