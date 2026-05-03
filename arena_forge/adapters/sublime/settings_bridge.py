@@ -9,9 +9,10 @@ from arena_forge.core.services import infer_language
 from arena_forge.product import SETTINGS_FILE
 
 from .messages import product_status_message
+from .package_resources import get_plugin_package_name, get_plugin_root_dir
 
-root_dir = str(Path(__file__).resolve().parents[3])
-base_name = "ArenaForge"
+root_dir = str(get_plugin_root_dir())
+base_name = get_plugin_package_name()
 settings_file = SETTINGS_FILE
 default_settings_file = "ArenaForge ({os}).sublime-settings".format(
     os={"windows": "Windows", "linux": "Linux", "osx": "OSX"}[sublime.platform().lower()]

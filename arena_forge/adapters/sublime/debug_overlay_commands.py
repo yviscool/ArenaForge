@@ -8,8 +8,9 @@ import sublime
 import sublime_plugin
 
 from .messages import status_message
+from .package_resources import ARROW_RIGHT_ICON_RESOURCE, TEST_SYNTAX_RESOURCE
 from .root_bridge import get_highlight_function
-from .settings_bridge import base_name, get_settings
+from .settings_bridge import get_settings
 
 
 def split_frame_description(desc):
@@ -79,7 +80,7 @@ class ViewTesterCommand(sublime_plugin.TextCommand):
         window.focus_view(view)
         window.focus_view(dbg_view)
 
-        dbg_view.set_syntax_file("Packages/%s/TestSyntax.sublime-syntax" % base_name)
+        dbg_view.set_syntax_file(TEST_SYNTAX_RESOURCE)
         dbg_view.set_name(os.path.split(view.file_name())[-1] + " -run")
         dbg_view.run_command("set_setting", {"setting": "fold_buttons", "value": False})
         dbg_view.run_command(
@@ -184,7 +185,7 @@ class ViewTesterCommand(sublime_plugin.TextCommand):
                 "crash_line",
                 [sublime.Region(point, point)],
                 "variable.language.python",
-                "Packages/%s/icons/arrow_right.png" % base_name,
+                ARROW_RIGHT_ICON_RESOURCE,
                 sublime.DRAW_SOLID_UNDERLINE,
             )
             sublime.set_timeout_async(lambda point=point: view.show_at_center(point), 39)

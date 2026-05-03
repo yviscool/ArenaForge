@@ -10,7 +10,8 @@ import sublime_plugin
 from arena_forge.adapters.runners import ProcessManager
 
 from .messages import error_message, status_message
-from .settings_bridge import base_name, get_settings
+from .package_resources import STRESS_SYNTAX_RESOURCE
+from .settings_bridge import get_settings
 
 
 class StressManagerCommand(sublime_plugin.TextCommand):
@@ -138,7 +139,7 @@ class StressManagerCommand(sublime_plugin.TextCommand):
 
         if action == "init":
             view.set_name("Stress: Compile")
-            view.set_syntax_file("Packages/%s/StressSyntax.sublime-syntax" % base_name)
+            view.set_syntax_file(STRESS_SYNTAX_RESOURCE)
             view.set_scratch(True)
             view.run_command("set_setting", {"setting": "line_numbers", "value": False})
             base_dir = path.dirname(file)

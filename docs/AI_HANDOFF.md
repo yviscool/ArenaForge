@@ -174,12 +174,13 @@ Run from repo root:
 
 ### 1. Sublime package import naming
 
-- `arena_forge/adapters/sublime/root_bridge.py` expects package-qualified
-  Sublime imports
-- if the outer Sublime package folder is literally named `arena_forge`,
-  `root_bridge.py` will reject it
-- keep the inner Python package named `arena_forge/`, but install the Sublime
-  package under a product-style outer folder name such as `ArenaForge`
+- package resource paths are derived from the actual outer package folder name
+- `arena_forge/adapters/sublime/root_bridge.py` supports both:
+  - direct Python imports from the repo root
+  - Sublime package installs where the outer package may or may not match the
+    inner `arena_forge/` package name
+- keep the inner Python package named `arena_forge/`; the outer Sublime package
+  folder can now be either `ArenaForge` or `arena_forge`
 
 ### 2. Diagnostics scratch file
 

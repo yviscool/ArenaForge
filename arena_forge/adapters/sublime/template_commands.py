@@ -8,7 +8,6 @@ import sublime_plugin
 from sublime import Region
 
 from arena_forge.adapters.sublime.settings_bridge import (
-    base_name,
     default_settings_file,
     get_algorithm_properties_path,
     get_settings,

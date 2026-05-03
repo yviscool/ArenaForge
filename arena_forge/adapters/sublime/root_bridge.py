@@ -3,15 +3,24 @@ from __future__ import annotations
 from importlib import import_module
 
 
-def _root_package_name() -> str:
-    parts = __name__.split(".")
-    if parts[0] == "arena_forge":
-        raise RuntimeError("Sublime root bridge requires package-qualified plugin imports")
-    return parts[0]
+def resolve_root_package_name(module_name: str) -> str | None:
+    parts = module_name.split(".")
+    if len(parts) >= 5 and parts[1] == "arena_forge":
+        return parts[0]
+    if parts[0] != "arena_forge":
+        return parts[0]
+    return None
+
+
+def _root_package_name() -> str | None:
+    return resolve_root_package_name(__name__)
 
 
 def import_root_module(module_name: str):
-    return import_module(f"{_root_package_name()}.{module_name}")
+    root_package_name = _root_package_name()
+    if root_package_name is not None:
+        return import_module(f"{root_package_name}.{module_name}")
+    return import_module(module_name)
 
 
 def get_debugger_info_module():

@@ -42,6 +42,7 @@ from .run_panel_logic import (
 	should_block_test_action,
 )
 from .messages import product_log_message, status_message, translate, translate_status_code
+from .package_resources import ARROW_LEFT_ICON_RESOURCE, ARROW_RIGHT_ICON_RESOURCE
 from .run_panel_input_actions import push_input_history
 from .root_bridge import get_debugger_info_module, get_highlight_function
 from .run_panel_regions import compute_tie_pos, sync_read_only_mode
@@ -50,7 +51,7 @@ from .run_panel_session_actions import clear_all as clear_run_panel, handle_proc
 from .run_panel_session_service import save_tests_for_run
 from .run_panel_state import PanelTestState
 from .run_panel_tester import RunPanelTester
-from .settings_bridge import base_name, get_settings, get_session_repository, infer_language_name, get_tests_file_path
+from .settings_bridge import get_settings, get_session_repository, infer_language_name, get_tests_file_path
 
 debugger_info = get_debugger_info_module()
 
@@ -67,10 +68,10 @@ class TestManagerCommand(sublime_plugin.TextCommand):
 	REGION_DECLINE_PROP = ['variable.c++', 'dot', sublime.HIDDEN]
 	REGION_UNKNOWN_PROP = ['text.plain', 'dot', sublime.HIDDEN]
 	REGION_OUT_PROP = ['entity.name.function.opd', 'bookmark', sublime.HIDDEN]
-	REGION_BEGIN_PROP = ['string', 'Packages/' + base_name + '/icons/arrow_right.png', \
+	REGION_BEGIN_PROP = ['string', ARROW_RIGHT_ICON_RESOURCE, \
 				sublime.DRAW_NO_FILL | sublime.DRAW_STIPPLED_UNDERLINE | \
 					sublime.DRAW_NO_OUTLINE | sublime.DRAW_EMPTY_AS_OVERWRITE]
-	REGION_END_PROP = ['variable.c++', 'Packages/' + base_name + '/icons/arrow_left.png', sublime.HIDDEN]
+	REGION_END_PROP = ['variable.c++', ARROW_LEFT_ICON_RESOURCE, sublime.HIDDEN]
 	REGION_LINE_PROP = ['string', 'dot', \
 				sublime.DRAW_NO_FILL | sublime.DRAW_STIPPLED_UNDERLINE | \
 					sublime.DRAW_NO_OUTLINE | sublime.DRAW_EMPTY_AS_OVERWRITE]

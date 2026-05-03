@@ -27,9 +27,9 @@ class LLDBDebugger(Debugger):
 	class LLDBAnalyzer(object):
 		"""docstring for LLDBAnalyzer"""
 
-		STR_REGEX_CRASH_LINE = '((?:{name}:))(\d+)'
-		REGEX_RT_CODE = re.compile('(?:\(code=)([A-Za-z0-9_]+)')
-		REGEX_STOP_REASON = re.compile('(?:stop reason = )([a-zA-Z_]+)')
+		STR_REGEX_CRASH_LINE = r'((?:{name}:))(\d+)'
+		REGEX_RT_CODE = re.compile(r'(?:\(code=)([A-Za-z0-9_]+)')
+		REGEX_STOP_REASON = re.compile(r'(?:stop reason = )([a-zA-Z_]+)')
 
 
 		def __init__(self, on_status_change):

@@ -2,11 +2,12 @@ import sublime, sublime_plugin
 from sublime import Region, PhantomSet
 
 from .messages import translate_status_code
+from .package_resources import ARROW_LEFT_ICON_RESOURCE, ARROW_RIGHT_ICON_RESOURCE, TEST_SYNTAX_RESOURCE
 from .test_editor_dispatch import dispatch_test_editor_action
 from .test_editor_controller_state import TestEditorControllerState
 from .run_panel_rendering import build_test_edit_header_phantom
 from .run_panel_state import persist_panel_tests
-from .settings_bridge import base_name, get_session_repository, get_tests_file_path, infer_language_name
+from .settings_bridge import get_session_repository, get_tests_file_path, infer_language_name
 
 
 class TestEditCommand(sublime_plugin.TextCommand):
@@ -21,10 +22,10 @@ class TestEditCommand(sublime_plugin.TextCommand):
 	REGION_DECLINE_PROP = ['variable.c++', 'dot', sublime.HIDDEN]
 	REGION_UNKNOWN_PROP = ['text.plain', 'dot', sublime.HIDDEN]
 	REGION_OUT_PROP = ['entity.name.function.opd', 'bookmark', sublime.HIDDEN]
-	REGION_BEGIN_PROP = ['string', 'Packages/' + base_name + '/icons/arrow_right.png', \
+	REGION_BEGIN_PROP = ['string', ARROW_RIGHT_ICON_RESOURCE, \
 				sublime.DRAW_NO_FILL | sublime.DRAW_STIPPLED_UNDERLINE | \
 					sublime.DRAW_NO_OUTLINE | sublime.DRAW_EMPTY_AS_OVERWRITE]
-	REGION_END_PROP = ['variable.c++', 'Packages/' + base_name + '/icons/arrow_left.png', sublime.HIDDEN]
+	REGION_END_PROP = ['variable.c++', ARROW_LEFT_ICON_RESOURCE, sublime.HIDDEN]
 	REGION_LINE_PROP = ['string', 'dot', \
 				sublime.DRAW_NO_FILL | sublime.DRAW_STIPPLED_UNDERLINE | \
 					sublime.DRAW_NO_OUTLINE | sublime.DRAW_EMPTY_AS_OVERWRITE]
@@ -118,7 +119,7 @@ class TestEditCommand(sublime_plugin.TextCommand):
 		v.run_command('toggle_setting', {'setting': 'line_numbers'})
 		v.run_command('set_setting', {'setting': 'fold_buttons', 'value': False})
 		v.settings().set('edit_mode', True)
-		v.set_syntax_file('Packages/%s/TestSyntax.sublime-syntax' % base_name)
+		v.set_syntax_file(TEST_SYNTAX_RESOURCE)
 		v.insert(edit, 0, '\n' + test)
 		self.update_config()
 
