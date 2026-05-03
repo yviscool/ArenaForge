@@ -21,16 +21,7 @@ def find_next_word_boundary(text: str, start_index: int = 0) -> int:
 
 
 def push_input_history(command, text: str) -> None:
-    if not text:
-        return
-    history = command.state.input_history
-    if history and history[-1] == text:
-        command.state.history_index = None
-        command.state.history_draft = ""
-        return
-    history.append(text)
-    command.state.history_index = None
-    command.state.history_draft = ""
+    command.state.history.push(text)
 
 
 def navigate_history(entries, current_index, draft, current_text, direction):
@@ -164,26 +155,26 @@ def move_input_forward_word(command) -> None:
 def history_previous(command, edit) -> None:
     current_text = get_current_input(command)
     index, draft, text = navigate_history(
-        command.state.input_history,
-        command.state.history_index,
-        command.state.history_draft,
+        command.state.history.entries,
+        command.state.history.index,
+        command.state.history.draft,
         current_text,
         -1,
     )
-    command.state.history_index = index
-    command.state.history_draft = draft
+    command.state.history.index = index
+    command.state.history.draft = draft
     set_current_input(command, edit, text)
 
 
 def history_next(command, edit) -> None:
     current_text = get_current_input(command)
     index, draft, text = navigate_history(
-        command.state.input_history,
-        command.state.history_index,
-        command.state.history_draft,
+        command.state.history.entries,
+        command.state.history.index,
+        command.state.history.draft,
         current_text,
         1,
     )
-    command.state.history_index = index
-    command.state.history_draft = draft
+    command.state.history.index = index
+    command.state.history.draft = draft
     set_current_input(command, edit, text)

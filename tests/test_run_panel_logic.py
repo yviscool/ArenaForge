@@ -3,14 +3,16 @@ from dataclasses import dataclass
 from typing import Optional
 
 from arena_forge.adapters.sublime.run_panel_logic import (
+    build_run_panel_stop_plan,
     build_panel_render_entries,
+    coerce_history_return_code,
     history_verdict_from_result,
     normalize_finished_output,
     should_block_test_action,
     should_clear_finished_input,
     should_queue_follow_up_test,
 )
-from arena_forge.core.domain import Verdict
+from arena_forge.core.domain import OutputEvaluation, OutputReferenceKind, Verdict
 
 
 @dataclass
@@ -57,6 +59,8 @@ class RunPanelLogicTests(unittest.TestCase):
         self.assertFalse(should_clear_finished_input(True, Verdict.UNKNOWN))
         self.assertEqual(history_verdict_from_result(Verdict.ACCEPTED), "accepted")
         self.assertEqual(history_verdict_from_result(Verdict.REJECTED), "rejected")
+        self.assertEqual(coerce_history_return_code(7), 7)
+        self.assertEqual(coerce_history_return_code("oops"), -1)
         self.assertTrue(
             should_queue_follow_up_test(0, verdict=Verdict.ACCEPTED, running_new=True, have_pretests=True)
         )
@@ -66,6 +70,65 @@ class RunPanelLogicTests(unittest.TestCase):
         self.assertFalse(
             should_queue_follow_up_test(1, verdict=Verdict.ACCEPTED, running_new=True, have_pretests=True)
         )
+
+    def test_build_run_panel_stop_plan_captures_rendering_history_and_follow_up(self) -> None:
+        evaluation = OutputEvaluation(
+            checker_name="normalized_text",
+            verdict=Verdict.ACCEPTED,
+            reference_kind=OutputReferenceKind.ACCEPTED,
+            normalized_actual="42",
+            normalized_expected="42",
+        )
+
+        plan = build_run_panel_stop_plan(
+            return_code=0,
+            input_text="1 2",
+            output_text="42\n",
+            running_new=True,
+            have_pretests=True,
+            evaluation=evaluation,
+        )
+
+        self.assertEqual(plan.output_text, "42\n\n")
+        self.assertEqual(plan.verdict, Verdict.ACCEPTED)
+        self.assertTrue(plan.clear_input)
+        self.assertEqual(plan.rendered_text, "")
+        self.assertEqual(plan.history_verdict, "accepted")
+        self.assertEqual(plan.history_return_code, 0)
+        self.assertTrue(plan.queue_follow_up)
+        self.assertEqual(plan.evaluation, evaluation)
+
+    def test_build_run_panel_stop_plan_preserves_output_for_rejected_or_runtime_error(self) -> None:
+        rejected = OutputEvaluation(
+            checker_name="normalized_text",
+            verdict=Verdict.REJECTED,
+            reference_kind=OutputReferenceKind.ACCEPTED,
+            normalized_actual="0",
+            normalized_expected="1",
+        )
+        rejected_plan = build_run_panel_stop_plan(
+            return_code=0,
+            input_text="input",
+            output_text="0\n",
+            running_new=True,
+            have_pretests=True,
+            evaluation=rejected,
+        )
+        runtime_error_plan = build_run_panel_stop_plan(
+            return_code="crash",
+            input_text="input",
+            output_text="segfault\n",
+            running_new=False,
+            have_pretests=False,
+            evaluation=None,
+        )
+
+        self.assertFalse(rejected_plan.clear_input)
+        self.assertEqual(rejected_plan.rendered_text, "input\n0\n\n")
+        self.assertFalse(rejected_plan.queue_follow_up)
+        self.assertEqual(runtime_error_plan.verdict, Verdict.RUNTIME_ERROR)
+        self.assertEqual(runtime_error_plan.history_return_code, -1)
+        self.assertEqual(runtime_error_plan.rendered_text, "input\nsegfault")
 
 
 if __name__ == "__main__":

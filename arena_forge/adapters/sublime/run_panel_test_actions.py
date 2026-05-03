@@ -181,12 +181,6 @@ def clear_all_tests(command) -> None:
     tester.running_test = None
     tester.running_new = None
     command.clear_all()
-    command.state.delta_input = 0
-    command.state.input_start = 0
-    command.state.output_start = 0
-    command.state.out_region_set = False
-    command.state.input_history = []
-    command.state.history_index = None
-    command.state.history_draft = ""
+    command.state.reset_panel_runtime()
     command.memorize_tests()
     command.view.run_command("test_manager", {"action": "new_test"})

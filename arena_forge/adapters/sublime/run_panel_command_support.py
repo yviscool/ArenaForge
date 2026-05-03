@@ -27,7 +27,7 @@ def insert_panel_input(command, edit, text=None) -> None:
     else:
         to_insert = text
         view.insert(edit, view.sel()[0].b, to_insert + "\n")
-    command.state.delta_input = view.sel()[0].b
+    command.state.advance_panel_input(view.sel()[0].b)
     push_input_history(command, to_insert)
     command.state.tester.insert(to_insert + "\n")
 
@@ -44,7 +44,7 @@ def insert_clipboard_input(command, edit) -> None:
 
 def memorize_tests(command) -> None:
     save_tests_for_run(
-        command.state.dbg_file,
+        command.state.source_file,
         command.state.tester.get_tests(),
         get_session_repository(),
         infer_language_name,

@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import List, Optional, Protocol, Tuple, Union
 
-from arena_forge.core.domain import Verdict
+from arena_forge.core.domain import OutputEvaluation, Verdict
 
 _BLOCKED_TEST_EVENTS = frozenset({"test-click", "test-edit", "test-run"})
 
@@ -24,6 +24,18 @@ class PanelRenderEntry:
     running: bool
     accdec_point: Optional[int] = None
     accdec_action: Optional[str] = None
+
+
+@dataclass(frozen=True)
+class RunPanelStopPlan:
+    output_text: str
+    verdict: Verdict
+    evaluation: Optional[OutputEvaluation]
+    clear_input: bool
+    rendered_text: str
+    history_verdict: str
+    history_return_code: int
+    queue_follow_up: bool
 
 
 def should_block_test_action(proc_run: bool, event: str) -> bool:
@@ -89,7 +101,44 @@ def history_verdict_from_result(verdict: Verdict) -> str:
     return verdict.value
 
 
+def coerce_history_return_code(return_code: Union[int, str]) -> int:
+    string_rtcode = str(return_code)
+    if string_rtcode.lstrip("-").isdigit():
+        return int(string_rtcode)
+    return -1
+
+
 def should_queue_follow_up_test(
     return_code: Union[int, str], *, verdict: Verdict, running_new: bool, have_pretests: bool
 ) -> bool:
     return str(return_code) == "0" and verdict != Verdict.REJECTED and running_new and have_pretests
+
+
+def build_run_panel_stop_plan(
+    *,
+    return_code: Union[int, str],
+    input_text: str,
+    output_text: str,
+    running_new: bool,
+    have_pretests: bool,
+    evaluation: Optional[OutputEvaluation],
+) -> RunPanelStopPlan:
+    normalized_output = normalize_finished_output(output_text, running_new)
+    verdict = evaluation.verdict if evaluation is not None else Verdict.RUNTIME_ERROR
+    clear_input = should_clear_finished_input(running_new, verdict)
+    rendered_text = "" if clear_input else input_text + "\n" + normalized_output
+    return RunPanelStopPlan(
+        output_text=normalized_output,
+        verdict=verdict,
+        evaluation=evaluation,
+        clear_input=clear_input,
+        rendered_text=rendered_text,
+        history_verdict=history_verdict_from_result(verdict),
+        history_return_code=coerce_history_return_code(return_code),
+        queue_follow_up=should_queue_follow_up_test(
+            return_code,
+            verdict=verdict,
+            running_new=running_new,
+            have_pretests=have_pretests,
+        ),
+    )

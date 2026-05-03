@@ -69,10 +69,7 @@ def update_configs(command, update_last=None) -> None:
 
 def start_new_test(command, edit) -> None:
     view = command.view
-    command.state.input_start = view.size()
-    command.state.delta_input = view.size()
-    command.state.output_start = view.size() + 1
-    command.state.out_region_set = False
+    command.state.begin_panel_input(view.size())
 
     view.add_regions("type", [Region(view.size(), view.size())], *command.REGION_BEGIN_PROP)
     view.sel().clear()
