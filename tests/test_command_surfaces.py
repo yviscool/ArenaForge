@@ -32,6 +32,23 @@ class CommandSurfaceTests(unittest.TestCase):
         self.assertIn("arena_forge_open_history_source", commands)
         self.assertIn("arena_forge_clear_all_tests", commands)
 
+    def test_main_menu_groups_package_settings_under_arenaforge(self) -> None:
+        payload = json.loads(Path("Main.sublime-menu").read_text(encoding="utf-8"))
+        preferences = next(item for item in payload if item.get("id") == "preferences")
+        package_settings = next(item for item in preferences["children"] if item.get("id") == "package-settings")
+        arena_forge = next(item for item in package_settings["children"] if item["caption"] == "ArenaForge")
+
+        captions = {item["caption"] for item in arena_forge["children"]}
+        self.assertIn("Settings - Default", captions)
+        self.assertIn("Settings - User", captions)
+        self.assertIn("Commands", captions)
+
+        commands_group = next(item for item in arena_forge["children"] if item["caption"] == "Commands")
+        command_ids = {item["command"] for item in commands_group["children"]}
+        self.assertIn("arena_forge_open_settings", command_ids)
+        self.assertIn("arena_forge_run_history", command_ids)
+        self.assertIn("arena_forge_clear_all_tests", command_ids)
+
 
 if __name__ == "__main__":
     unittest.main()

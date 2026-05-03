@@ -8,23 +8,126 @@
                 "caption": "Package Settings",
                 "mnemonic": "P",
                 "id": "package-settings",
-                "children":
-                [
+                "children": [
                     {
-                        "caption": "ArenaForge / \u7ade\u8d5b\u5de5\u4f5c\u53f0",
-                        "command": "arena_forge_open_settings"
-                    },
-                    {
-                        "caption": "ArenaForge Run History / \u8fd0\u884c\u5386\u53f2",
-                        "command": "arena_forge_run_history"
-                    },
-                    {
-                        "caption": "ArenaForge Open History Source / \u6253\u5f00\u5386\u53f2\u6e90\u6587\u4ef6",
-                        "command": "arena_forge_open_history_source"
-                    },
-                    {
-                        "caption": "ArenaForge Clear All Tests / \u6e05\u7a7a\u5168\u90e8\u6d4b\u8bd5",
-                        "command": "arena_forge_clear_all_tests"
+                        "caption": "ArenaForge",
+                        "children": [
+                            {
+                                "caption": "README",
+                                "command": "open_file",
+                                "args": {
+                                    "file": "${packages}/ArenaForge/README.md"
+                                }
+                            },
+                            {
+                                "caption": "-"
+                            },
+                            {
+                                "caption": "Settings - Default",
+                                "command": "open_file",
+                                "args": {
+                                    "file": "${packages}/ArenaForge/ArenaForge.sublime-settings"
+                                }
+                            },
+                            {
+                                "caption": "Settings - User",
+                                "command": "open_file",
+                                "args": {
+                                    "file": "${packages}/User/ArenaForge.sublime-settings"
+                                }
+                            },
+                            {
+                                "caption": "-"
+                            },
+                            {
+                                "caption": "Key Bindings - Default",
+                                "command": "open_file",
+                                "args": {
+                                    "file": "${packages}/ArenaForge/Default (Windows).sublime-keymap"
+                                },
+                                "platform": "Windows"
+                            },
+                            {
+                                "caption": "Key Bindings - Default",
+                                "command": "open_file",
+                                "args": {
+                                    "file": "${packages}/ArenaForge/Default (Linux).sublime-keymap"
+                                },
+                                "platform": "Linux"
+                            },
+                            {
+                                "caption": "Key Bindings - Default",
+                                "command": "open_file",
+                                "args": {
+                                    "file": "${packages}/ArenaForge/Default (OSX).sublime-keymap"
+                                },
+                                "platform": "OSX"
+                            },
+                            {
+                                "caption": "Key Bindings - User",
+                                "command": "open_file",
+                                "args": {
+                                    "file": "${packages}/User/Default (Windows).sublime-keymap"
+                                },
+                                "platform": "Windows"
+                            },
+                            {
+                                "caption": "Key Bindings - User",
+                                "command": "open_file",
+                                "args": {
+                                    "file": "${packages}/User/Default (Linux).sublime-keymap"
+                                },
+                                "platform": "Linux"
+                            },
+                            {
+                                "caption": "Key Bindings - User",
+                                "command": "open_file",
+                                "args": {
+                                    "file": "${packages}/User/Default (OSX).sublime-keymap"
+                                },
+                                "platform": "OSX"
+                            },
+                            {
+                                "caption": "-"
+                            },
+                            {
+                                "caption": "Commands",
+                                "children": [
+                                    {
+                                        "caption": "Open Settings / 打开设置",
+                                        "command": "arena_forge_open_settings"
+                                    },
+                                    {
+                                        "caption": "Setup Contest / 初始化比赛",
+                                        "command": "arena_forge_setup_contest"
+                                    },
+                                    {
+                                        "caption": "Configure Credentials / 配置凭据",
+                                        "command": "arena_forge_configure_credentials"
+                                    },
+                                    {
+                                        "caption": "Run History / 运行历史",
+                                        "command": "arena_forge_run_history"
+                                    },
+                                    {
+                                        "caption": "Open History Source / 打开历史源文件",
+                                        "command": "arena_forge_open_history_source"
+                                    },
+                                    {
+                                        "caption": "Clear All Tests / 清空全部测试",
+                                        "command": "arena_forge_clear_all_tests"
+                                    },
+                                    {
+                                        "caption": "Make Stress / 开始对拍",
+                                        "command": "arena_forge_make_stress"
+                                    },
+                                    {
+                                        "caption": "Stop Stress / 停止对拍",
+                                        "command": "arena_forge_stop_stress"
+                                    }
+                                ]
+                            }
+                        ]
                     }
                 ]
             }

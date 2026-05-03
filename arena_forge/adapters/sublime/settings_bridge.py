@@ -10,6 +10,7 @@ from arena_forge.product import SETTINGS_FILE
 
 from .messages import product_status_message
 from .package_resources import get_plugin_package_name, get_plugin_root_dir
+from .package_resources import remap_package_syntax_resource
 
 root_dir = str(get_plugin_root_dir())
 base_name = get_plugin_package_name()
@@ -92,11 +93,25 @@ def try_load_settings():
         locale_directory=Path(root_dir) / "arena_forge" / "locales",
     )
     init_application(application)
+    repair_open_view_syntaxes()
     product_status_message("status.settings_loaded")
 
 
 def plugin_loaded():
     sublime.set_timeout(try_load_settings, 200)
+
+
+def repair_open_view_syntaxes():
+    for window in sublime.windows():
+        for view in window.views():
+            repair_view_syntax(view)
+
+
+def repair_view_syntax(view):
+    current_syntax = view.settings().get("syntax")
+    corrected_syntax = remap_package_syntax_resource(current_syntax)
+    if corrected_syntax is not None:
+        view.set_syntax_file(corrected_syntax)
 
 
 def get_tests_file_suffix():
