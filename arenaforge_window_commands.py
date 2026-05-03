@@ -2,6 +2,7 @@ from .arena_forge.adapters.sublime.window_commands import (
     ArenaForgeAutoCommand,
     ArenaForgeClearAllTestsCommand,
     ArenaForgeConfigureCredentialsCommand,
+    ArenaForgeDoctorCommand,
     ArenaForgeMakeStressCommand,
     ArenaForgeOpenHistorySourceCommand,
     ArenaForgeOpenSettingsCommand,

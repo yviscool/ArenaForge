@@ -28,6 +28,11 @@ class WorkspaceLayoutTests(unittest.TestCase):
             str(snapshot_path).replace("\\", "/").endswith(".arena-forge/sessions/A.cpp.session.json")
         )
 
+    def test_algorithm_properties_path_uses_portable_json_suffix(self) -> None:
+        layout = WorkspaceLayout()
+        properties_path = layout.algorithm_properties_path_for("C:/work/snippet.cpp")
+        self.assertTrue(str(properties_path).replace("\\", "/").endswith("snippet.cpp.cpp.properties.json"))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 
-
 _REPO_ROOT_SENTINELS = ("pyproject.toml", "TestSyntax.sublime-syntax", "Default.sublime-commands")
 
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional, Protocol
+from typing import Callable, Optional, Protocol
 
 from .domain import (
     CommandExecution,
@@ -69,29 +69,34 @@ class DebuggerBackend(Protocol):
     RUN_PRIOR: float
 
     @staticmethod
-    def is_runnable():
+    def is_runnable() -> bool:
         ...
 
-    def compile(self):
+    def compile(self) -> tuple[int, str] | None:
         ...
 
-    def run(self, args=""):
+    def run(self, args: str = "") -> None:
         ...
 
-    def set_calls(self, on_out, on_stop, on_status_change):
+    def set_calls(
+        self,
+        on_out: Callable[..., None],
+        on_stop: Callable[..., None],
+        on_status_change: Callable[[str], None],
+    ) -> None:
         ...
 
-    def terminate(self):
+    def terminate(self) -> None:
         ...
 
     def has_var_view_api(self) -> bool:
         ...
 
-    def get_var_value(self, var_name: str, frame_id=None):
+    def get_var_value(self, var_name: str, frame_id: int | None = None) -> str | None:
         ...
 
-    def get_frames(self):
+    def get_frames(self) -> list[dict[str, object]]:
         ...
 
-    def select_frame(self, frame_id):
+    def select_frame(self, frame_id: int) -> None:
         ...

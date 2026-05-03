@@ -3,9 +3,9 @@ import unittest
 from arena_forge.adapters.sublime.package_resources import (
     ARROW_LEFT_ICON_RESOURCE,
     ARROW_RIGHT_ICON_RESOURCE,
-    PackageLayout,
     STRESS_SYNTAX_RESOURCE,
     TEST_SYNTAX_RESOURCE,
+    PackageLayout,
     build_package_resource_path,
     get_plugin_package_name,
     get_plugin_root_dir,

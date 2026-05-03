@@ -1,9 +1,17 @@
 from __future__ import annotations
 
 from dataclasses import replace
-from typing import Optional
+from typing import Optional, Sequence
 
-from .domain import SessionRunReport, SessionSnapshot, TestCase, TestRunResult, Verdict
+from .domain import (
+    CommandExecution,
+    LanguageProfile,
+    SessionRunReport,
+    SessionSnapshot,
+    TestCase,
+    TestRunResult,
+    Verdict,
+)
 from .ports import Runner, SessionRepository
 from .services import evaluate_output, infer_language
 
@@ -13,7 +21,7 @@ class SessionService:
         self.repository = repository
         self.runner = runner
 
-    def ensure_session(self, source_file: str, profiles) -> SessionSnapshot:
+    def ensure_session(self, source_file: str, profiles: Sequence[LanguageProfile]) -> SessionSnapshot:
         session = self.repository.load(source_file)
         if session is not None:
             return session
@@ -41,7 +49,7 @@ class RunSessionService:
     def __init__(self, runner: Runner):
         self.runner = runner
 
-    def compile_session(self, session: SessionSnapshot):
+    def compile_session(self, session: SessionSnapshot) -> Optional[CommandExecution]:
         return self.runner.compile(session.source_file, session.language)
 
     def run_all_tests(self, session: SessionSnapshot) -> SessionRunReport:

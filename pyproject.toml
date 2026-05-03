@@ -10,6 +10,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+  "mypy>=1.18.2",
   "pytest>=8.4.0",
   "ruff>=0.11.0",
 ]
@@ -39,3 +40,14 @@ select = ["E", "F", "I"]
 "arena_forge/adapters/sublime/run_panel_commands.py" = ["E501", "E701", "E722", "F401", "F841", "I001"]
 "arena_forge/adapters/sublime/template_commands.py" = ["E501", "F401", "I001"]
 "arena_forge/adapters/sublime/test_editor_commands.py" = ["E722", "F401", "F841", "I001"]
+
+[tool.mypy]
+python_version = "3.14"
+files = [
+  "arena_forge/core",
+  "arena_forge/adapters/storage",
+  "arena_forge/adapters/runners/diagnostics.py",
+  "arena_forge/adapters/sublime/doctor_report.py",
+]
+strict = true
+warn_unused_ignores = true

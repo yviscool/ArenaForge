@@ -24,10 +24,12 @@ class CommandSurfaceTests(unittest.TestCase):
         captions = {item["caption"] for item in payload}
         commands = {item["command"] for item in payload}
         self.assertIn("ArenaForge: Configure Credentials / \u914d\u7f6e\u51ed\u636e", captions)
+        self.assertIn("ArenaForge: Doctor / \u5065\u5eb7\u68c0\u67e5", captions)
         self.assertIn("ArenaForge: Run History / \u8fd0\u884c\u5386\u53f2", captions)
         self.assertIn("ArenaForge: Open History Source / \u6253\u5f00\u5386\u53f2\u6e90\u6587\u4ef6", captions)
         self.assertIn("ArenaForge: Clear All Tests / \u6e05\u7a7a\u5168\u90e8\u6d4b\u8bd5", captions)
         self.assertIn("arena_forge_open_settings", commands)
+        self.assertIn("arena_forge_doctor", commands)
         self.assertIn("arena_forge_run_history", commands)
         self.assertIn("arena_forge_open_history_source", commands)
         self.assertIn("arena_forge_clear_all_tests", commands)
@@ -44,8 +46,9 @@ class CommandSurfaceTests(unittest.TestCase):
         self.assertIn("Commands", captions)
 
         commands_group = next(item for item in arena_forge["children"] if item["caption"] == "Commands")
-        command_ids = {item["command"] for item in commands_group["children"]}
+        command_ids = {item["command"] for item in commands_group["children"] if "command" in item}
         self.assertIn("arena_forge_open_settings", command_ids)
+        self.assertIn("arena_forge_doctor", command_ids)
         self.assertIn("arena_forge_run_history", command_ids)
         self.assertIn("arena_forge_clear_all_tests", command_ids)
 

@@ -1,12 +1,17 @@
 import sublime, sublime_plugin
-import ast
-import os
-from os.path import dirname
-from sublime import Region, PhantomSet
-from os import path
+from sublime import PhantomSet
 
-from .debug_protocol import supports_frames
 from .run_panel_controller_state import RunPanelControllerState
+from .run_panel_command_support import (
+	add_transient_region as add_run_panel_transient_region,
+	change_process_status as change_run_panel_process_status,
+	get_style_test_status as get_run_panel_style_test_status,
+	insert_clipboard_input as insert_run_panel_clipboard_input,
+	insert_panel_input as insert_run_panel_input,
+	memorize_tests as memorize_run_panel_tests,
+	renumerate_tests as renumerate_run_panel_tests,
+	set_compile_bar as set_run_panel_compile_bar,
+)
 from .run_panel_debug_actions import (
 	get_view_by_id as get_run_panel_view_by_id,
 	prepare_code_view as prepare_run_panel_code_view,
@@ -41,17 +46,13 @@ from .run_panel_test_actions import (
 from .run_panel_logic import (
 	should_block_test_action,
 )
-from .messages import product_log_message, status_message, translate, translate_status_code
+from .messages import status_message
 from .package_resources import ARROW_LEFT_ICON_RESOURCE, ARROW_RIGHT_ICON_RESOURCE
-from .run_panel_input_actions import push_input_history
-from .root_bridge import get_debugger_info_module, get_highlight_function
+from .root_bridge import get_debugger_info_module
 from .run_panel_regions import compute_tie_pos, sync_read_only_mode
-from .run_panel_rendering import build_compile_bar_phantom
 from .run_panel_session_actions import clear_all as clear_run_panel, handle_process_stop, make_opd as make_run_panel
-from .run_panel_session_service import save_tests_for_run
 from .run_panel_state import PanelTestState
 from .run_panel_tester import RunPanelTester
-from .settings_bridge import get_settings, get_session_repository, infer_language_name, get_tests_file_path
 
 debugger_info = get_debugger_info_module()
 
@@ -95,31 +96,10 @@ class TestManagerCommand(sublime_plugin.TextCommand):
 	Tester = RunPanelTester
 
 	def insert_text(self, edit, text=None):
-		v = self.view
-		expected = v.line(self.state.delta_input).end()
-		if len(v.sel()) > 1: return
-		if v.sel()[0].a != expected or v.sel()[0].b != expected: return
-		if text is None:
-			if not self.state.tester.proc_run:
-				return None
-			to_shove = v.substr(Region(self.state.delta_input, v.sel()[0].b))
-			v.insert(edit, v.sel()[0].b, '\n')
-		else:
-			to_shove = text
-			v.insert(edit, v.sel()[0].b, to_shove + '\n')
-		self.state.delta_input = v.sel()[0].b 
-		push_input_history(self, to_shove)
-		self.state.tester.insert(to_shove + '\n')
+		insert_run_panel_input(self, edit, text=text)
 
 	def insert_cb(self, edit):
-		v = self.view
-		s = sublime.get_clipboard()
-		lst = s.split('\n')
-		for i in range(len(lst) - 1):
-			push_input_history(self, lst[i])
-			self.state.tester.insert(lst[i] + '\n', call_on_insert=True)
-		push_input_history(self, lst[-1])
-		self.state.tester.insert(lst[-1], call_on_insert=True)
+		insert_run_panel_clipboard_input(self, edit)
 
 	def toggle_fold(self, i):
 		toggle_run_panel_fold(self, i)
@@ -151,13 +131,7 @@ class TestManagerCommand(sublime_plugin.TextCommand):
 		start_new_test(self, edit)
 	
 	def memorize_tests(self):
-		save_tests_for_run(
-			self.state.dbg_file,
-			self.state.tester.get_tests(),
-			get_session_repository(),
-			infer_language_name,
-			get_tests_file_path,
-		)
+		memorize_run_panel_tests(self)
 
 	def on_insert(self, s):
 		self.view.run_command('test_manager', {'action': 'insert_opd_input', 'text': s})
@@ -171,10 +145,7 @@ class TestManagerCommand(sublime_plugin.TextCommand):
 			self.state.out_region_set = True
 
 	def add_region(self, line, region_prop):
-		v = self.view
-		pos = v.line(line)
-		from random import randint
-		v.add_regions(str(randint(0, 1e9)), [Region(pos.a, pos.a + 1)], *region_prop)
+		add_run_panel_transient_region(self, line, region_prop)
 
 	def on_stop(self, rtcode, runtime, crash_line=None):
 		handle_process_stop(self, rtcode, runtime, crash_line=crash_line)
@@ -201,14 +172,13 @@ class TestManagerCommand(sublime_plugin.TextCommand):
 		fold_run_panel_accept_tests(self)
 
 	def change_process_status(self, status):
-		self.view.set_status('process_status_code', status)
-		self.view.set_status('process_status', translate_status_code(status))
+		change_run_panel_process_status(self, status)
 
 	def clear_all(self):
 		clear_run_panel(self)
 
 	def set_compile_bar(self, cmd, type=''):
-		self.state.test_phantoms[0].update([build_compile_bar_phantom(self.view, cmd, type=type)])
+		set_run_panel_compile_bar(self, cmd, type=type)
 
 	def get_view_by_id(self, id):
 		return get_run_panel_view_by_id(self, id)
@@ -237,48 +207,10 @@ class TestManagerCommand(sublime_plugin.TextCommand):
 		delete_run_panel_test(self, edit, id)
 
 	def get_style_test_status(self, nth):
-		check = self.state.tester.check_test(nth)
-		if check:
-			return self.REGION_ACCEPT_PROP
-		elif check is False:
-			return self.REGION_DECLINE_PROP
-		return self.REGION_UNKNOWN_PROP
+		return get_run_panel_style_test_status(self, nth)
 
 	def renumerate_tests(self, edit, max_nth_test):
-		'''
-		renumerating tests
-		sample if 
-			[test 2, test 5] -> [test 1, test 2]
-		uses after del_tests
-		'''
-		v = self.view
-		cur_nth = 0
-		for i in range(0, max_nth_test):
-			begin_key = self.REGION_BEGIN_KEY % i
-			rs_beg = v.get_regions(begin_key)
-			if rs_beg:
-				rs_beg = rs_beg[0]
-				# v.replace(edit, v.word(rs_beg.begin() + 5), str(cur_nth + 1))
-				v.erase_regions(begin_key)
-				v.add_regions(self.REGION_BEGIN_KEY % (cur_nth), [rs_beg], \
-					*self.REGION_BEGIN_PROP)
-
-				rs_line = v.get_regions('line_%d' % cur_nth)
-
-				v.erase_regions('line_%d' % i)
-				v.add_regions('line_%d' % cur_nth, rs_line, \
-					*self.REGION_LINE_PROP)
-
-
-				end_key = self.REGION_END_KEY % i
-				rs_end = v.get_regions(end_key)
-				if rs_end:
-					rs_end = rs_end[0]
-					v.erase_regions(end_key)
-					v.add_regions(self.REGION_END_KEY % (cur_nth), [rs_end], \
-						*self.REGION_END_PROP)
-
-				cur_nth += 1
+		renumerate_run_panel_tests(self, edit, max_nth_test)
 
 	def delete_tests(self, edit):
 		delete_run_panel_tests(self, edit)

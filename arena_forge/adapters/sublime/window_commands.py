@@ -1,8 +1,20 @@
 from __future__ import annotations
 
+from pathlib import Path
+
+import sublime
 import sublime_plugin
 
+from .doctor_report import build_doctor_report
 from .messages import status_message
+from .package_resources import (
+    STRESS_SYNTAX_RESOURCE,
+    TEST_SYNTAX_RESOURCE,
+    get_package_resource_root,
+    get_plugin_package_name,
+    get_plugin_root_dir,
+)
+from .settings_bridge import get_application, get_contests_root
 
 
 def _ensure_view(window):
@@ -119,3 +131,38 @@ class ArenaForgeClearAllTestsCommand(sublime_plugin.WindowCommand):
             status_message("error.active_view_required")
             return
         view.run_command("test_manager", {"action": "clear_all_tests"})
+
+
+class ArenaForgeDoctorCommand(sublime_plugin.WindowCommand):
+    def run(self) -> None:
+        application = get_application()
+        credential_store = application.credential_store
+        credential_available = bool(
+            getattr(credential_store, "is_available", lambda: False)()
+        )
+        report = build_doctor_report(
+            package_name=get_plugin_package_name(),
+            package_root=Path(get_plugin_root_dir()),
+            package_resource_root=get_package_resource_root(),
+            discovered_resources={
+                "TestSyntax.sublime-syntax": sublime.find_resources("TestSyntax.sublime-syntax"),
+                "StressSyntax.sublime-syntax": sublime.find_resources("StressSyntax.sublime-syntax"),
+                TEST_SYNTAX_RESOURCE: (
+                    [TEST_SYNTAX_RESOURCE]
+                    if sublime.find_resources("TestSyntax.sublime-syntax")
+                    else []
+                ),
+                STRESS_SYNTAX_RESOURCE: [STRESS_SYNTAX_RESOURCE]
+                if sublime.find_resources("StressSyntax.sublime-syntax")
+                else [],
+            },
+            settings=application.settings,
+            contests_root=get_contests_root(),
+            credential_backend=str(getattr(credential_store, "backend_name", "unknown")),
+            credential_available=credential_available,
+        )
+        view = self.window.new_file()
+        view.set_name("ArenaForge Doctor")
+        view.set_scratch(True)
+        view.run_command("append", {"characters": report, "force": True, "scroll_to_end": False})
+        status_message("status.doctor_report_ready")

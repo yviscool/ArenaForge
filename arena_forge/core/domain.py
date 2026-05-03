@@ -16,6 +16,12 @@ class Verdict(str, Enum):
     TIMEOUT = "timeout"
 
 
+class DiagnosticSeverity(str, Enum):
+    ERROR = "error"
+    WARNING = "warning"
+    INFO = "info"
+
+
 class ProviderWorkspaceKind(str, Enum):
     CONTEST = "contest"
     PROBLEM = "problem"
@@ -92,6 +98,14 @@ class CommandExecution:
 
 
 @dataclass(frozen=True)
+class CompilerIssue:
+    severity: DiagnosticSeverity
+    line: int
+    column: int
+    message: str
+
+
+@dataclass(frozen=True)
 class ProviderCapabilities:
     workspace_kind: ProviderWorkspaceKind = ProviderWorkspaceKind.CONTEST
     supports_submission: bool = False
@@ -123,15 +137,17 @@ class RunHistoryEntry:
     return_code: int
 
 
+def _utc_timestamp() -> str:
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+
+
 @dataclass(frozen=True)
 class SessionSnapshot:
     source_file: str
     language: str
     tests: Tuple[TestCase, ...] = field(default_factory=tuple)
     run_history: Tuple[RunHistoryEntry, ...] = field(default_factory=tuple)
-    updated_at: str = field(
-        default_factory=lambda: datetime.now(timezone.utc).replace(microsecond=0).isoformat()
-    )
+    updated_at: str = field(default_factory=_utc_timestamp)
 
     @property
     def source_path(self) -> Path:
@@ -177,7 +193,7 @@ class SessionSnapshot:
             language=str(payload["language"]),
             tests=tests,
             run_history=history,
-            updated_at=str(payload.get("updated_at") or cls.__dataclass_fields__["updated_at"].default_factory()),
+            updated_at=str(payload.get("updated_at") or _utc_timestamp()),
         )
 
 

@@ -56,11 +56,9 @@ class WorkspaceLayout:
         destination.parent.mkdir(parents=True, exist_ok=True)
         return destination
 
-    def algorithm_properties_candidates(self, snippet_file: str) -> tuple[Path, Path]:
+    def algorithm_properties_path_for(self, snippet_file: str) -> Path:
         snippet_path = Path(snippet_file)
-        next_gen = snippet_path.with_name(snippet_path.name + self.algorithm_properties_suffix)
-        legacy = Path(str(snippet_path) + ":properties")
-        return next_gen, legacy
+        return snippet_path.with_name(snippet_path.name + self.algorithm_properties_suffix)
 
     def expanded_contests_root(self) -> Path:
         return Path(self.contests_root).expanduser()

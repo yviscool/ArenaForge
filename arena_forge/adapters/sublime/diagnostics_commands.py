@@ -1,20 +1,16 @@
 from __future__ import annotations
 
-import re
-from os import path
-from subprocess import PIPE, STDOUT, Popen
+from pathlib import Path
 
 import sublime
 import sublime_plugin
 
-from arena_forge.adapters.runners.subprocess_runner import build_command_argv, build_process_spawn_options
+from arena_forge.adapters.runners import CompilerDiagnosticsService, DiagnosticsScratchWorkspace
+from arena_forge.core.domain import DiagnosticSeverity
 
 from .messages import product_log_message, status_message, translate
+from .package_resources import get_plugin_root_dir
 from .settings_bridge import get_settings, is_lang_view
-
-ROOT_DIR = path.dirname(path.dirname(path.dirname(path.dirname(__file__))))
-CMP_SENSE_RUN_FILE = path.join(ROOT_DIR, "cmp_sense", "amin.cpp")
-ERROR_PATTERN = re.compile(r"(:)(\d+)(:)(\d+)(:)( *)([a-zA-Z ]+)(:)( *)(.*)")
 
 
 class InteliSenseCommand(sublime_plugin.TextCommand):
@@ -84,73 +80,51 @@ class InteliSenseCommand(sublime_plugin.TextCommand):
         elif action == "sync_modified":
             self.run_sense()
 
-    def parse_cpp_errors_smart(self, output, run_file_path):
-        errors = []
-        for line in output.splitlines():
-            if not line.startswith(run_file_path):
-                continue
-            match = ERROR_PATTERN.match(line[len(run_file_path) :])
-            if match is None:
-                continue
-            row, column, error_type, error_string = match.group(2, 4, 7, 10)
-            y, x = int(row), int(column)
-            errors.append(
-                {
-                    "type": "error" if error_type.strip() == "fatal error" else error_type.strip(),
-                    "position": (y - 1, x),
-                    "error_string": error_string.strip(),
-                }
-            )
-        return errors
+    def _diagnostics_service(self) -> CompilerDiagnosticsService:
+        return CompilerDiagnosticsService(
+            platform_name=sublime.platform(),
+            scratch_workspace=DiagnosticsScratchWorkspace(Path(get_plugin_root_dir())),
+        )
 
     def insert_error_marks(self):
         view = self.view
         source = view.substr(sublime.Region(0, view.size()))
-        with open(CMP_SENSE_RUN_FILE, "wb") as handle:
-            handle.write(source.encode())
-        file_dir_path = path.split(view.file_name())[0]
-        cmd = self.get_compile_cmd().format(source_file=CMP_SENSE_RUN_FILE, source_file_dir=file_dir_path)
-        spawn_options = build_process_spawn_options(sublime.platform())
-        process = Popen(
-            build_command_argv(cmd, platform_name=sublime.platform()),
-            shell=False,
-            stdin=PIPE,
-            stdout=PIPE,
-            stderr=STDOUT,
-            startupinfo=spawn_options["startupinfo"],
-            creationflags=spawn_options["creationflags"],
+        file_dir_path = str(Path(view.file_name()).resolve().parent)
+        report = self._diagnostics_service().run(
+            compile_cmd=self.get_compile_cmd(),
+            source_text=source,
+            source_file_dir=file_dir_path,
         )
-        output = process.communicate()[0].decode()
         view.erase_regions("warning_marks")
         view.erase_regions("error_marks")
         try:
-            errors = self.parse_cpp_errors_smart(output, CMP_SENSE_RUN_FILE)
+            errors = report.issues
         except Exception:
             product_log_message("error.parse_errors_failed")
             return 0
 
-        for x in errors:
-            if x["type"] == "error":
+        for issue in errors:
+            if issue.severity is DiagnosticSeverity.ERROR:
                 view.set_status(
                     "compile_error",
                     translate(
                         "status.compile_issue",
-                        line=x["position"][0] + 1,
-                        column=x["position"][1],
-                        message=x["error_string"],
+                        line=issue.line,
+                        column=issue.column,
+                        message=issue.message,
                     ),
                 )
                 break
         else:
-            for x in errors:
-                if x["type"] == "warning":
+            for issue in errors:
+                if issue.severity is DiagnosticSeverity.WARNING:
                     view.set_status(
                         "compile_error",
                         translate(
                             "status.compile_issue",
-                            line=x["position"][0] + 1,
-                            column=x["position"][1],
-                            message=x["error_string"],
+                            line=issue.line,
+                            column=issue.column,
+                            message=issue.message,
                         ),
                     )
                     break
@@ -159,11 +133,11 @@ class InteliSenseCommand(sublime_plugin.TextCommand):
 
         warn_regions = []
         error_regions = []
-        for x in errors:
-            pt = view.text_point(*x["position"])
-            if x["type"] == "warning":
+        for issue in errors:
+            pt = view.text_point(issue.line - 1, issue.column)
+            if issue.severity is DiagnosticSeverity.WARNING:
                 warn_regions.append(view.word(pt))
-            elif x["type"] == "error":
+            elif issue.severity is DiagnosticSeverity.ERROR:
                 error_regions.append(view.word(pt))
 
         if self.run_status == "do_sense":

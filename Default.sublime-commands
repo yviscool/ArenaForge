@@ -36,6 +36,10 @@
 		"command": "arena_forge_configure_credentials"
 	},
 	{
+		"caption": "ArenaForge: Doctor / \u5065\u5eb7\u68c0\u67e5",
+		"command": "arena_forge_doctor"
+	},
+	{
 		"caption": "ArenaForge: Run History / \u8fd0\u884c\u5386\u53f2",
 		"command": "arena_forge_run_history"
 	},

@@ -9,8 +9,7 @@ from arena_forge.core.services import infer_language
 from arena_forge.product import SETTINGS_FILE
 
 from .messages import product_status_message
-from .package_resources import get_plugin_package_name, get_plugin_root_dir
-from .package_resources import remap_package_syntax_resource
+from .package_resources import get_plugin_package_name, get_plugin_root_dir, remap_package_syntax_resource
 
 root_dir = str(get_plugin_root_dir())
 base_name = get_plugin_package_name()
@@ -143,12 +142,10 @@ def get_tests_file_path(file, for_write=False):
 
 def get_algorithm_properties_path(file, for_write=False):
     layout = get_workspace_layout()
-    primary, legacy = layout.algorithm_properties_candidates(file)
+    primary = layout.algorithm_properties_path_for(file)
     if for_write:
         return str(layout.ensure_parent(primary))
-    if primary.exists():
-        return str(primary)
-    return str(legacy)
+    return str(primary)
 
 
 def get_contests_root():
