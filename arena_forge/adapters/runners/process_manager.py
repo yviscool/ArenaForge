@@ -7,7 +7,7 @@ from os import path
 
 import sublime
 
-from .subprocess_runner import build_command_argv, build_process_spawn_options
+from .subprocess_runner import build_command_argv, build_process_spawn_options, build_process_text_options
 
 
 class ProcessManager(object):
@@ -60,6 +60,7 @@ class ProcessManager(object):
         if cmd not in {None, -1}:
             argv = build_command_argv(cmd, platform_name=sublime.platform())
             spawn_options = build_process_spawn_options(sublime.platform())
+            text_options = build_process_text_options(sublime.platform())
             process = subprocess.Popen(
                 argv,
                 shell=False,
@@ -69,8 +70,9 @@ class ProcessManager(object):
                 cwd=os.path.split(self.file)[0],
                 startupinfo=spawn_options["startupinfo"],
                 creationflags=spawn_options["creationflags"],
+                **text_options,
             )
-            compile_result = process.communicate()[0].decode("utf-8", "ignore")
+            compile_result = process.communicate()[0]
             return (process.returncode, compile_result)
 
     def run_file(self, args=[]):
@@ -80,6 +82,7 @@ class ProcessManager(object):
 
         argv = build_command_argv(cmd, platform_name=sublime.platform())
         spawn_options = build_process_spawn_options(sublime.platform())
+        text_options = build_process_text_options(sublime.platform())
 
         self.process = subprocess.Popen(
             argv,
@@ -92,7 +95,7 @@ class ProcessManager(object):
             startupinfo=spawn_options["startupinfo"],
             creationflags=spawn_options["creationflags"],
             preexec_fn=spawn_options["preexec_fn"],
-            universal_newlines=True,
+            **text_options,
         )
 
     def insert(self, s):

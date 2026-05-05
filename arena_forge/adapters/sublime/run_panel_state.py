@@ -30,6 +30,8 @@ class PanelTestState(object):
         self.rtcode = 0
         self.tie_pos = 0
         self.last_evaluation = None
+        self.display_body_text = None
+        self.output_start_offset = None
 
     def add_correct_answer(self, answer):
         self.correct_answers.add(answer.strip())
@@ -69,6 +71,10 @@ class PanelTestState(object):
 
     def set_last_evaluation(self, evaluation: Optional[OutputEvaluation]):
         self.last_evaluation = evaluation
+
+    def set_display_layout(self, body_text: Optional[str], output_start_offset: Optional[int]) -> None:
+        self.display_body_text = body_text
+        self.output_start_offset = output_start_offset
 
     def get_nice_runtime(self):
         runtime = self.runtime

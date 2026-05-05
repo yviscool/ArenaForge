@@ -77,7 +77,7 @@ def build_next_test_title_phantom(view, callback):
     styles = build_styles(view)
     content = render_template("test_next.html")
     content = "<style>" + styles + "</style>" + content
-    return Phantom(Region(view.size() - 1), content, LAYOUT_BLOCK, lambda event, cb=callback: cb(event))
+    return Phantom(Region(max(view.size() - 1, 0)), content, LAYOUT_BLOCK, lambda event, cb=callback: cb(event))
 
 
 def build_compile_bar_phantom(view, cmd, type=""):

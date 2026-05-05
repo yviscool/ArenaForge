@@ -8,7 +8,7 @@ from typing import Optional, Union
 
 from arena_forge.core.domain import CompilerIssue, DiagnosticSeverity
 
-from .subprocess_runner import build_command_argv, build_process_spawn_options
+from .subprocess_runner import build_command_argv, build_process_spawn_options, build_process_text_options
 
 _DIAGNOSTIC_PATTERN = re.compile(
     r"^(?P<source>.+?):(?P<line>\d+):(?P<column>\d+):\s*(?P<severity>[a-zA-Z ]+):\s*(?P<message>.*)$"
@@ -81,14 +81,15 @@ class CompilerDiagnosticsService:
         command = compile_cmd.format(source_file=str(scratch_file), source_file_dir=source_file_dir)
         argv = tuple(build_command_argv(command, platform_name=self.platform_name))
         spawn_options = build_process_spawn_options(self.platform_name)
+        text_options = build_process_text_options(self.platform_name)
         completed = subprocess.run(
             argv,
             cwd=source_file_dir,
             capture_output=True,
-            text=True,
             check=False,
             startupinfo=spawn_options["startupinfo"],
             creationflags=spawn_options["creationflags"],
+            **text_options,
         )
         output = (completed.stdout or "") + (completed.stderr or "")
         return DiagnosticsReport(

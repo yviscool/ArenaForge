@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from arena_forge.adapters.sublime.run_panel_logic import (
+    build_finished_display_layout,
     build_run_panel_stop_plan,
     build_panel_render_entries,
     coerce_history_return_code,
@@ -48,8 +49,8 @@ class RunPanelLogicTests(unittest.TestCase):
         self.assertEqual(entries[0].test_id, 0)
         self.assertEqual(entries[0].config_point, 0)
         self.assertEqual(entries[0].accdec_action, "decline")
-        self.assertEqual(entries[0].accdec_point, len("1\n") + len("ok") + 1)
-        self.assertEqual(entries[1].config_point, len("1\n") + len("ok") + 3)
+        self.assertEqual(entries[0].accdec_point, len("1\nok"))
+        self.assertEqual(entries[1].config_point, len("1\nok\n\n"))
 
     def test_normalize_finished_output_appends_spacing_for_new_test(self) -> None:
         self.assertEqual(normalize_finished_output("42\n", True), "42\n\n")
@@ -131,7 +132,35 @@ class RunPanelLogicTests(unittest.TestCase):
         self.assertFalse(rejected_plan.queue_follow_up)
         self.assertEqual(runtime_error_plan.verdict, Verdict.RUNTIME_ERROR)
         self.assertEqual(runtime_error_plan.history_return_code, -1)
-        self.assertEqual(runtime_error_plan.rendered_text, "input\nsegfault")
+        self.assertEqual(runtime_error_plan.rendered_text, "input\nsegfault\n\n")
+
+    def test_build_finished_display_layout_merges_prompt_and_input_for_unknown_output(self) -> None:
+        prompt = "\u8bf7\u8f93\u5165\u6b63\u6574\u6570:"
+        layout = build_finished_display_layout(
+            "12\n",
+            prompt + "3 1\n\n",
+            Verdict.UNKNOWN,
+        )
+        self.assertEqual(layout.body_text, prompt + "12\n3 1\n\n")
+        self.assertEqual(layout.output_start_offset, len(prompt + "12\n"))
+
+    def test_build_run_panel_stop_plan_preserves_raw_output_but_formats_display_output(self) -> None:
+        plan = build_run_panel_stop_plan(
+            return_code=0,
+            input_text="12\n",
+            output_text="\u8bf7\u8f93\u5165\u6b63\u6574\u6570:3 1\n",
+            running_new=True,
+            have_pretests=False,
+            evaluation=OutputEvaluation(
+                checker_name="normalized_text",
+                verdict=Verdict.UNKNOWN,
+                reference_kind=OutputReferenceKind.NONE,
+                normalized_actual="\u8bf7\u8f93\u5165\u6b63\u6574\u6570:3 1",
+            ),
+        )
+        self.assertEqual(plan.output_text, "\u8bf7\u8f93\u5165\u6b63\u6574\u6570:3 1\n\n")
+        self.assertEqual(plan.rendered_text, "\u8bf7\u8f93\u5165\u6b63\u6574\u6570:12\n3 1\n\n")
+        self.assertEqual(plan.output_start_offset, len("\u8bf7\u8f93\u5165\u6b63\u6574\u6570:12\n"))
 
 
 if __name__ == "__main__":
