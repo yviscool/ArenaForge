@@ -50,7 +50,7 @@ class RunPanelLogicTests(unittest.TestCase):
         self.assertEqual(entries[0].config_point, 0)
         self.assertEqual(entries[0].accdec_action, "decline")
         self.assertEqual(entries[0].accdec_point, len("1\nok"))
-        self.assertEqual(entries[1].config_point, len("1\nok"))
+        self.assertEqual(entries[1].config_point, len("1\nok\n\n"))
 
     def test_normalize_finished_output_appends_spacing_for_new_test(self) -> None:
         self.assertEqual(normalize_finished_output("42\n", True), "42\n\n")
@@ -132,7 +132,7 @@ class RunPanelLogicTests(unittest.TestCase):
         self.assertFalse(rejected_plan.queue_follow_up)
         self.assertEqual(runtime_error_plan.verdict, Verdict.RUNTIME_ERROR)
         self.assertEqual(runtime_error_plan.history_return_code, -1)
-        self.assertEqual(runtime_error_plan.rendered_text, "input\nsegfault")
+        self.assertEqual(runtime_error_plan.rendered_text, "input\nsegfault\n\n")
 
     def test_build_finished_display_layout_merges_prompt_and_input_for_unknown_output(self) -> None:
         prompt = "\u8bf7\u8f93\u5165\u6b63\u6574\u6570:"

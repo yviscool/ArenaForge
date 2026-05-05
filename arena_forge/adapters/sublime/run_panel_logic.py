@@ -76,7 +76,7 @@ def build_panel_render_entries(
             point += len(visible_text)
 
         if not running and not test.fold and str(test.rtcode) == "0" and output:
-            accdec_point = point
+            accdec_point = max(config_point, point - 2)
             accdec_action = "decline" if test.is_correct_answer(output) else "accept"
 
         entries.append(
@@ -123,10 +123,15 @@ def should_queue_follow_up_test(
     return str(return_code) == "0" and verdict != Verdict.REJECTED and running_new and have_pretests
 
 
+def _ensure_footer_spacing(text: str) -> str:
+    return text.rstrip("\n") + "\n\n"
+
+
 def _default_finished_display_layout(input_text: str, output_text: str) -> FinishedDisplayLayout:
     separator = "" if not input_text or input_text.endswith("\n") else "\n"
+    content = input_text + separator + output_text
     return FinishedDisplayLayout(
-        body_text=input_text + separator + output_text,
+        body_text=_ensure_footer_spacing(content),
         output_start_offset=len(input_text + separator),
     )
 
@@ -156,8 +161,9 @@ def _build_prompt_transcript_layout(
         return None
     trailing_newlines = output_text[len(stripped_output) :]
     first_line = prompt_text + stripped_input
+    body_text = first_line + "\n" + result_text + trailing_newlines
     return FinishedDisplayLayout(
-        body_text=first_line + "\n" + result_text + trailing_newlines,
+        body_text=_ensure_footer_spacing(body_text),
         output_start_offset=len(first_line) + 1,
     )
 
