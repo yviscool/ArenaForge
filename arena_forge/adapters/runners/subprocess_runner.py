@@ -49,6 +49,15 @@ def build_process_spawn_options(platform_name: Optional[str] = None) -> dict:
     }
 
 
+def build_process_text_options(platform_name: Optional[str] = None) -> dict:
+    del platform_name
+    return {
+        "text": True,
+        "encoding": "utf-8",
+        "errors": "replace",
+    }
+
+
 def compile_once(
     profile: LanguageProfile,
     source_file: str,
@@ -59,15 +68,16 @@ def compile_once(
     command = render_command(profile.compile_cmd, source_file)
     argv = build_command_argv(command, platform_name=platform_name)
     spawn_options = build_process_spawn_options(platform_name)
+    text_options = build_process_text_options(platform_name)
     started_at = perf_counter()
     completed = subprocess.run(
         argv,
         cwd=str(Path(source_file).resolve().parent),
         capture_output=True,
-        text=True,
         check=False,
         startupinfo=spawn_options["startupinfo"],
         creationflags=spawn_options["creationflags"],
+        **text_options,
     )
     runtime_ms = int((perf_counter() - started_at) * 1000)
     stdout = (completed.stdout or "") + (completed.stderr or "")
@@ -92,6 +102,7 @@ def run_once(
     command = render_command(profile.run_cmd, source_file)
     argv = build_command_argv(command, platform_name=platform_name)
     spawn_options = build_process_spawn_options(platform_name)
+    text_options = build_process_text_options(platform_name)
     started_at = perf_counter()
     try:
         completed = subprocess.run(
@@ -99,11 +110,11 @@ def run_once(
             cwd=str(Path(source_file).resolve().parent),
             input=input_text,
             capture_output=True,
-            text=True,
             timeout=timeout_seconds,
             check=False,
             startupinfo=spawn_options["startupinfo"],
             creationflags=spawn_options["creationflags"],
+            **text_options,
         )
         runtime_ms = int((perf_counter() - started_at) * 1000)
         stdout = (completed.stdout or "") + (completed.stderr or "")
@@ -141,17 +152,18 @@ def build_interactive_process(
     command = render_command(profile.run_cmd, source_file, args=merged_args)
     argv = build_command_argv(command, platform_name=platform_name)
     spawn_options = build_process_spawn_options(platform_name)
+    text_options = build_process_text_options(platform_name)
     return subprocess.Popen(
         argv,
         cwd=str(Path(source_file).resolve().parent),
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
-        text=True,
         bufsize=1,
         startupinfo=spawn_options["startupinfo"],
         creationflags=spawn_options["creationflags"],
         preexec_fn=spawn_options["preexec_fn"],
+        **text_options,
     )
 
 

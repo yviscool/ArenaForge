@@ -3,14 +3,18 @@ from __future__ import annotations
 from sublime import Region
 
 from .messages import status_message
+from .run_panel_logic import resolve_visible_body_text
 
 
 def toggle_test_fold(command, test_id):
     view = command.view
     tester = command.state.tester
-    input_text = tester.tests[test_id].test_string
-    output_text = tester.prog_out[test_id]
-    text = input_text + "\n" + output_text.rstrip() + "\n\n"
+    text = resolve_visible_body_text(tester.tests[test_id], tester.prog_out[test_id])
+    output_start_offset = getattr(tester.tests[test_id], "output_start_offset", None)
+    if output_start_offset is None:
+        input_text = tester.tests[test_id].test_string
+        separator = "" if not input_text or input_text.endswith("\n") else "\n"
+        output_start_offset = len(input_text + separator)
     tie_pos = command.get_tie_pos(test_id)
 
     if tester.tests[test_id].fold:
@@ -18,7 +22,7 @@ def toggle_test_fold(command, test_id):
         view.add_regions(command.REGION_BEGIN_KEY % test_id, [Region(tie_pos + 1)], *command.REGION_BEGIN_PROP)
         view.add_regions(
             "test_end_%d" % test_id,
-            [Region(tie_pos + len(input_text) + 2, tie_pos + len(input_text) + 2)],
+            [Region(tie_pos + 1 + output_start_offset, tie_pos + 1 + output_start_offset)],
             *command.REGION_END_PROP,
         )
         delta = len(text)

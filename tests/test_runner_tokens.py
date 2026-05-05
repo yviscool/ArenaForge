@@ -1,6 +1,12 @@
+import subprocess
+import sys
 import unittest
 
-from arena_forge.adapters.runners.subprocess_runner import build_command_argv, build_process_spawn_options
+from arena_forge.adapters.runners.subprocess_runner import (
+    build_command_argv,
+    build_process_spawn_options,
+    build_process_text_options,
+)
 
 
 class RunnerTokenTests(unittest.TestCase):
@@ -16,6 +22,25 @@ class RunnerTokenTests(unittest.TestCase):
         self.assertIsNotNone(options["startupinfo"])
         self.assertGreaterEqual(options["creationflags"], 0)
         self.assertIsNone(options["preexec_fn"])
+
+    def test_text_options_decode_utf8_process_output(self) -> None:
+        prompt = "\u8bf7\u8f93\u5165\u6b63\u6574\u6570:"
+        process = subprocess.Popen(
+            [
+                sys.executable,
+                "-c",
+                f"import sys; sys.stdout.buffer.write({prompt!r}.encode('utf-8')); sys.stdout.flush()",
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            **build_process_text_options("windows"),
+        )
+        self.addCleanup(lambda: process.poll() is None and process.kill())
+        self.addCleanup(lambda: process.stdout is not None and process.stdout.close())
+        first = process.stdout.read(1)
+        rest = process.stdout.read()
+        process.wait(timeout=5)
+        self.assertEqual((first or "") + (rest or ""), prompt)
 
 
 if __name__ == "__main__":

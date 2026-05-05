@@ -33,6 +33,10 @@ def handle_process_stop(command, rtcode, runtime, crash_line=None) -> None:
         evaluation=evaluation,
     )
     tester.tests[test_id].set_last_evaluation(stop_plan.evaluation)
+    tester.tests[test_id].set_display_layout(
+        None if stop_plan.clear_input else stop_plan.rendered_text,
+        None if stop_plan.clear_input else stop_plan.output_start_offset,
+    )
 
     tester.tests[test_id].set_cur_runtime(runtime)
     tester.tests[test_id].set_cur_rtcode(rtcode)
@@ -65,7 +69,7 @@ def handle_process_stop(command, rtcode, runtime, crash_line=None) -> None:
     view.show(command.state.input_start + 20)
     view.add_regions(
         "test_end_%d" % test_id,
-        [Region(command.state.input_start + len(input_text) + 1, command.state.input_start + len(input_text) + 1)],
+        [Region(line.begin() + stop_plan.output_start_offset, line.begin() + stop_plan.output_start_offset)],
         *command.REGION_END_PROP,
     )
     view.run_command("test_manager", {"action": "set_cursor_to_end"})

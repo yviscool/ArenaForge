@@ -54,12 +54,6 @@ def update_configs(command, update_last=None) -> None:
         )
 
     hide_phantoms = view.settings().get("hide_phantoms")
-    if update_last:
-        command.state.test_phantoms[last_test_entry].update(
-            [configs[last_test_entry]] if not hide_phantoms else []
-        )
-        return
-
     for index, config in enumerate(configs):
         command.state.test_phantoms[index].update([config] if not hide_phantoms else [])
 

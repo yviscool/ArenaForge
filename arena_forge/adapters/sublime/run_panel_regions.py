@@ -2,17 +2,16 @@ from __future__ import annotations
 
 from sublime import Region
 
+from .run_panel_logic import resolve_visible_body_text
+
 
 def compute_tie_pos(tester, index):
     point = 0
     for offset in range(index):
         running = tester.proc_run and offset == tester.running_test
-        if running:
-            point += len(tester.tests[offset].test_string) + len(tester.prog_out[offset]) + 1
-        elif not tester.tests[offset].fold:
-            point += len(tester.tests[offset].test_string) + len(tester.prog_out[offset]) + 1
-        if not tester.tests[offset].fold:
-            point += 2
+        if running or not tester.tests[offset].fold:
+            body_text = resolve_visible_body_text(tester.tests[offset], tester.prog_out[offset], running=running)
+            point += len(body_text)
     return point
 
 
