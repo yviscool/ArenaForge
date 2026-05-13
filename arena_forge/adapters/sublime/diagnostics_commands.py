@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Optional
 
 import sublime
 import sublime_plugin
@@ -12,11 +14,30 @@ from .messages import product_log_message, status_message, translate
 from .package_resources import get_plugin_root_dir
 from .settings_bridge import get_settings, is_lang_view
 
+_DIAGNOSTIC_DEBOUNCE_MS = 250
+
+
+@dataclass
+class _DiagnosticsState:
+    enabled: bool = True
+    generation: int = 0
+    last_change_count: Optional[int] = None
+
+
+_VIEW_STATES: dict[int, _DiagnosticsState] = {}
+
+
+def _state_for(view) -> _DiagnosticsState:
+    return _VIEW_STATES.setdefault(view.id(), _DiagnosticsState())
+
+
+def _clear_marks(view) -> None:
+    view.erase_regions("error_marks")
+    view.erase_regions("warning_marks")
+    view.erase_status("compile_error")
+
 
 class InteliSenseCommand(sublime_plugin.TextCommand):
-    run_status = ""
-    timer_run = False
-
     def get_compile_cmd(self):
         for option in get_settings().get("run_settings", []):
             if option["name"] == "C++":
@@ -24,57 +45,113 @@ class InteliSenseCommand(sublime_plugin.TextCommand):
         return None
 
     def stop_sense(self):
-        self.run_status = "do_disable"
+        state = _state_for(self.view)
+        state.enabled = False
+        state.generation += 1
+        _clear_marks(self.view)
+
+    def clear_sense_state(self):
+        state = _VIEW_STATES.get(self.view.id())
+        if state is not None:
+            state.generation += 1
+        _VIEW_STATES.pop(self.view.id(), None)
+        _clear_marks(self.view)
 
     def sync(self):
-        if self.timer_run:
+        state = _state_for(self.view)
+        if state.enabled:
             self.stop_sense()
             status_message("status.sense_disabled")
         else:
-            self.run_sense()
+            state.enabled = True
             status_message("status.sense_enabled")
+            self.run_sense(force=True)
 
-    def run_sense(self):
+    def run_sense(self, *, force: bool = False):
+        view = self.view
         compile_cmd = self.get_compile_cmd()
         if compile_cmd is None or not get_settings().get("lint_enabled"):
-            return
-        if self.timer_run:
-            self.run_status = "do_waited_sense"
             return 0
-        self.run_status = "do_waited_sense"
 
-        def sense_timer(self=self):
-            view = self.view
-            state = self.run_status
-            if state == "do_waited_sense":
-                view.erase_regions("error_marks")
-                view.erase_regions("warning_marks")
-                self.run_status = "do_sense"
-            elif state == "do_sense":
-                self.insert_error_marks()
-                if self.run_status == "do_sense":
-                    self.run_status = "sense_complete"
-            elif state == "do_disable":
-                view.erase_regions("error_marks")
-                view.erase_regions("warning_marks")
-                self.run_status = "disabled"
-                self.timer_run = False
-                return 0
-            elif state == "":
-                view.erase_regions("error_marks")
-                view.erase_regions("warning_marks")
-                self.timer_run = False
-                return 0
-            sublime.set_timeout_async(sense_timer, 500)
+        state = _state_for(view)
+        if not state.enabled:
+            return 0
 
-        self.timer_run = True
-        sublime.set_timeout_async(sense_timer, 500)
+        change_count = view.change_count()
+        if not force and state.last_change_count == change_count:
+            return 0
+
+        state.generation += 1
+        generation = state.generation
+
+        def capture_snapshot(
+            self=self,
+            view=view,
+            compile_cmd=compile_cmd,
+            change_count=change_count,
+            generation=generation,
+        ):
+            current = _VIEW_STATES.get(view.id())
+            if current is None or not current.enabled or current.generation != generation:
+                return
+            file_name = view.file_name()
+            if not file_name:
+                return
+
+            source = view.substr(sublime.Region(0, view.size()))
+            file_dir_path = str(Path(file_name).resolve().parent)
+            sublime.set_timeout_async(
+                lambda: self._collect_diagnostics(
+                    view=view,
+                    compile_cmd=compile_cmd,
+                    source=source,
+                    file_dir_path=file_dir_path,
+                    change_count=change_count,
+                    generation=generation,
+                ),
+                0,
+            )
+
+        sublime.set_timeout(capture_snapshot, _DIAGNOSTIC_DEBOUNCE_MS)
+        return 0
+
+    def _collect_diagnostics(
+        self,
+        *,
+        view,
+        compile_cmd: str,
+        source: str,
+        file_dir_path: str,
+        change_count: int,
+        generation: int,
+    ) -> None:
+        try:
+            report = self._diagnostics_service().run(
+                compile_cmd=compile_cmd,
+                source_text=source,
+                source_file_dir=file_dir_path,
+            )
+        except Exception:
+            sublime.set_timeout(lambda: product_log_message("error.parse_errors_failed"), 0)
+            return
+
+        sublime.set_timeout(
+            lambda: self._apply_diagnostics(
+                view=view,
+                report=report,
+                change_count=change_count,
+                generation=generation,
+            ),
+            0,
+        )
 
     def run(self, edit, action=None):
         if action == "run_sense":
             self.run_sense()
         elif action == "stop_sense":
             self.stop_sense()
+        elif action == "clear_sense_state":
+            self.clear_sense_state()
         elif action == "sync_sense":
             self.sync()
         elif action == "sync_modified":
@@ -86,22 +163,20 @@ class InteliSenseCommand(sublime_plugin.TextCommand):
             scratch_workspace=DiagnosticsScratchWorkspace(Path(get_plugin_root_dir())),
         )
 
-    def insert_error_marks(self):
-        view = self.view
-        source = view.substr(sublime.Region(0, view.size()))
-        file_dir_path = str(Path(view.file_name()).resolve().parent)
-        report = self._diagnostics_service().run(
-            compile_cmd=self.get_compile_cmd(),
-            source_text=source,
-            source_file_dir=file_dir_path,
-        )
-        view.erase_regions("warning_marks")
-        view.erase_regions("error_marks")
+    def _apply_diagnostics(self, *, view, report, change_count: int, generation: int) -> None:
+        state = _VIEW_STATES.get(view.id())
+        if state is None or not state.enabled or state.generation != generation:
+            return
+
         try:
             errors = report.issues
         except Exception:
             product_log_message("error.parse_errors_failed")
             return 0
+
+        state.last_change_count = change_count
+        view.erase_regions("warning_marks")
+        view.erase_regions("error_marks")
 
         for issue in errors:
             if issue.severity is DiagnosticSeverity.ERROR:
@@ -140,21 +215,20 @@ class InteliSenseCommand(sublime_plugin.TextCommand):
             elif issue.severity is DiagnosticSeverity.ERROR:
                 error_regions.append(view.word(pt))
 
-        if self.run_status == "do_sense":
-            view.add_regions(
-                "warning_marks",
-                warn_regions,
-                get_settings().get("lint_warning_region_scope", "text.plain"),
-                "dot",
-                sublime.DRAW_NO_FILL,
-            )
-            view.add_regions(
-                "error_marks",
-                error_regions,
-                get_settings().get("lint_error_region_scope", "text.plain"),
-                "dot",
-                sublime.DRAW_NO_FILL,
-            )
+        view.add_regions(
+            "warning_marks",
+            warn_regions,
+            get_settings().get("lint_warning_region_scope", "text.plain"),
+            "dot",
+            sublime.DRAW_NO_FILL,
+        )
+        view.add_regions(
+            "error_marks",
+            error_regions,
+            get_settings().get("lint_error_region_scope", "text.plain"),
+            "dot",
+            sublime.DRAW_NO_FILL,
+        )
 
 
 class SenseListener(sublime_plugin.EventListener):
@@ -164,15 +238,11 @@ class SenseListener(sublime_plugin.EventListener):
 
     def on_pre_close(self, view):
         if is_lang_view(view, "C++"):
-            view.run_command("inteli_sense", {"action": "stop_sense"})
+            view.run_command("inteli_sense", {"action": "clear_sense_state"})
 
     def on_modified(self, view):
         if is_lang_view(view, "C++"):
             view.run_command("inteli_sense", {"action": "sync_modified"})
-
-    def on_deactivated(self, view):
-        if is_lang_view(view, "C++"):
-            view.run_command("inteli_sense", {"action": "stop_sense"})
 
     def on_activated(self, view):
         if is_lang_view(view, "C++"):
