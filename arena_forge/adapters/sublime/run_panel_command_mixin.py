@@ -1,49 +1,106 @@
 from __future__ import annotations
 
-from .run_panel_action_request import RunPanelActionRequest
 from .messages import status_message
+from .run_panel_action_request import RunPanelActionRequest
 from .run_panel_command_support import (
     add_transient_region as add_run_panel_transient_region,
+)
+from .run_panel_command_support import (
     change_process_status as change_run_panel_process_status,
+)
+from .run_panel_command_support import (
     get_style_test_status as get_run_panel_style_test_status,
+)
+from .run_panel_command_support import (
     insert_clipboard_input as insert_run_panel_clipboard_input,
+)
+from .run_panel_command_support import (
     insert_panel_input as insert_run_panel_input,
+)
+from .run_panel_command_support import (
     memorize_tests as memorize_run_panel_tests,
+)
+from .run_panel_command_support import (
     renumerate_tests as renumerate_run_panel_tests,
+)
+from .run_panel_command_support import (
     set_compile_bar as set_run_panel_compile_bar,
 )
 from .run_panel_debug_actions import (
     get_view_by_id as get_run_panel_view_by_id,
+)
+from .run_panel_debug_actions import (
     prepare_code_view as prepare_run_panel_code_view,
+)
+from .run_panel_debug_actions import (
     redirect_frames as redirect_run_panel_frames,
+)
+from .run_panel_debug_actions import (
     redirect_var_value as redirect_run_panel_var_value,
+)
+from .run_panel_debug_actions import (
     select_frame as select_run_panel_frame,
 )
 from .run_panel_dispatch import dispatch_test_manager_action
-from .run_panel_display_actions import start_new_test, update_configs as update_run_panel_configs
+from .run_panel_display_actions import start_new_test
+from .run_panel_display_actions import update_configs as update_run_panel_configs
 from .run_panel_edit_actions import (
     apply_edit_changes as apply_run_panel_edit_changes,
+)
+from .run_panel_edit_actions import (
     enable_edit_mode as enable_run_panel_edit_mode,
+)
+from .run_panel_edit_actions import (
     get_begin_region as get_run_panel_begin_region,
+)
+from .run_panel_edit_actions import (
     toggle_new_test as toggle_run_panel_new_test,
 )
 from .run_panel_logic import should_block_test_action
 from .run_panel_regions import compute_tie_pos, sync_read_only_mode
-from .run_panel_session_actions import clear_all as clear_run_panel, handle_process_stop, make_opd as make_run_panel
+from .run_panel_session_actions import clear_all as clear_run_panel
+from .run_panel_session_actions import handle_process_stop
+from .run_panel_session_actions import make_opd as make_run_panel
 from .run_panel_test_actions import (
     clear_all_tests as clear_run_panel_all_tests,
+)
+from .run_panel_test_actions import (
     delete_nth_test as delete_run_panel_nth_test,
+)
+from .run_panel_test_actions import (
     delete_test as delete_run_panel_test,
+)
+from .run_panel_test_actions import (
     delete_tests as delete_run_panel_tests,
+)
+from .run_panel_test_actions import (
     fold_accept_tests as fold_run_panel_accept_tests,
+)
+from .run_panel_test_actions import (
     handle_accdec_event as handle_run_panel_accdec_event,
+)
+from .run_panel_test_actions import (
     handle_test_event as handle_run_panel_test_event,
+)
+from .run_panel_test_actions import (
     open_test_edit as open_run_panel_test_edit,
+)
+from .run_panel_test_actions import (
     set_test_input as set_run_panel_test_input,
+)
+from .run_panel_test_actions import (
     set_test_status as set_run_panel_test_status,
+)
+from .run_panel_test_actions import (
     set_tests_status as set_run_panel_tests_status,
+)
+from .run_panel_test_actions import (
     swap_tests as swap_run_panel_tests,
+)
+from .run_panel_test_actions import (
     toggle_fold as toggle_run_panel_fold,
+)
+from .run_panel_test_actions import (
     toggle_hide_phantoms as toggle_run_panel_hide_phantoms,
 )
 

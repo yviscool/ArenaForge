@@ -5,7 +5,7 @@ from pathlib import Path
 import sublime
 import sublime_plugin
 
-from .messages import translate
+from .messages import translate, translate_verdict
 from .result_display import format_output_evaluation_detail, format_output_evaluation_summary
 from .settings_bridge import get_session_repository
 
@@ -13,7 +13,7 @@ HISTORY_SOURCE_FILE_KEY = "arena_forge.history_source_file"
 
 
 def build_history_report(source_file: str, snapshot, *, product_name: str) -> str:
-    lines = [f"{product_name}  {translate('ui.run_history')}", f"file: {source_file}", ""]
+    lines = [f"{product_name}  {translate('ui.run_history')}", f"{translate('ui.file')}: {source_file}", ""]
     if snapshot is None or not snapshot.run_history:
         lines.append(translate("status.history_empty"))
         return "\n".join(lines)
@@ -21,7 +21,7 @@ def build_history_report(source_file: str, snapshot, *, product_name: str) -> st
         lines.append(
             "{test_name}  [{verdict}]  {runtime}ms  rc={return_code}".format(
                 test_name=item.test_name,
-                verdict=item.verdict.value,
+                verdict=translate_verdict(item.verdict),
                 runtime=item.runtime_ms,
                 return_code=item.return_code,
             )
@@ -46,7 +46,7 @@ class RunHistoryPanelCommand(sublime_plugin.TextCommand):
             return
         snapshot = get_session_repository().load(source_file)
         history_view = self.view.window().new_file()
-        history_view.set_name(f"{Path(source_file).name} - history")
+        history_view.set_name(translate("ui.history_view_title", file_name=Path(source_file).name))
         history_view.set_scratch(True)
         history_view.settings().set(HISTORY_SOURCE_FILE_KEY, source_file)
         history_view.run_command(

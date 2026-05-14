@@ -4,7 +4,7 @@ from typing import Optional
 
 from arena_forge.core.domain import OutputEvaluation, OutputReferenceKind, Verdict
 
-from .messages import translate
+from .messages import translate, translate_verdict
 
 
 def format_output_evaluation_summary(evaluation: Optional[OutputEvaluation]) -> str:
@@ -22,7 +22,7 @@ def format_output_evaluation_summary(evaluation: Optional[OutputEvaluation]) -> 
         )
     if evaluation.verdict == Verdict.UNKNOWN:
         return translate("result.no_expected_output")
-    return evaluation.verdict.value
+    return translate_verdict(evaluation.verdict)
 
 
 def format_output_evaluation_detail(evaluation: Optional[OutputEvaluation]) -> str:

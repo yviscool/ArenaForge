@@ -2,6 +2,8 @@
 
 # ArenaForge
 
+[![CI](https://github.com/yviscool/ArenaForge/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/yviscool/ArenaForge/actions/workflows/ci.yml)
+
 ArenaForge 是一个给 Sublime Text 使用的竞赛编程工具。
 它围绕日常写题最核心的几件事来设计：打开源码、快速运行、整理样例，并且直接从题目链接或比赛链接生成干净的工作区。
 
@@ -86,7 +88,7 @@ Codeforces 提交需要 `requests` 和可用的 `keyring` 后端。
 - `run_settings`：语言配置、文件扩展名、编译命令、运行命令，以及可选的 `lint_compile_cmd`
 - `contests_root`：生成比赛或题目工作区的位置
 - `tests_relative_dir`、`session_relative_dir`、`tests_file_suffix`：测试索引和会话快照的存放位置
-- `preferred_locale`：`en` 或 `zh-Hans`
+- `preferred_locale`：`en`、`zh-Hans`、`ja`、`ko` 或 `ru`
 - `credential_backend`：当前是 `keyring`
 - `stress_time_limit_seconds`：对拍超时时间
 - `algorithms_base`：本地 C++ 模板或片段的根目录
@@ -133,8 +135,23 @@ Codeforces 提交需要 `requests` 和可用的 `keyring` 后端。
 - Python：`3.8+`
 - 依赖管理：`uv`
 - 运行时依赖：`keyring`
-- 测试命令：`uv run pytest`
-- Lint 命令：`uv run ruff check arena_forge tests`
+
+本地初始化与校验：
+
+```bash
+uv sync --group dev
+uv run ruff check arena_forge tests
+uv run pytest -q
+uv run mypy
+```
+
+CI 覆盖范围：
+
+- 工作流文件：`.github/workflows/ci.yml`
+- 触发条件：`push`、`pull_request`、手动 `workflow_dispatch`
+- 矩阵平台：`ubuntu-latest`、`windows-latest`
+- 双平台检查：`ruff`、`pytest`
+- Ubuntu 额外检查：`mypy`
 
 ## 致谢
 

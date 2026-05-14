@@ -2,6 +2,7 @@
 	// User overrides live here.
 	// Portable defaults are injected in code based on your platform.
 	// Credentials are no longer stored here. Use secure credential storage.
+	// Available locales: en, zh-Hans, ja, ko, ru
 	"preferred_locale": "zh-Hans",
 	"ui_variant": "terminal",
 	"ui_density": "compact",

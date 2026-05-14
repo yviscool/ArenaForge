@@ -4,11 +4,18 @@ import os
 import shlex
 import signal
 import subprocess
+from dataclasses import dataclass
 from pathlib import Path
 from time import perf_counter
 from typing import List, Optional
 
 from arena_forge.core.domain import CommandExecution, LanguageProfile, TestRunResult, Verdict
+
+
+@dataclass
+class _StartupInfoProxy:
+    dwFlags: int = 0
+    wShowWindow: int = 0
 
 
 def build_command_context(source_file: str, args: str = "") -> dict[str, str]:
@@ -34,8 +41,9 @@ def build_command_argv(command: str, platform_name: Optional[str] = None) -> Lis
 def build_process_spawn_options(platform_name: Optional[str] = None) -> dict:
     normalized = (platform_name or os.name).lower()
     if normalized in {"nt", "windows"}:
-        startupinfo = subprocess.STARTUPINFO()
-        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        startupinfo_cls = getattr(subprocess, "STARTUPINFO", None)
+        startupinfo = startupinfo_cls() if startupinfo_cls is not None else _StartupInfoProxy()
+        startupinfo.dwFlags |= getattr(subprocess, "STARTF_USESHOWWINDOW", 0)
         startupinfo.wShowWindow = 0
         return {
             "startupinfo": startupinfo,
@@ -46,6 +54,16 @@ def build_process_spawn_options(platform_name: Optional[str] = None) -> dict:
         "startupinfo": None,
         "creationflags": 0,
         "preexec_fn": os.setsid,
+    }
+
+
+def _resolve_subprocess_spawn_options(spawn_options: dict) -> dict:
+    if hasattr(subprocess, "STARTUPINFO"):
+        return spawn_options
+    return {
+        "startupinfo": None,
+        "creationflags": 0,
+        "preexec_fn": spawn_options["preexec_fn"],
     }
 
 
@@ -67,7 +85,7 @@ def compile_once(
         return None
     command = render_command(profile.compile_cmd, source_file)
     argv = build_command_argv(command, platform_name=platform_name)
-    spawn_options = build_process_spawn_options(platform_name)
+    spawn_options = _resolve_subprocess_spawn_options(build_process_spawn_options(platform_name))
     text_options = build_process_text_options(platform_name)
     started_at = perf_counter()
     completed = subprocess.run(
@@ -101,7 +119,7 @@ def run_once(
 
     command = render_command(profile.run_cmd, source_file)
     argv = build_command_argv(command, platform_name=platform_name)
-    spawn_options = build_process_spawn_options(platform_name)
+    spawn_options = _resolve_subprocess_spawn_options(build_process_spawn_options(platform_name))
     text_options = build_process_text_options(platform_name)
     started_at = perf_counter()
     try:
@@ -151,7 +169,7 @@ def build_interactive_process(
     merged_args = " ".join(args or ())
     command = render_command(profile.run_cmd, source_file, args=merged_args)
     argv = build_command_argv(command, platform_name=platform_name)
-    spawn_options = build_process_spawn_options(platform_name)
+    spawn_options = _resolve_subprocess_spawn_options(build_process_spawn_options(platform_name))
     text_options = build_process_text_options(platform_name)
     return subprocess.Popen(
         argv,

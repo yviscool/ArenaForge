@@ -2,6 +2,8 @@
 
 # ArenaForge
 
+[![CI](https://github.com/yviscool/ArenaForge/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/yviscool/ArenaForge/actions/workflows/ci.yml)
+
 ArenaForge is a competitive-programming toolkit for Sublime Text.
 It is built for the day-to-day loop of solving problems: open a file, run it quickly, keep sample tests in order, and create a clean workspace from a problem or contest URL.
 
@@ -86,7 +88,7 @@ The settings you will most likely touch are:
 - `run_settings`: language profiles, file extensions, compile commands, run commands, and optional `lint_compile_cmd`
 - `contests_root`: where generated contest or problem workspaces are created
 - `tests_relative_dir`, `session_relative_dir`, `tests_file_suffix`: where test indexes and session snapshots are stored
-- `preferred_locale`: `en` or `zh-Hans`
+- `preferred_locale`: `en`, `zh-Hans`, `ja`, `ko`, or `ru`
 - `credential_backend`: currently `keyring`
 - `stress_time_limit_seconds`: timeout used by stress tests
 - `algorithms_base`: base directory for local C++ templates or snippets
@@ -133,8 +135,23 @@ The shipped settings files use slightly different layouts by platform, so treat 
 - Python: `3.8+`
 - Dependency manager: `uv`
 - Runtime dependency: `keyring`
-- Test command: `uv run pytest`
-- Lint command: `uv run ruff check arena_forge tests`
+
+Local setup and verification:
+
+```bash
+uv sync --group dev
+uv run ruff check arena_forge tests
+uv run pytest -q
+uv run mypy
+```
+
+CI coverage:
+
+- Workflow file: `.github/workflows/ci.yml`
+- Triggers: `push`, `pull_request`, and manual `workflow_dispatch`
+- Matrix: `ubuntu-latest` and `windows-latest`
+- Checks on both platforms: `ruff`, `pytest`
+- Extra check on Ubuntu: `mypy`
 
 ## Thanks
 

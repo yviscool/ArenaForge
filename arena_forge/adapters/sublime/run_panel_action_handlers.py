@@ -54,7 +54,9 @@ def build_test_manager_action_handlers(context: RunPanelActionContext) -> Dict[s
         "clear_current_input": RunPanelActionHandler(lambda ctx: clear_current_input(ctx.command, ctx.edit)),
         "history_next": RunPanelActionHandler(lambda ctx: history_next(ctx.command, ctx.edit)),
         "history_previous": RunPanelActionHandler(lambda ctx: history_previous(ctx.command, ctx.edit)),
-        "make_opd": RunPanelActionHandler(lambda ctx: make_opd(ctx.command, ctx.edit, **ctx.request.to_make_opd_kwargs())),
+        "make_opd": RunPanelActionHandler(
+            lambda ctx: make_opd(ctx.command, ctx.edit, **ctx.request.to_make_opd_kwargs())
+        ),
         "redirect_var_value": RunPanelActionHandler(
             lambda ctx: ctx.command.redirect_var_value(ctx.request.var_name, pos=ctx.request.pos)
         ),

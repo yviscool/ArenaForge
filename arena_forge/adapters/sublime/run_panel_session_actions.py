@@ -155,7 +155,11 @@ def make_opd(
     if launch_plan.action == "error":
         view.run_command(
             "append",
-            {"characters": translate(launch_plan.error_key or "error.session_restore_failed"), "force": True, "scroll_to_end": False},
+            {
+                "characters": translate(launch_plan.error_key or "error.session_restore_failed"),
+                "force": True,
+                "scroll_to_end": False,
+            },
         )
         command.set_compile_bar("session restore failed", type="error")
         return

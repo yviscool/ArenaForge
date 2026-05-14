@@ -6,7 +6,7 @@ import sublime
 import sublime_plugin
 
 from .doctor_report import build_doctor_report
-from .messages import status_message
+from .messages import status_message, translate
 from .package_resources import (
     STRESS_SYNTAX_RESOURCE,
     TEST_SYNTAX_RESOURCE,
@@ -160,9 +160,10 @@ class ArenaForgeDoctorCommand(sublime_plugin.WindowCommand):
             contests_root=get_contests_root(),
             credential_backend=str(getattr(credential_store, "backend_name", "unknown")),
             credential_available=credential_available,
+            translate_text=translate,
         )
         view = self.window.new_file()
-        view.set_name("ArenaForge Doctor")
+        view.set_name(translate("doctor.title"))
         view.set_scratch(True)
         view.run_command("append", {"characters": report, "force": True, "scroll_to_end": False})
         status_message("status.doctor_report_ready")

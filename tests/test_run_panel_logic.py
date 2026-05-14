@@ -4,8 +4,8 @@ from typing import Optional
 
 from arena_forge.adapters.sublime.run_panel_logic import (
     build_finished_display_layout,
-    build_run_panel_stop_plan,
     build_panel_render_entries,
+    build_run_panel_stop_plan,
     coerce_history_return_code,
     display_test_number,
     history_verdict_from_result,

@@ -10,7 +10,6 @@ def update_configs(command, update_last=None) -> None:
     view = command.view
     tester = command.state.tester
     configs = []
-    last_test_entry = -1
     for entry in build_panel_render_entries(
         tester.tests,
         tester.prog_out,
@@ -26,7 +25,6 @@ def update_configs(command, update_last=None) -> None:
             command.view,
             running=entry.running,
         )
-        last_test_entry = len(configs)
         configs.append(config)
 
         if entry.accdec_action is not None and entry.accdec_point is not None:

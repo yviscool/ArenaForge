@@ -16,7 +16,7 @@ DEFAULT_SESSION_RELATIVE_DIR = WORKSPACE_DIRNAME + "/sessions"
 DEFAULT_TESTS_FILE_SUFFIX = ".tests.json"
 DEFAULT_ALGORITHM_PROPERTIES_SUFFIX = ".cpp.properties.json"
 DEFAULT_CONTESTS_ROOT = "~/Contests/ArenaForge"
-SUPPORTED_LOCALES = ("en", "zh-Hans")
+SUPPORTED_LOCALES = ("en", "zh-Hans", "ja", "ko", "ru")
 
 
 def _default_run_settings(platform_name: str) -> list[dict[str, Any]]:
