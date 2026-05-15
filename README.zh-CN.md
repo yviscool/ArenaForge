@@ -67,6 +67,22 @@ Codeforces 提交需要 `requests` 和可用的 `keyring` 后端。
 - 运行当前文件：Windows/Linux 上是 `Ctrl+Alt+B`，macOS 上是 `Ctrl+B`
 - 新建测试：`Ctrl+Enter`
 - 停止当前进程：所有平台都可以用 `Ctrl+C`，Windows/Linux 额外支持 `Ctrl+X`
+- 删除当前选中的测试块：`Ctrl+D`
+- 调整测试顺序：Windows/Linux 上是 `Ctrl+Shift+Up` / `Ctrl+Shift+Down`，macOS 上是 `Ctrl+Super+Up` / `Ctrl+Super+Down`
+- 切换右侧测试面板：Windows/Linux 上是 `Ctrl+K`、`Ctrl+P`，macOS 上是 `Super+K`、`Super+P`
+
+在运行面板里，Windows/Linux 还支持一组类终端编辑快捷键：
+
+- 清空全部测试：`Ctrl+L`
+- 清空当前输入行：`Ctrl+U`
+- 浏览输入历史：`Ctrl+Up` / `Ctrl+Down`
+- 跳到行首或行尾：`Ctrl+A` / `Ctrl+E`
+- 按单词移动或删除：`Alt+B`、`Alt+F`、`Ctrl+W`
+
+macOS 目前还额外提供：
+
+- 用调试器运行：`Ctrl+Shift+B`
+- 切换内联 phantom 显示：`Ctrl+Super+Shift+H`
 
 完整列表见：
 
@@ -145,13 +161,15 @@ uv run pytest -q
 uv run mypy
 ```
 
-CI 覆盖范围：
+CI 与 Release 自动化：
 
 - 工作流文件：`.github/workflows/ci.yml`
 - 触发条件：`push`、`pull_request`、手动 `workflow_dispatch`
-- 矩阵平台：`ubuntu-latest`、`windows-latest`
+- 质量检查矩阵：`ubuntu-latest`、`windows-latest`
 - 双平台检查：`ruff`、`pytest`
 - Ubuntu 额外检查：`mypy`
+- 发布规则：每次 push 到 `main` 且质量检查通过后，都会自动发布一个标签为 `ci-<short-sha>` 的 GitHub 预发布版本
+- 发布资产：`ArenaForge.sublime-package`，由仓库里被跟踪的包文件构建，并挂到对应的预发布版本上
 
 ## 致谢
 

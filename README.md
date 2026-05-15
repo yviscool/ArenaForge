@@ -67,6 +67,22 @@ Common shortcuts:
 - Run current file: `Ctrl+Alt+B` on Windows/Linux, `Ctrl+B` on macOS
 - Add a new test: `Ctrl+Enter`
 - Stop the current process: `Ctrl+C` on all platforms, `Ctrl+X` on Windows/Linux
+- Delete the selected test block: `Ctrl+D`
+- Reorder tests: `Ctrl+Shift+Up` / `Ctrl+Shift+Down` on Windows/Linux, `Ctrl+Super+Up` / `Ctrl+Super+Down` on macOS
+- Toggle the right-side tester panel: `Ctrl+K`, `Ctrl+P` on Windows/Linux, `Super+K`, `Super+P` on macOS
+
+In the run panel, Windows/Linux also support a few terminal-style editing keys:
+
+- Clear all tests: `Ctrl+L`
+- Clear the current input line: `Ctrl+U`
+- Browse input history: `Ctrl+Up` / `Ctrl+Down`
+- Jump to the start or end of the line: `Ctrl+A` / `Ctrl+E`
+- Move or delete by word: `Alt+B`, `Alt+F`, `Ctrl+W`
+
+macOS currently also exposes:
+
+- Run with the debugger: `Ctrl+Shift+B`
+- Toggle inline phantoms: `Ctrl+Super+Shift+H`
 
 For the full list, see:
 
@@ -145,13 +161,15 @@ uv run pytest -q
 uv run mypy
 ```
 
-CI coverage:
+CI and release automation:
 
 - Workflow file: `.github/workflows/ci.yml`
 - Triggers: `push`, `pull_request`, and manual `workflow_dispatch`
-- Matrix: `ubuntu-latest` and `windows-latest`
+- Quality matrix: `ubuntu-latest` and `windows-latest`
 - Checks on both platforms: `ruff`, `pytest`
 - Extra check on Ubuntu: `mypy`
+- Release rule: every push to `main` that passes the quality matrix publishes a GitHub prerelease tagged `ci-<short-sha>`
+- Release asset: `ArenaForge.sublime-package`, built from the tracked package files and attached to that prerelease
 
 ## Thanks
 

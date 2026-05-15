@@ -44,3 +44,70 @@ jobs:
       - name: Mypy
         if: matrix.os == 'ubuntu-latest'
         run: uv run mypy
+
+  release:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: quality
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare release metadata
+        id: meta
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          short_sha="${GITHUB_SHA::7}"
+          commit_subject="$(git log -1 --pretty=%s)"
+          echo "tag=ci-${short_sha}" >> "$GITHUB_OUTPUT"
+          echo "name=CI build ${short_sha}" >> "$GITHUB_OUTPUT"
+          cat > dist/release-notes.md <<EOF
+          Automated prerelease for commit \`${GITHUB_SHA}\`.
+
+          - Branch: \`${GITHUB_REF_NAME}\`
+          - Commit message: ${commit_subject}
+          - Commit: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}
+          - Workflow run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
+          EOF
+
+      - name: Build release package
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist/package
+          while IFS= read -r -d '' path; do
+            case "$path" in
+              .github/*|docs/*|tests/*|.venv/*|.mypy_cache/*|.ruff_cache/*|.test-workdir/*|__pycache__/*|pyproject.toml|uv.lock|.python-version|.gitignore|.no-sublime-package)
+                continue
+                ;;
+            esac
+            mkdir -p "dist/package/$(dirname "$path")"
+            cp "$path" "dist/package/$path"
+          done < <(git ls-files -z)
+          (
+            cd dist/package
+            zip -qr ../ArenaForge.sublime-package .
+          )
+
+      - name: Publish GitHub prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.meta.outputs.tag }}
+          NAME: ${{ steps.meta.outputs.name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/ArenaForge.sublime-package --clobber
+            gh release edit "$TAG" --title "$NAME" --notes-file dist/release-notes.md
+          else
+            gh release create "$TAG" dist/ArenaForge.sublime-package \
+              --title "$NAME" \
+              --notes-file dist/release-notes.md \
+              --target "$GITHUB_SHA" \
+              --prerelease
+          fi

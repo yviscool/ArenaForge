@@ -67,6 +67,22 @@ Codeforces 제출에는 `requests`와 정상 동작하는 `keyring` 백엔드가
 - 현재 파일 실행: Windows/Linux는 `Ctrl+Alt+B`, macOS는 `Ctrl+B`
 - 새 테스트 추가: `Ctrl+Enter`
 - 현재 프로세스 중지: 모든 플랫폼에서 `Ctrl+C`, Windows/Linux에서는 `Ctrl+X`도 지원
+- 선택한 테스트 블록 삭제: `Ctrl+D`
+- 테스트 순서 바꾸기: Windows/Linux는 `Ctrl+Shift+Up` / `Ctrl+Shift+Down`, macOS는 `Ctrl+Super+Up` / `Ctrl+Super+Down`
+- 오른쪽 테스터 패널 전환: Windows/Linux는 `Ctrl+K`, `Ctrl+P`, macOS는 `Super+K`, `Super+P`
+
+실행 패널에서는 Windows/Linux에서 다음과 같은 터미널 스타일 편집 키도 지원합니다.
+
+- 모든 테스트 지우기: `Ctrl+L`
+- 현재 입력 줄 지우기: `Ctrl+U`
+- 입력 기록 탐색: `Ctrl+Up` / `Ctrl+Down`
+- 줄 처음이나 끝으로 이동: `Ctrl+A` / `Ctrl+E`
+- 단어 단위 이동 또는 삭제: `Alt+B`, `Alt+F`, `Ctrl+W`
+
+macOS에서는 추가로 다음도 사용할 수 있습니다.
+
+- 디버거로 실행: `Ctrl+Shift+B`
+- 인라인 phantom 표시 전환: `Ctrl+Super+Shift+H`
 
 전체 목록은 다음 파일을 참고하세요.
 
@@ -145,13 +161,15 @@ uv run pytest -q
 uv run mypy
 ```
 
-CI 범위:
+CI 및 Release 자동화:
 
 - 워크플로 파일: `.github/workflows/ci.yml`
 - 트리거: `push`, `pull_request`, 수동 `workflow_dispatch`
-- 매트릭스: `ubuntu-latest`, `windows-latest`
+- 품질 검사 매트릭스: `ubuntu-latest`, `windows-latest`
 - 두 플랫폼 공통 검사: `ruff`, `pytest`
 - Ubuntu 추가 검사: `mypy`
+- 배포 규칙: `main` 브랜치로 push되고 품질 검사 매트릭스를 통과하면 `ci-<short-sha>` 태그의 GitHub 프리릴리스를 자동 발행
+- 배포 자산: 추적 중인 패키지 파일로 만든 `ArenaForge.sublime-package`를 해당 프리릴리스에 첨부
 
 ## 감사의 말
 
