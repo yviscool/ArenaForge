@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Union
+from typing import Callable, Optional, Union
 
 from arena_forge.core.domain import ContestDescriptor, LanguageProfile, SessionSnapshot
 from arena_forge.core.services import infer_language
@@ -35,6 +35,7 @@ class ContestWorkspaceScaffolder:
         *,
         source_extension: str = "cpp",
         template_text: str = "",
+        progress: Optional[Callable[[int, int, str], None]] = None,
     ) -> Path:
         base = Path(contests_root).expanduser() / contest.provider / self.sanitize_name(contest.title)
         base.mkdir(parents=True, exist_ok=True)
@@ -51,12 +52,13 @@ class ContestWorkspaceScaffolder:
             encoding="utf-8",
         )
 
-        for problem in contest.problems:
+        language = infer_language(f"placeholder.{source_extension}", self.profiles)
+        total = len(contest.problems)
+        for position, problem in enumerate(contest.problems, start=1):
             source_file = base / f"{problem.index}.{source_extension}"
             if not source_file.exists():
                 source_file.write_text(template_text, encoding="utf-8")
 
-            language = infer_language(str(source_file), self.profiles)
             session = SessionSnapshot(
                 source_file=str(source_file.resolve()),
                 language=language,
@@ -67,4 +69,6 @@ class ContestWorkspaceScaffolder:
                 str(source_file),
                 [sample.to_mapping() for sample in problem.samples],
             )
+            if progress is not None:
+                progress(position, total, problem.index)
         return base

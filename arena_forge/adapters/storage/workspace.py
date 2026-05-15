@@ -65,5 +65,7 @@ class WorkspaceLayout:
 
     def write_tests_index(self, source_file: str, tests_payload: list[dict[str, object]]) -> Path:
         destination = self.ensure_parent(self.session_path_for(source_file))
-        destination.write_text(json.dumps(tests_payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        serialized = json.dumps(tests_payload, ensure_ascii=False, indent=2)
+        if not destination.exists() or destination.read_text(encoding="utf-8") != serialized:
+            destination.write_text(serialized, encoding="utf-8")
         return destination

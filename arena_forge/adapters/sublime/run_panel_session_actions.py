@@ -5,6 +5,8 @@ from os import path
 import sublime
 from sublime import Region
 
+from arena_forge.core.domain import OutputEvaluation, Verdict
+
 from .messages import product_log_message, translate
 from .root_bridge import get_debugger_info_module
 from .run_panel_launch_flow import RunPanelLaunchRequest, plan_run_panel_launch
@@ -17,13 +19,21 @@ from .run_panel_state import append_run_history
 from .settings_bridge import get_session_repository, get_settings, get_tests_file_path
 
 
-def handle_process_stop(command, rtcode, runtime, crash_line=None) -> None:
+def resolve_stop_evaluation(tester, test_id, rtcode, *, compile_failed=False):
+    if compile_failed:
+        return OutputEvaluation(checker_name="normalized_text", verdict=Verdict.COMPILE_ERROR)
+    if str(rtcode) == "0":
+        return tester.evaluate_test(test_id)
+    return None
+
+
+def handle_process_stop(command, rtcode, runtime, crash_line=None, compile_failed=False) -> None:
     view = command.view
     tester = command.state.tester
 
     test_id = tester.running_test
     input_text = tester.tests[test_id].test_string
-    evaluation = tester.evaluate_test(test_id) if str(rtcode) == "0" else None
+    evaluation = resolve_stop_evaluation(tester, test_id, rtcode, compile_failed=compile_failed)
     stop_plan = build_run_panel_stop_plan(
         return_code=rtcode,
         input_text=input_text,
@@ -95,6 +105,12 @@ def handle_process_stop(command, rtcode, runtime, crash_line=None) -> None:
         for subview in view.window().views():
             if subview.id() == command.state.code_view_id:
                 subview.run_command("view_tester", {"action": "show_crash_line", "crash_line": crash_line})
+
+
+def handle_compile_failure(command, rtcode) -> None:
+    command.change_process_status("STOPPED")
+    handle_process_stop(command, rtcode, 0, compile_failed=True)
+    command.set_compile_bar("compilation error", type="error")
 
 
 def clear_all(command) -> None:
@@ -217,6 +233,7 @@ def make_opd(
                 tests=tests,
                 sync_out=sync_out,
                 test_factory=command.Test,
+                on_compile_error=lambda test_id, rtcode, output_text: handle_compile_failure(command, rtcode),
             )
             view.settings().set("edit_mode", False)
             view.run_command("test_manager", {"action": "new_test"})

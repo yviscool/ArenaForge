@@ -9,6 +9,31 @@ import sublime
 
 from .subprocess_runner import build_command_argv, build_process_spawn_options, build_process_text_options
 
+_COMPILE_CACHE = {}
+
+
+def _build_compile_cache_key(source_file, command):
+    try:
+        source_stat = os.stat(source_file)
+    except OSError:
+        return None
+    return (path.abspath(source_file), source_stat.st_mtime_ns, command)
+
+
+def _get_cached_compile_result(cache_key):
+    if cache_key is None:
+        return None
+    return _COMPILE_CACHE.get(cache_key)
+
+
+def _store_cached_compile_result(cache_key, compile_result):
+    if cache_key is None:
+        return
+    if compile_result[0] == 0:
+        _COMPILE_CACHE[cache_key] = compile_result
+    else:
+        _COMPILE_CACHE.pop(cache_key, None)
+
 
 class ProcessManager(object):
     def __init__(self, file, syntax, run_settings=None):
@@ -58,6 +83,10 @@ class ProcessManager(object):
     def compile(self, wait_close=True):
         cmd = self.get_compile_cmd()
         if cmd not in {None, -1}:
+            cache_key = _build_compile_cache_key(self.file, cmd)
+            cached_result = _get_cached_compile_result(cache_key)
+            if cached_result is not None:
+                return cached_result
             argv = build_command_argv(cmd, platform_name=sublime.platform())
             spawn_options = build_process_spawn_options(sublime.platform())
             text_options = build_process_text_options(sublime.platform())
@@ -73,7 +102,9 @@ class ProcessManager(object):
                 **text_options,
             )
             compile_result = process.communicate()[0]
-            return (process.returncode, compile_result)
+            result = (process.returncode, compile_result)
+            _store_cached_compile_result(cache_key, result)
+            return result
 
     def run_file(self, args=[]):
         cmd = self.get_run_cmd(" ".join(args))

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from inspect import Parameter, signature
 from os import path
 
 import sublime
@@ -17,6 +18,22 @@ from .settings_bridge import get_application, get_contests_root
 
 
 class ContestHandlerCommand(sublime_plugin.TextCommand):
+    @staticmethod
+    def _schedule_status_message(key: str, **kwargs) -> None:
+        payload = dict(kwargs)
+        sublime.set_timeout(lambda key=key, payload=payload: product_status_message(key, **payload))
+
+    @staticmethod
+    def _supports_keyword_argument(callable_obj, parameter_name: str) -> bool:
+        try:
+            callable_signature = signature(callable_obj)
+        except (TypeError, ValueError):
+            return False
+        parameter = callable_signature.parameters.get(parameter_name)
+        if parameter is None:
+            return False
+        return parameter.kind in (Parameter.KEYWORD_ONLY, Parameter.POSITIONAL_OR_KEYWORD)
+
     def _open_contest_workspace(self, base):
         sublime.run_command("new_window")
         sublime.active_window().set_project_data({"folders": [{"path": str(base)}]})
@@ -24,8 +41,38 @@ class ContestHandlerCommand(sublime_plugin.TextCommand):
     def try_init_contest(self, url):
         app = get_application()
         resolved = app.provider_registry.resolve_url(url)
-        descriptor = resolved.provider.load_contest(resolved.contest_id)
-        base = app.workspace_scaffolder.scaffold(get_contests_root(), descriptor)
+        self._schedule_status_message(
+            "status.contest_loading",
+            provider=resolved.provider_name,
+            contest_id=resolved.contest_id,
+        )
+
+        load_contest = resolved.provider.load_contest
+        if self._supports_keyword_argument(load_contest, "progress"):
+            descriptor = load_contest(
+                resolved.contest_id,
+                progress=lambda completed, total, problem: self._schedule_status_message(
+                    "status.contest_loading_samples",
+                    provider=resolved.provider_name,
+                    completed=completed,
+                    total=total,
+                    problem=problem,
+                ),
+            )
+        else:
+            descriptor = load_contest(resolved.contest_id)
+
+        base = app.workspace_scaffolder.scaffold(
+            get_contests_root(),
+            descriptor,
+            progress=lambda completed, total, problem: self._schedule_status_message(
+                "status.contest_scaffolding",
+                completed=completed,
+                total=total,
+                problem=problem,
+            ),
+        )
+        self._schedule_status_message("status.contest_ready", title=descriptor.title)
         sublime.set_timeout(lambda base=base: self._open_contest_workspace(base))
 
     def _read_contest_settings(self):

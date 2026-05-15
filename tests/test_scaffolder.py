@@ -26,12 +26,19 @@ class ScaffolderTests(unittest.TestCase):
                     ),
                 ),
             )
-            base = scaffolder.scaffold(root, contest, template_text="// template\n")
+            progress_events = []
+            base = scaffolder.scaffold(
+                root,
+                contest,
+                template_text="// template\n",
+                progress=lambda completed, total, problem: progress_events.append((completed, total, problem)),
+            )
             self.assertTrue((base / "A.cpp").exists())
             self.assertTrue((base / "contest.json").exists())
             self.assertTrue((base / "_contest.sublime-settings").exists())
             metadata = json.loads((base / "contest.json").read_text(encoding="utf-8"))
             self.assertEqual(metadata["contest_id"], "123")
+            self.assertEqual(progress_events, [(1, 1, "A")])
 
 
 if __name__ == "__main__":

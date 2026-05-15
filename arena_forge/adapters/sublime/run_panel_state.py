@@ -91,9 +91,9 @@ class PanelTestState(object):
     def memorize(self):
         payload = {"test": self.test_string}
         if self.correct_answers:
-            payload["correct_answers"] = list(self.correct_answers)
+            payload["correct_answers"] = sorted(self.correct_answers)
         if self.uncorrect_answers:
-            payload["uncorrect_answers"] = list(self.uncorrect_answers)
+            payload["uncorrect_answers"] = sorted(self.uncorrect_answers)
         if self.checker_name != "normalized_text":
             payload["checker_name"] = self.checker_name
         return payload
@@ -106,15 +106,40 @@ class PanelTestState(object):
 
 
 def persist_panel_tests(source_file, tests, repository, infer_language_name, tests_file_path_factory):
-    with open(tests_file_path_factory(source_file, for_write=True), "w", encoding="utf-8") as handle:
-        handle.write(sublime.encode_value([test.memorize() for test in tests], True))
+    tests_payload = [test.memorize() for test in tests]
+    encoded_tests = sublime.encode_value(tests_payload, True)
+    tests_path = tests_file_path_factory(source_file, for_write=True)
+    current_payload = _read_panel_tests_payload(tests_path)
+    if current_payload != encoded_tests:
+        with open(tests_path, "w", encoding="utf-8") as handle:
+            handle.write(encoded_tests)
+
+    language_name = infer_language_name(source_file)
+    core_tests = tuple(test.to_core_test_case(index + 1) for index, test in enumerate(tests))
+    snapshot = repository.load(source_file)
+    if snapshot is not None and snapshot.language == language_name and snapshot.tests == core_tests:
+        return
+    session_kwargs = {
+        "source_file": source_file,
+        "language": language_name,
+        "tests": core_tests,
+        "run_history": snapshot.run_history if snapshot is not None else (),
+    }
+    if snapshot is not None:
+        session_kwargs["updated_at"] = snapshot.updated_at
     repository.save(
         SessionSnapshot(
-            source_file=source_file,
-            language=infer_language_name(source_file),
-            tests=tuple(test.to_core_test_case(index + 1) for index, test in enumerate(tests)),
+            **session_kwargs,
         )
     )
+
+
+def _read_panel_tests_payload(path):
+    try:
+        with open(path, encoding="utf-8") as handle:
+            return handle.read()
+    except OSError:
+        return None
 
 
 def append_run_history(

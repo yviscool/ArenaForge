@@ -26,6 +26,9 @@ class JsonSessionRepository:
         destination = self.layout.ensure_parent(self.layout.snapshot_path_for(session.source_file))
         payload = session.to_mapping()
         payload["schema_version"] = self.SCHEMA_VERSION
+        serialized = json.dumps(payload, ensure_ascii=False, indent=2)
+        if destination.exists() and destination.read_text(encoding="utf-8") == serialized:
+            return
         temporary = destination.with_suffix(destination.suffix + ".tmp")
-        temporary.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        temporary.write_text(serialized, encoding="utf-8")
         temporary.replace(destination)

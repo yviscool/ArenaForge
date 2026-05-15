@@ -22,6 +22,7 @@ class RunPanelTester(object):
         test_factory=None,
         schedule_async=None,
         show_status=None,
+        on_compile_error=None,
     ):
         super(RunPanelTester, self).__init__()
         self.process_manager = process_manager
@@ -39,6 +40,7 @@ class RunPanelTester(object):
         self.on_status_change = on_status_change
         self.schedule_async = schedule_async or sublime.set_timeout_async
         self.show_status = show_status or (lambda: status_message("status.process_already_running"))
+        self.on_compile_error = on_compile_error or (lambda test_id, return_code, output_text: None)
         if type(self.process_manager).__name__ != "ProcessManager":
             self.process_manager.set_calls(self.__on_out, self.__on_stop, on_status_change)
 
@@ -69,7 +71,9 @@ class RunPanelTester(object):
             if self.sync_out:
                 output = proc.read(bfsize=1)
             else:
-                output = proc.read()
+                output = proc.read(bfsize=4096)
+            if not output:
+                continue
             self.__on_out(output)
         try:
             output = proc.read()
@@ -121,11 +125,15 @@ class RunPanelTester(object):
 
     def run_test(self, id):
         self.on_status_change("COMPILE")
-        self.process_manager.compile()
         self.running_test = id
         self.running_new = False
         self._ensure_output_slot(id)
         self.prog_out[id] = ""
+        compile_result = self.process_manager.compile()
+        if compile_result is not None and compile_result[0] != 0:
+            self.prog_out[id] = compile_result[1]
+            self.on_compile_error(id, compile_result[0], compile_result[1])
+            return
         self.insert_test(id)
         if type(self.process_manager).__name__ == "ProcessManager":
             self.schedule_async(self.__process_listener)

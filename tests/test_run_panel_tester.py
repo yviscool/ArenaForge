@@ -40,11 +40,12 @@ class _DummyTest:
 
 
 class _FakeProcessManager:
-    def __init__(self):
+    def __init__(self, compile_result=None):
         self.calls = []
         self.on_out = None
         self.on_stop = None
         self.on_status_change = None
+        self.compile_result = compile_result
 
     def set_calls(self, on_out, on_stop, on_status_change):
         self.on_out = on_out
@@ -59,9 +60,33 @@ class _FakeProcessManager:
 
     def compile(self):
         self.calls.append("compile")
+        return self.compile_result
 
     def terminate(self):
         self.calls.append("terminate")
+
+
+class _FakeStreamingProcessManager:
+    def __init__(self, chunks, stop_codes):
+        self.chunks = list(chunks)
+        self.stop_codes = list(stop_codes)
+        self.read_sizes = []
+
+    def set_calls(self, on_out, on_stop, on_status_change):
+        self.on_out = on_out
+        self.on_stop = on_stop
+        self.on_status_change = on_status_change
+
+    def is_stopped(self):
+        if self.stop_codes:
+            return self.stop_codes.pop(0)
+        return 0
+
+    def read(self, bfsize=None):
+        self.read_sizes.append(bfsize)
+        if self.chunks:
+            return self.chunks.pop(0)
+        return ""
 
 
 @contextmanager
@@ -155,6 +180,35 @@ class RunPanelTesterTests(unittest.TestCase):
             self.assertEqual(tester.prog_out[0], "")
             self.assertEqual(statuses[0], "COMPILE")
 
+    def test_run_test_reports_compile_error_without_starting_process(self) -> None:
+        with _patched_sublime():
+            module = importlib.import_module("arena_forge.adapters.sublime.run_panel_tester")
+            process = _FakeProcessManager(compile_result=(1, "boom"))
+            compile_errors = []
+            statuses = []
+            tester = module.RunPanelTester(
+                process,
+                on_insert=lambda chunk: None,
+                on_out=lambda chunk: None,
+                on_stop=lambda *args, **kwargs: None,
+                on_status_change=statuses.append,
+                tests=[_DummyTest("abc")],
+                test_factory=_DummyTest,
+                schedule_async=lambda callback, delay=0: callback(),
+                show_status=statuses.append,
+                on_compile_error=lambda test_id, return_code, output_text: compile_errors.append(
+                    (test_id, return_code, output_text)
+                ),
+            )
+
+            tester.prog_out = ["stale"]
+            tester.run_test(0)
+
+            self.assertEqual(process.calls, ["compile"])
+            self.assertEqual(tester.prog_out[0], "boom")
+            self.assertEqual(compile_errors, [(0, 1, "boom")])
+            self.assertEqual(statuses, ["COMPILE"])
+
     def test_set_tests_rebuilds_output_slots_and_iteration(self) -> None:
         with _patched_sublime():
             module = importlib.import_module("arena_forge.adapters.sublime.run_panel_tester")
@@ -175,6 +229,32 @@ class RunPanelTesterTests(unittest.TestCase):
             self.assertEqual(len(tester.tests), 2)
             self.assertEqual(tester.prog_out, ["old-output", ""])
             self.assertEqual(tester.test_iter, 2)
+
+    def test_process_listener_uses_chunked_reads_when_sync_out_is_disabled(self) -> None:
+        with _patched_sublime():
+            module = importlib.import_module("arena_forge.adapters.sublime.run_panel_tester")
+            process = _FakeStreamingProcessManager(["first", "second", ""], [None, None, 0])
+            outputs = []
+            stops = []
+            tester = module.RunPanelTester(
+                process,
+                on_insert=lambda chunk: None,
+                on_out=outputs.append,
+                on_stop=lambda *args, **kwargs: stops.append(args),
+                on_status_change=lambda status: None,
+                tests=[_DummyTest("abc")],
+                test_factory=_DummyTest,
+                schedule_async=lambda callback, delay=0: callback(),
+                show_status=lambda: None,
+            )
+            tester.running_test = 0
+            tester.prog_out = [""]
+
+            tester._RunPanelTester__process_listener()
+
+            self.assertEqual(process.read_sizes[:2], [4096, 4096])
+            self.assertEqual(outputs[:2], ["first", "second"])
+            self.assertTrue(stops)
 
 
 if __name__ == "__main__":

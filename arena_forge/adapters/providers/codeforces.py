@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from html import unescape
 from html.parser import HTMLParser
-from typing import Iterable, List, Optional, Tuple
+from typing import Callable, Dict, Iterable, List, Optional, Tuple
+from urllib.parse import urljoin
 from urllib.request import Request, urlopen
 
 from arena_forge.core.domain import (
@@ -19,6 +21,7 @@ from .codeforces_submit import login as login_codeforces
 from .codeforces_submit import submit as submit_codeforces
 
 USER_AGENT = "ArenaForge/3.0 (+https://example.invalid)"
+CODEFORCES_BASE_URL = "https://codeforces.com"
 
 
 class _SamplesParser(HTMLParser):
@@ -88,10 +91,93 @@ class _SamplesParser(HTMLParser):
         return text
 
 
+@dataclass(frozen=True)
+class ProblemSummary:
+    index: str
+    title: str
+    url: str
+
+
+@dataclass
+class _MutableProblemSummary:
+    url: str
+    index: str
+    title: Optional[str] = None
+
+
+class _ProblemListParser(HTMLParser):
+    def __init__(self, contest_id: str) -> None:
+        super().__init__(convert_charrefs=False)
+        self.contest_id = contest_id
+        self._problems: Dict[str, _MutableProblemSummary] = {}
+        self._order: List[str] = []
+        self._active_problem_id: Optional[str] = None
+        self._active_chunks: List[str] = []
+
+    def handle_starttag(self, tag: str, attrs: Iterable[Tuple[str, Optional[str]]]) -> None:
+        if tag != "a":
+            return
+        href = dict(attrs).get("href", "")
+        problem_id = _problem_id_from_href(href, self.contest_id)
+        if problem_id is None:
+            return
+        self._active_problem_id = problem_id
+        self._active_chunks = []
+
+    def handle_data(self, data: str) -> None:
+        if self._active_problem_id is not None:
+            self._active_chunks.append(data)
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag != "a" or self._active_problem_id is None:
+            return
+        problem_id = self._active_problem_id
+        self._active_problem_id = None
+        text = " ".join(unescape("".join(self._active_chunks)).split())
+        self._active_chunks = []
+        if problem_id not in self._problems:
+            self._problems[problem_id] = _MutableProblemSummary(
+                url=urljoin(CODEFORCES_BASE_URL, f"/contest/{self.contest_id}/problem/{problem_id}"),
+                index=problem_id,
+            )
+            self._order.append(problem_id)
+        problem = self._problems[problem_id]
+        if text and text != problem.index and problem.title is None:
+            problem.title = text
+
+    def finalize(self) -> tuple[ProblemSummary, ...]:
+        return tuple(
+            ProblemSummary(
+                index=problem.index,
+                title=problem.title or problem.index,
+                url=problem.url,
+            )
+            for problem_id in self._order
+            for problem in (self._problems[problem_id],)
+        )
+
+
+def _problem_id_from_href(href: str, contest_id: str) -> Optional[str]:
+    contest_prefix = f"/contest/{contest_id}/problem/"
+    problemset_prefix = f"/problemset/problem/{contest_id}/"
+    normalized = href.split("?", 1)[0].split("#", 1)[0]
+    if normalized.startswith(contest_prefix):
+        return normalized[len(contest_prefix) :].strip("/") or None
+    if normalized.startswith(problemset_prefix):
+        return normalized[len(problemset_prefix) :].strip("/") or None
+    return None
+
+
 def extract_samples(html: str) -> tuple[tuple[str, str], ...]:
     parser = _SamplesParser()
     parser.feed(html)
     return tuple(parser.samples)
+
+
+def extract_problem_summaries(html: str, contest_id: str) -> tuple[ProblemSummary, ...]:
+    parser = _ProblemListParser(contest_id)
+    parser.feed(html)
+    return parser.finalize()
 
 
 def extract_contest_title(html: str, contest_id: str) -> str:
@@ -121,8 +207,11 @@ class CodeforcesProvider:
         with urlopen(request, timeout=10) as response:
             return response.read().decode("utf-8", "replace")
 
+    def _contest_url(self, contest_id: str) -> str:
+        return f"{CODEFORCES_BASE_URL}/contest/{contest_id}"
+
     def load_problem_samples(self, contest_id: str, problem_id: str) -> tuple[TestCase, ...]:
-        url = f"https://codeforces.com/contest/{contest_id}/problem/{problem_id}"
+        url = f"{self._contest_url(contest_id)}/problem/{problem_id}"
         html = self._fetch_text(url)
         samples = extract_samples(html)
         return tuple(
@@ -135,22 +224,67 @@ class CodeforcesProvider:
         )
 
     def load_contest_title(self, contest_id: str) -> str:
-        html = self._fetch_text(f"https://codeforces.com/contest/{contest_id}")
+        html = self._fetch_text(self._contest_url(contest_id))
         return extract_contest_title(html, contest_id)
 
-    def load_contest(self, contest_id: str) -> ContestDescriptor:
-        title = self.load_contest_title(contest_id)
+    def _load_problems_with_progress(
+        self,
+        contest_id: str,
+        problem_summaries: tuple[ProblemSummary, ...],
+        progress: Optional[Callable[[int, int, str], None]] = None,
+    ) -> tuple[ContestProblem, ...]:
+        total = len(problem_summaries)
+        if total == 0:
+            return ()
+
+        results: Dict[int, ContestProblem] = {}
+        max_workers = min(8, total)
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = {
+                executor.submit(self.load_problem_samples, contest_id, summary.index): (position, summary)
+                for position, summary in enumerate(problem_summaries)
+            }
+            completed = 0
+            for future in as_completed(futures):
+                position, summary = futures[future]
+                samples = future.result()
+                results[position] = ContestProblem(
+                    index=summary.index,
+                    title=summary.title,
+                    samples=samples,
+                )
+                completed += 1
+                if progress is not None:
+                    progress(completed, total, summary.index)
+        return tuple(results[position] for position in range(total))
+
+    def _load_problems_by_probe(self, contest_id: str) -> tuple[ContestProblem, ...]:
         problems = []
         for problem_id in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
             samples = self.load_problem_samples(contest_id, problem_id)
             if not samples:
                 break
             problems.append(ContestProblem(index=problem_id, title=problem_id, samples=samples))
+        return tuple(problems)
+
+    def load_contest(
+        self,
+        contest_id: str,
+        *,
+        progress: Optional[Callable[[int, int, str], None]] = None,
+    ) -> ContestDescriptor:
+        contest_html = self._fetch_text(self._contest_url(contest_id))
+        title = extract_contest_title(contest_html, contest_id)
+        problem_summaries = extract_problem_summaries(contest_html, contest_id)
+        if problem_summaries:
+            problems = self._load_problems_with_progress(contest_id, problem_summaries, progress=progress)
+        else:
+            problems = self._load_problems_by_probe(contest_id)
         return ContestDescriptor(
             contest_id=str(contest_id),
             title=title,
             provider=self.provider_name,
-            problems=tuple(problems),
+            problems=problems,
         )
 
     def submit_solution(
