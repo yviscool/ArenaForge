@@ -31,19 +31,21 @@ jobs:
           python-version: "3.8"
 
       - uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
 
       - name: Sync dependencies
         run: uv sync --group dev
 
       - name: Ruff
-        run: uv run ruff check arena_forge tests
+        run: uv run python -m ruff check arena_forge tests
 
       - name: Pytest
-        run: uv run pytest -q
+        run: uv run python -m pytest -q
 
       - name: Mypy
         if: matrix.os == 'ubuntu-latest'
-        run: uv run mypy
+        run: uv run python -m mypy
 
   release:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -55,6 +57,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.8"
+
       - name: Prepare release metadata
         id: meta
         shell: bash
@@ -63,8 +69,8 @@ jobs:
           mkdir -p dist
           short_sha="${GITHUB_SHA::7}"
           commit_subject="$(git log -1 --pretty=%s)"
-          echo "tag=ci-${short_sha}" >> "$GITHUB_OUTPUT"
-          echo "name=CI build ${short_sha}" >> "$GITHUB_OUTPUT"
+          echo "tag=edge-${GITHUB_RUN_NUMBER}-${GITHUB_RUN_ATTEMPT}-${short_sha}" >> "$GITHUB_OUTPUT"
+          echo "name=Edge ${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT} (${short_sha})" >> "$GITHUB_OUTPUT"
           cat > dist/release-notes.md <<EOF
           Automated prerelease for commit \`${GITHUB_SHA}\`.
 
@@ -72,42 +78,43 @@ jobs:
           - Commit message: ${commit_subject}
           - Commit: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}
           - Workflow run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
+
+          Assets:
+          - \`ArenaForge.sublime-package\`
+          - \`ArenaForge.sublime-package.sha256\`
           EOF
 
       - name: Build release package
-        shell: bash
         run: |
-          set -euo pipefail
-          mkdir -p dist/package
-          while IFS= read -r -d '' path; do
-            case "$path" in
-              .github/*|docs/*|tests/*|.venv/*|.mypy_cache/*|.ruff_cache/*|.test-workdir/*|__pycache__/*|pyproject.toml|uv.lock|.python-version|.gitignore|.no-sublime-package)
-                continue
-                ;;
-            esac
-            mkdir -p "dist/package/$(dirname "$path")"
-            cp "$path" "dist/package/$path"
-          done < <(git ls-files -z)
-          (
-            cd dist/package
-            zip -qr ../ArenaForge.sublime-package .
-          )
+          python scripts/build_release.py \
+            --mode git-files \
+            --output dist/ArenaForge.sublime-package \
+            --exclude ".github/*" \
+            --exclude "docs/*" \
+            --exclude "tests/*" \
+            --exclude "scripts/*" \
+            --exclude ".venv/*" \
+            --exclude ".mypy_cache/*" \
+            --exclude ".ruff_cache/*" \
+            --exclude ".test-workdir/*" \
+            --exclude "__pycache__/*" \
+            --exclude "pyproject.toml" \
+            --exclude "uv.lock" \
+            --exclude ".python-version" \
+            --exclude ".gitignore" \
+            --exclude ".no-sublime-package"
 
       - name: Publish GitHub prerelease
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.meta.outputs.tag }}
           NAME: ${{ steps.meta.outputs.name }}
-        shell: bash
         run: |
-          set -euo pipefail
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" dist/ArenaForge.sublime-package --clobber
-            gh release edit "$TAG" --title "$NAME" --notes-file dist/release-notes.md
-          else
-            gh release create "$TAG" dist/ArenaForge.sublime-package \
-              --title "$NAME" \
-              --notes-file dist/release-notes.md \
-              --target "$GITHUB_SHA" \
-              --prerelease
-          fi
+          gh release create "$TAG" \
+            dist/ArenaForge.sublime-package \
+            dist/ArenaForge.sublime-package.sha256 \
+            --title "$NAME" \
+            --notes-file dist/release-notes.md \
+            --target "$GITHUB_SHA" \
+            --prerelease \
+            --latest=false
