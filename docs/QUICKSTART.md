@@ -86,7 +86,9 @@ Python formatting uses `ruff format`.
 2. Run `ArenaForge: Run`.
 3. Use `ArenaForge: Format` after configuring `google-java-format` if needed.
 
-If `google-java-format` is not on `PATH`, configure:
+ArenaForge also auto-detects `tools/google-java-format.jar` and `tools/ktfmt.jar` inside the project when `java` is available.
+
+If you prefer an explicit override, or the JAR lives elsewhere, configure:
 
 ```json
 {
@@ -97,6 +99,8 @@ If `google-java-format` is not on `PATH`, configure:
   }
 }
 ```
+
+The same pattern works for `ktfmt` with `tools/ktfmt.jar`.
 
 ## 7. Create a Contest Workspace
 

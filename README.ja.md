@@ -142,6 +142,11 @@ macOS では追加で次も使えます。
 }
 ```
 
+### Formatter に関する補足
+
+- Java / Kotlin では、プロジェクト内の `tools/google-java-format.jar` と `tools/ktfmt.jar` も自動検出されます。
+- JAR を別の場所に置く場合は、`formatting.commands` に `["java", "-jar", "..."]` を明示してください。
+
 テストデータとセッションデータは、通常の JSON ファイルとして作業中のソースツリーの近くに保存されます。
 正確な場所は `tests_relative_dir` と `session_relative_dir` の設定によって決まります。
 同梱の設定ファイルはプラットフォームごとにディレクトリ構成が少し異なるため、上の例は固定の記述ではなくテンプレートとして扱ってください。

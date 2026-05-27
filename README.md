@@ -160,6 +160,11 @@ Example user settings:
 }
 ```
 
+### Formatter Notes
+
+- Java and Kotlin formatters also auto-detect `tools/google-java-format.jar` and `tools/ktfmt.jar` inside the project.
+- If a JAR lives elsewhere, use `formatting.commands` with an explicit `["java", "-jar", "..."]` prefix.
+
 ## Key Settings
 
 - `default_contest_language`: default language highlighted in `Setup Contest`
@@ -195,7 +200,7 @@ If needed, run:
 Check:
 
 - the current syntax is supported by one of the formatter adapters
-- the formatter binary exists on `PATH`, or is configured in `formatting.commands`
+- the formatter binary exists on `PATH`, is configured in `formatting.commands`, or for Java/Kotlin is available as `tools/google-java-format.jar` or `tools/ktfmt.jar`
 - the file is not in an unsupported selection-format mode
 
 Use `ArenaForge: Diagnose Formatter` to inspect the matched adapter, command, and config file lookup.

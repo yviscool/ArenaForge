@@ -160,6 +160,11 @@ Packages/User/ArenaForge.sublime-settings
 }
 ```
 
+### Formatter 补充说明
+
+- Java / Kotlin formatter 也会自动发现项目里的 `tools/google-java-format.jar` 和 `tools/ktfmt.jar`。
+- 如果 JAR 放在别的位置，再用 `formatting.commands` 显式写 `["java", "-jar", "..."]`。
+
 ## 关键设置项
 
 - `default_contest_language`：`Setup Contest` 时默认高亮的语言
@@ -195,7 +200,7 @@ ArenaForge 目前只对 C++ 做内联诊断标记。
 先检查：
 
 - 当前语法是否被某个 formatter adapter 识别
-- formatter 是否在 `PATH` 中，或者已经写进 `formatting.commands`
+- formatter 是否在 `PATH` 中，或者已经写进 `formatting.commands`，或者对 Java / Kotlin 来说项目里已经有 `tools/google-java-format.jar` / `tools/ktfmt.jar`
 - 当前不是某个不支持选区格式化的语言/模式
 
 可以运行 `ArenaForge: Diagnose Formatter` 查看匹配到的 adapter、命令和配置文件搜索结果。

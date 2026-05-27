@@ -86,7 +86,9 @@ Python 格式化走的是 `ruff format`。
 2. 运行 `ArenaForge: Run`
 3. 需要的话配置 `google-java-format` 后再运行 `ArenaForge: Format`
 
-如果 `google-java-format` 不在 `PATH`，可以这样配：
+ArenaForge 也会在项目里自动发现 `tools/google-java-format.jar` 和 `tools/ktfmt.jar`，前提是本机能调用 `java`。
+
+如果你更想显式配置，或者 JAR 不在这里，可以这样配：
 
 ```json
 {
@@ -97,6 +99,8 @@ Python 格式化走的是 `ruff format`。
   }
 }
 ```
+
+同样的写法也适用于 `ktfmt`，把 JAR 放到 `tools/ktfmt.jar` 或写进 `formatting.commands` 即可。
 
 ## 7. 创建比赛工作区
 
