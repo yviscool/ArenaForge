@@ -26,7 +26,8 @@ class GoogleJavaFormatAdapter(FormatterAdapter):
         return "\n".join(
             (
                 "Recommended command override:",
-                '  "formatting": { "commands": { "google-java-format": ["java", "-jar", "tools/google-java-format.jar"] } }',
+                '  "formatting": { "commands": { '
+                '"google-java-format": ["java", "-jar", "tools/google-java-format.jar"] } }',
                 f"Docs: {self.docs_url}",
             )
         )
