@@ -40,6 +40,24 @@ class LanguageProfile:
     compile_cmd: Optional[str]
     run_cmd: Optional[str]
     lint_compile_cmd: Optional[str] = None
+    id: str = ""
+    syntax_selectors: Tuple[str, ...] = ()
+    formatter: Optional[str] = None
+    template_path: Optional[str] = None
+    submission_key: Optional[str] = None
+
+    @property
+    def identifier(self) -> str:
+        if self.id:
+            return self.id
+        normalized = self.name.strip().lower()
+        if "c++" in normalized:
+            return "cpp"
+        return normalized.replace("#", "sharp").replace(" ", "_")
+
+    @property
+    def primary_extension(self) -> str:
+        return self.extensions[0] if self.extensions else ""
 
     @classmethod
     def from_mapping(cls, payload: dict[str, Any]) -> "LanguageProfile":
@@ -49,6 +67,11 @@ class LanguageProfile:
             compile_cmd=payload.get("compile_cmd"),
             run_cmd=payload.get("run_cmd"),
             lint_compile_cmd=payload.get("lint_compile_cmd"),
+            id=str(payload.get("id") or ""),
+            syntax_selectors=tuple(str(item) for item in payload.get("syntax_selectors", ())),
+            formatter=str(payload["formatter"]) if payload.get("formatter") is not None else None,
+            template_path=str(payload["template_path"]) if payload.get("template_path") is not None else None,
+            submission_key=str(payload["submission_key"]) if payload.get("submission_key") is not None else None,
         )
 
 

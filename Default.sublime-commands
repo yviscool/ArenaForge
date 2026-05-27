@@ -20,6 +20,34 @@
 		"command": "arena_forge_run"
 	},
 	{
+		"caption": "ArenaForge: Format",
+		"command": "arena_forge_format"
+	},
+	{
+		"caption": "ArenaForge: Format Document",
+		"command": "arena_forge_format_document"
+	},
+	{
+		"caption": "ArenaForge: Format Selection",
+		"command": "arena_forge_format_selection"
+	},
+	{
+		"caption": "ArenaForge: Diagnose Formatter",
+		"command": "arena_forge_format_diagnose"
+	},
+	{
+		"caption": "ArenaForge: Formatter Install Guide",
+		"command": "arena_forge_format_install_guide"
+	},
+	{
+		"caption": "ArenaForge: Create Format Config For Current File",
+		"command": "arena_forge_format_create_config"
+	},
+	{
+		"caption": "ArenaForge: Create Workspace Format Configs",
+		"command": "arena_forge_format_create_workspace_configs"
+	},
+	{
 		"caption": "ArenaForge: Auto / \u6a21\u677f\u63d2\u5165",
 		"command": "arena_forge_auto"
 	},

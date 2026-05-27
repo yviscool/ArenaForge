@@ -123,7 +123,7 @@ def infer_language(source_file: str, profiles: Iterable[LanguageProfile]) -> str
     ext = Path(source_file).suffix.lstrip(".")
     for profile in profiles:
         if ext in profile.extensions:
-            return profile.name
+            return profile.identifier
     raise ValueError(f"Unsupported source extension: {ext}")
 
 

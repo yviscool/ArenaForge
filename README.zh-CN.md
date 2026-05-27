@@ -4,27 +4,56 @@
 
 [![CI](https://github.com/yviscool/ArenaForge/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/yviscool/ArenaForge/actions/workflows/ci.yml)
 
-ArenaForge 是一个给 Sublime Text 使用的竞赛编程工具。
-它围绕日常写题最核心的几件事来设计：打开源码、快速运行、整理样例，并且直接从题目链接或比赛链接生成干净的工作区。
+ArenaForge 是一个给 Sublime Text 使用的竞赛编程一体化工作台。
+它把本地运行、样例管理、比赛工作区初始化、格式化、C++ 诊断、对拍和 Codeforces 提交放进同一个包里。
 
-整个流程尽量留在编辑器里完成。
-运行历史、对拍、诊断、模板插入、比赛初始化和 Codeforces 提交，都放在同一套工作界面里。
+## 快速入口
+
+- [快速上手](docs/QUICKSTART.zh-CN.md)
+- [架构说明](docs/ARCHITECTURE.md)
+- [Sublime 壳层迁移说明](docs/SUBLIME_SHELL_MIGRATION.md)
 
 ## 它能做什么
 
 - 在独立的测试面板里运行当前文件。
-- 把样例测试和更完整的会话快照存成靠近源码树的 JSON 文件。
-- 对比程序输出与期望答案，并给出第一个不匹配的位置。
-- 在运行面板里保留交互输入历史，并提供基础的类终端编辑操作。
-- 为当前源文件提供独立的测试编辑视图和运行历史视图。
-- 从 Codeforces、AtCoder、Luogu、AcWing 链接初始化比赛或单题工作区。
-- 直接在 Sublime Text 里提交 Codeforces 代码，凭据通过 `keyring` 保存。
+- 把测试和会话快照存成靠近源码树的 JSON 文件。
+- 对比程序输出与期望答案，并标出第一个不匹配的位置。
+- 在运行面板里保留输入历史和类终端编辑操作。
+- 从 OJ 链接初始化比赛或单题工作区。
+- 初始化比赛前先选择目标语言。
+- 在 ArenaForge 内部对支持的语言直接做格式化。
+- 通过 `lint_compile_cmd` 显示 C++ 诊断标记。
 - 使用 `<task>__Good` 和 `<task>__Generator` 做对拍。
-- 插入本地算法模板，并提供轻量的 C++ 补全辅助。
-- 用 `lint_compile_cmd` 做 C++ 诊断。
-- 通过 `Doctor` 命令检查包文件、资源、运行配置和凭据后端是否可用。
+- 通过 `keyring` 保存凭据并直接提交 Codeforces。
+- 为当前文件或整个工作区生成 formatter 配置文件。
 
-## 当前 Provider 支持
+## 语言支持
+
+### 运行 / 比赛模板
+
+| 语言 | 运行 | 比赛模板 | formatter |
+| --- | --- | --- | --- |
+| C | 支持 | 支持 | `clang-format` |
+| C++ | 支持 | 支持 | `clang-format` |
+| Python | 支持 | 支持 | `ruff format` |
+| Java | 支持 | 支持 | `google-java-format` |
+| Kotlin | 支持 | 支持 | `ktfmt` |
+| Go | 支持 | 支持 | `gofmt` |
+| Rust | 支持 | 支持 | `rustfmt` |
+| JavaScript | 支持 | 支持 | `oxfmt` |
+
+### 仅格式化支持
+
+通过 `oxfmt`，ArenaForge 还支持这些常见文本 / Web 文件的格式化：
+
+- TypeScript / TSX
+- JSON / YAML / TOML
+- HTML / Vue / Svelte
+- CSS / SCSS / Less
+- Markdown / MDX
+- GraphQL
+
+## Provider 支持
 
 | Provider | 工作区初始化 | 提交 |
 | --- | --- | --- |
@@ -36,115 +65,156 @@ ArenaForge 是一个给 Sublime Text 使用的竞赛编程工具。
 Codeforces 提交需要 `requests` 和可用的 `keyring` 后端。
 仓库里的 `dependencies.json` 已声明 `requests`。
 
-## 项目结构
-
-- `arena_forge/core`：类型化领域模型、输出比对、会话用例
-- `arena_forge/adapters`：Sublime 集成、provider、存储、runner、i18n、工作区脚手架、凭据存储
-- `tests`：覆盖 provider、存储、设置、运行面板行为和命令面的 pytest 测试
-- `docs`：架构、迁移和国际化说明
-- 仓库根目录：Sublime 包资源，例如快捷键、语法文件、HTML 渲染资源、图标、调试桥接模块，以及薄封装命令
-
 ## 安装
 
+### 普通安装
+
 1. 把这个目录放到 Sublime Text 的 `Packages/` 目录下。
-2. 如果是手动安装，建议把外层包目录重命名为 `ArenaForge`。
-3. 重启 Sublime Text。
+2. 外层包目录名保持为 `ArenaForge`。
+3. 重启 Sublime Text，或者执行 `Tools -> Developer -> Reload Plugins`。
 4. 打开命令面板，运行 `ArenaForge: Open Settings`。
 
-你还需要本地可用的语言工具链，例如 `g++`、`python` 或 `javac`。
+你仍然需要本地装好要用到的编译器和 formatter，例如 `g++`、`python`、`javac`、`ruff`、`rustfmt`。
 
-## 基本流程
+### Windows 开发连接
 
-1. 打开一个源文件，例如 `A.cpp` 或 `main.py`。
-2. 运行 `ArenaForge: Run`。
-3. 在运行面板里添加或编辑测试。
-4. 需要从链接建比赛目录或单题目录时，运行 `ArenaForge: Setup Contest`。
-5. 第一次提交 Codeforces 之前，先运行 `ArenaForge: Configure Credentials`。
-6. 在比赛工作区里的源文件上运行 `ArenaForge: Submit`。
+本地开发时，推荐用 junction，而不是手动复制目录到 `Packages/`。
+这样 Sublime 会直接指向你的工作树，不会保留过期副本。
 
-常用快捷键：
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\link_sublime_package.ps1
+```
 
-- 运行当前文件：Windows/Linux 上是 `Ctrl+Alt+B`，macOS 上是 `Ctrl+B`
-- 新建测试：`Ctrl+Enter`
-- 停止当前进程：所有平台都可以用 `Ctrl+C`，Windows/Linux 额外支持 `Ctrl+X`
-- 删除当前选中的测试块：`Ctrl+D`
-- 调整测试顺序：Windows/Linux 上是 `Ctrl+Shift+Up` / `Ctrl+Shift+Down`，macOS 上是 `Ctrl+Super+Up` / `Ctrl+Super+Down`
-- 切换右侧测试面板：Windows/Linux 上是 `Ctrl+K`、`Ctrl+P`，macOS 上是 `Super+K`、`Super+P`
+按你当前环境，这会创建：
 
-在运行面板里，Windows/Linux 还支持一组类终端编辑快捷键：
+```text
+C:\software\Sublime Text 4\Data\Packages\ArenaForge
+-> C:\Users\Administrator\Desktop\manage_svn\sub\arena_forge
+```
 
-- 清空全部测试：`Ctrl+L`
-- 清空当前输入行：`Ctrl+U`
-- 浏览输入历史：`Ctrl+Up` / `Ctrl+Down`
-- 跳到行首或行尾：`Ctrl+A` / `Ctrl+E`
-- 按单词移动或删除：`Alt+B`、`Alt+F`、`Ctrl+W`
+## 命令
 
-macOS 目前还额外提供：
+### 运行 / 比赛
 
-- 用调试器运行：`Ctrl+Shift+B`
-- 切换内联 phantom 显示：`Ctrl+Super+Shift+H`
+- `ArenaForge: Run`
+- `ArenaForge: Setup Contest`
+- `ArenaForge: Submit`
+- `ArenaForge: Configure Credentials`
+- `ArenaForge: Doctor`
+- `ArenaForge: Run History`
 
-完整列表见：
+### 格式化
 
-- `Default (Windows).sublime-keymap`
-- `Default (Linux).sublime-keymap`
-- `Default (OSX).sublime-keymap`
+- `ArenaForge: Format`
+- `ArenaForge: Format Document`
+- `ArenaForge: Format Selection`
+- `ArenaForge: Diagnose Formatter`
+- `ArenaForge: Formatter Install Guide`
+- `ArenaForge: Create Format Config For Current File`
+- `ArenaForge: Create Workspace Format Configs`
 
-## 配置
+## 推荐工作流
 
-主设置文件是 `ArenaForge.sublime-settings`。
-仓库里还附带了按平台整理的推荐设置：
+1. 如果你在本地开发，先用 junction 脚本把包连到 Sublime。
+2. 个性化覆盖只写在 `Packages/User/ArenaForge.sublime-settings`。
+3. 打开 `A.cpp`、`main.py` 或 `Main.java` 这类源文件。
+4. 运行 `ArenaForge: Run`，在右侧面板维护测试。
+5. 需要时运行 `ArenaForge: Format`，或者开启 `format_on_save`。
+6. 需要建比赛目录时运行 `ArenaForge: Setup Contest`。
+7. 在比赛初始化面板里选择目标语言。
+8. 调整过编译器或 formatter 路径后，跑一次 `ArenaForge: Doctor`。
 
-- `ArenaForge (Windows).sublime-settings`
-- `ArenaForge (Linux).sublime-settings`
-- `ArenaForge (OSX).sublime-settings`
+具体的 C++ / Python / Java 例子见 [快速上手](docs/QUICKSTART.zh-CN.md)。
 
-最常会改到的设置项有：
+## 用户配置
 
-- `run_settings`：语言配置、文件扩展名、编译命令、运行命令，以及可选的 `lint_compile_cmd`
-- `contests_root`：生成比赛或题目工作区的位置
-- `tests_relative_dir`、`session_relative_dir`、`tests_file_suffix`：测试索引和会话快照的存放位置
-- `preferred_locale`：`en`、`zh-Hans`、`ja`、`ko` 或 `ru`
-- `credential_backend`：当前是 `keyring`
-- `stress_time_limit_seconds`：对拍超时时间
-- `algorithms_base`：本地 C++ 模板或片段的根目录
-- `cpp_complete_enabled` 和 `cpp_complete_settings`：轻量 C++ 补全相关设置
-- `submission_language_ids`：不同 provider 的提交语言 ID 映射
-- `ui_variant` 和 `ui_density`：运行面板的基础显示风格
+主设置文件是仓库自带的 `ArenaForge.sublime-settings`。
+你自己的覆盖配置应该放到：
+
+```text
+Packages/User/ArenaForge.sublime-settings
+```
+
+最佳实践：
+
+- 用户配置只放“个人路径”和“工作流开关”。
+- 风格规则尽量写到项目原生配置文件里，例如 `.clang-format`、`pyproject.toml`、`rustfmt.toml`。
+- `formatting.commands` 用来写本机 formatter 路径或完整命令前缀。
+- 不要把超长 formatter 风格定义直接塞进编辑器设置。
 
 示例：
 
 ```json
 {
   "preferred_locale": "zh-Hans",
-  "contests_root": "~/Contests/ArenaForge",
-  "tests_relative_dir": ".arena-forge/tests",
-  "session_relative_dir": ".arena-forge/sessions",
-  "stress_time_limit_seconds": 2,
-  "credential_backend": "keyring",
-  "algorithms_base": "Algorithms",
-  "run_settings": [
-    {
-      "name": "C++",
-      "extensions": ["cpp", "cc", "cxx"],
-      "compile_cmd": "g++ \"{source_file}\" -std=gnu++17 -O2 -pipe -o \"{file_name}\"",
-      "run_cmd": "./{file_name} {args}",
-      "lint_compile_cmd": "g++ -std=gnu++17 \"{source_file}\" -I \"{source_file_dir}\""
-    },
-    {
-      "name": "Python",
-      "extensions": ["py"],
-      "compile_cmd": null,
-      "run_cmd": "python \"{source_file}\"",
-      "lint_compile_cmd": null
+  "default_contest_language": "cpp",
+  "close_sidebar": false,
+  "formatting": {
+    "format_on_save": true,
+    "commands": {
+      "clang-format": [
+        "C:/Program Files/LLVM/bin/clang-format.exe"
+      ]
     }
-  ]
+  }
 }
 ```
 
-测试数据和会话数据都是普通 JSON 文件，保存在你的源码树附近。
-具体路径由 `tests_relative_dir` 和 `session_relative_dir` 控制。
-仓库里随包附带的不同平台设置文件在目录布局上略有差异，上面的示例更适合当模板看，而不是要求逐字照抄。
+## 关键设置项
+
+- `default_contest_language`：`Setup Contest` 时默认高亮的语言
+- `run_settings`：运行 / 编译 / 模板行为对应的语言档案
+- `formatting.format_on_save`：保存前同步格式化
+- `formatting.commands`：本机 formatter 命令前缀
+- `formatting.extra_args`：formatter 运行参数
+- `submission_language_ids`：不同 provider 的提交语言 ID 映射
+- `stress_time_limit_seconds`：对拍超时时间
+- `tests_relative_dir`、`session_relative_dir`、`tests_file_suffix`：测试与快照存储布局
+
+## 排错
+
+### 没有 C++ 红框或错误标记
+
+ArenaForge 目前只对 C++ 做内联诊断标记。
+
+先检查：
+
+- `lint_enabled` 是否为 `true`
+- 当前文件是不是受支持的 C++ 扩展名，例如 `.cpp`
+- C++ 的 `run_settings` 里是否还保留了有效的 `lint_compile_cmd`
+- Sublime 当前环境里是否能调用 `g++`
+- 改完设置后是否执行了 `Reload Plugins`
+
+必要时运行：
+
+- `ArenaForge: Doctor`
+- `Tools -> Developer -> Reload Plugins`
+
+### 格式化命令没有效果
+
+先检查：
+
+- 当前语法是否被某个 formatter adapter 识别
+- formatter 是否在 `PATH` 中，或者已经写进 `formatting.commands`
+- 当前不是某个不支持选区格式化的语言/模式
+
+可以运行 `ArenaForge: Diagnose Formatter` 查看匹配到的 adapter、命令和配置文件搜索结果。
+
+### 比赛工作区生成成了错误的语言
+
+先检查：
+
+- 你在 `ArenaForge: Setup Contest` 里选了什么语言
+- 用户配置里的 `default_contest_language` 是什么
+
+## 项目结构
+
+- `arena_forge/core`：类型化领域模型、输出比对、会话用例
+- `arena_forge/adapters`：Sublime 集成、provider、存储、runner、i18n、工作区脚手架、凭据存储
+- `arena_forge/formatting`：formatter adapter、可执行文件发现、配置生成和格式化运行时
+- `arena_forge/templates`：内置比赛模板
+- `tests`：覆盖 provider、存储、设置、运行面板行为和格式化的 pytest 测试
+- `docs`：架构、迁移说明和快速上手文档
 
 ## 开发
 
@@ -152,7 +222,7 @@ macOS 目前还额外提供：
 - 依赖管理：`uv`
 - 运行时依赖：`keyring`
 
-本地初始化与校验：
+本地检查：
 
 ```bash
 uv sync --group dev
@@ -161,18 +231,8 @@ uv run pytest -q
 uv run mypy
 ```
 
-CI 与 Release 自动化：
-
-- 工作流文件：`.github/workflows/ci.yml`
-- 触发条件：`push`、`pull_request`、手动 `workflow_dispatch`
-- 质量检查矩阵：`ubuntu-latest`、`windows-latest`
-- 双平台检查：`ruff`、`pytest`
-- Ubuntu 额外检查：`mypy`
-- 发布规则：每次 push 到 `main` 且质量检查通过后，都会自动发布一个标签为 `ci-<short-sha>` 的 GitHub 预发布版本
-- 发布资产：`ArenaForge.sublime-package`，由仓库里被跟踪的包文件构建，并挂到对应的预发布版本上
-
 ## 致谢
 
 这个项目的思路和工作流来自 [FastOlympicCoding](https://github.com/Jatana/FastOlympicCoding) by Jatana。
 
-当前代码库仍然面向竞赛编程场景，但实现已经重组为类型化核心、可移植的 JSON 存储，以及更清晰的 Sublime 适配层。
+当前代码库仍然面向竞赛编程场景，但实现已经重组为类型化核心、可移植 JSON 存储、集成格式化能力，以及更清晰的 Sublime 适配层。

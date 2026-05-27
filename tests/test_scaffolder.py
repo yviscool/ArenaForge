@@ -38,7 +38,35 @@ class ScaffolderTests(unittest.TestCase):
             self.assertTrue((base / "_contest.sublime-settings").exists())
             metadata = json.loads((base / "contest.json").read_text(encoding="utf-8"))
             self.assertEqual(metadata["contest_id"], "123")
+            self.assertEqual(metadata["language_id"], "cpp")
             self.assertEqual(progress_events, [(1, 1, "A")])
+
+    def test_scaffold_uses_language_profile_template(self) -> None:
+        with local_test_workspace("scaffolder-java") as root:
+            layout = WorkspaceLayout()
+            profiles = (
+                LanguageProfile(
+                    name="Java",
+                    extensions=("java",),
+                    compile_cmd=None,
+                    run_cmd=None,
+                    id="java",
+                    template_path="templates/contest/Main.java",
+                ),
+            )
+            repository = JsonSessionRepository(layout, profiles=profiles)
+            scaffolder = ContestWorkspaceScaffolder(layout, repository, profiles)
+            contest = ContestDescriptor(
+                contest_id="123",
+                title="Round / 123",
+                provider="codeforces",
+                problems=(ContestProblem(index="A", title="A", samples=()),),
+            )
+
+            base = scaffolder.scaffold(root, contest, language_id="java")
+
+            java_source = (base / "A.java").read_text(encoding="utf-8")
+            self.assertIn("public class A", java_source)
 
 
 if __name__ == "__main__":

@@ -17,6 +17,8 @@ _DOCTOR_FALLBACKS = {
     "doctor.checks": "Checks",
     "doctor.run_profiles": "Run profiles",
     "doctor.lint_profiles": "Lint profiles",
+    "doctor.formatting": "Formatting",
+    "doctor.formatter_commands": "{count} formatter command overrides",
     "doctor.required_file": "Required file {name}",
     "doctor.resource": "Resource {name}",
     "doctor.configured": "{count} configured",
@@ -64,6 +66,8 @@ def build_doctor_report(
     lint_profiles = [
         profile for profile in run_settings if isinstance(profile, dict) and profile.get("lint_compile_cmd")
     ]
+    formatting = cast(Mapping[str, object], settings.get("formatting") or {})
+    formatter_commands = cast(Mapping[str, object], formatting.get("commands") or {})
     title = _translate(translate_text, "doctor.title")
     checks_title = _translate(translate_text, "doctor.checks")
     availability = _translate(
@@ -93,6 +97,12 @@ def build_doctor_report(
             bool(lint_profiles),
             _translate(translate_text, "doctor.lint_profiles"),
             _translate(translate_text, "doctor.profiles_with_lint_compile", count=len(lint_profiles)),
+            translate_text=translate_text,
+        ),
+        _format_check(
+            bool(formatting),
+            _translate(translate_text, "doctor.formatting"),
+            _translate(translate_text, "doctor.formatter_commands", count=len(formatter_commands)),
             translate_text=translate_text,
         ),
     ]

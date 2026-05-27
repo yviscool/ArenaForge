@@ -36,6 +36,7 @@ def _settings_to_dict(settings_obj):
                 "algorithm_properties_suffix", "contests_root", "close_sidebar",
                 "stress_time_limit_seconds", "lint_enabled", "lint_error_region_scope",
                 "lint_warning_region_scope", "cpp_complete_enabled", "algorithms_base",
+                "default_contest_language", "formatting",
                 "run_settings", "submission_language_ids", "cpp_complete_settings"):
         value = settings_obj.get(key)
         if value is not None:
@@ -73,7 +74,7 @@ def is_run_supported_ext(ext):
 
 def get_supported_exts(lang):
     for option in get_settings().get("run_settings", []):
-        if option["name"] == lang:
+        if lang in {option.get("name"), option.get("id")}:
             return option["extensions"]
     return []
 
@@ -127,6 +128,10 @@ def get_language_profiles():
 
 def infer_language_name(file):
     return infer_language(file, get_language_profiles())
+
+
+def get_default_contest_language() -> str:
+    return str(get_settings().get("default_contest_language") or "cpp")
 
 
 def get_session_repository():

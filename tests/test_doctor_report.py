@@ -14,7 +14,10 @@ class DoctorReportTests(unittest.TestCase):
                 "TestSyntax.sublime-syntax": ["Packages/ArenaForge/TestSyntax.sublime-syntax"],
                 "StressSyntax.sublime-syntax": ["Packages/ArenaForge/StressSyntax.sublime-syntax"],
             },
-            settings={"run_settings": [{"name": "C++", "lint_compile_cmd": "g++"}]},
+            settings={
+                "run_settings": [{"name": "C++", "lint_compile_cmd": "g++"}],
+                "formatting": {"commands": {"ruff": ["ruff"]}},
+            },
             contests_root="C:/Contests/ArenaForge",
             credential_backend="keyring",
             credential_available=True,
@@ -23,6 +26,7 @@ class DoctorReportTests(unittest.TestCase):
         self.assertIn("Credential backend: keyring (available)", report)
         self.assertIn("Resource TestSyntax.sublime-syntax", report)
         self.assertIn("Run profiles", report)
+        self.assertIn("Formatting", report)
 
 
 if __name__ == "__main__":

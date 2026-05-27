@@ -25,8 +25,13 @@ class SettingsBackedRunner:
         return cls(profiles=profiles, platform_name=platform_name, timeout_seconds=timeout_seconds)
 
     def profile_for_language(self, language: str) -> LanguageProfile:
+        normalized = str(language).strip().lower()
         for profile in self.profiles:
-            if profile.name == language:
+            if normalized in {
+                profile.identifier.lower(),
+                profile.name.strip().lower(),
+                str(profile.submission_key or "").strip().lower(),
+            }:
                 return profile
         raise ValueError(f"Unsupported language profile: {language}")
 

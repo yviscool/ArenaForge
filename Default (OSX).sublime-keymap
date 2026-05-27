@@ -1,4 +1,12 @@
 [	
+	{
+		"keys": ["super+alt+f"],
+		"command": "arena_forge_format"
+	},
+	{
+		"keys": ["super+alt+shift+f"],
+		"command": "arena_forge_format_document"
+	},
 	{ 
 		"keys": ["tab"], 
 		"command": "olympic_funcs",

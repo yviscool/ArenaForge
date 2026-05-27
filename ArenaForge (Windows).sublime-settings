@@ -2,10 +2,6 @@
 	// Portable defaults are provided at runtime. This file documents the
 	// recommended Windows profile and is opened side-by-side with your user file.
 
-	"tests_relative_dir": "tests",
-	"session_relative_dir": ".arena-forge/sessions",
-	"tests_file_suffix": ".tests.json",
-	"contests_root": "~/Contests/ArenaForge",
 	"preferred_locale": "zh-Hans",
 	"ui_variant": "terminal",
 	"ui_density": "compact",
@@ -16,22 +12,25 @@
 	"stress_time_limit_seconds": 2,
 	"cpp_complete_enabled": true,
 	"close_sidebar": false,
-	"run_settings": [
-		{
-			"name": "C++",
-			"extensions": ["cpp", "cc", "cxx"],
-			"compile_cmd": "g++ \"{source_file}\" -std=c++14 -Wall -Winvalid-pch -finput-charset=UTF-8 -fexec-charset=UTF-8 -O2 -o \"{source_file_dir}\\{file_name}.exe\"",
-			"run_cmd": "\"{source_file_dir}\\{file_name}.exe\" {args}",
-			"lint_compile_cmd": "g++ -std=c++14 -finput-charset=UTF-8 -fexec-charset=UTF-8 -fsyntax-only \"{source_file}\""
+
+	"tests_relative_dir": ".arena-forge/tests",
+	"session_relative_dir": ".arena-forge/sessions",
+	"tests_file_suffix": ".tests.json",
+	"contests_root": "~/Contests/ArenaForge",
+	"default_contest_language": "cpp",
+
+	"formatting": {
+		"format_on_save": false,
+		"timeout_ms": 10000,
+		"show_output_panel_on_error": true,
+		"commands": {
+			// "google-java-format": ["java", "-jar", "tools/google-java-format.jar"],
+			// "ktfmt": ["java", "-jar", "tools/ktfmt.jar"]
 		},
-		{
-			"name": "Python",
-			"extensions": ["py"],
-			"compile_cmd": null,
-			"run_cmd": "python \"{source_file}\"",
-			"lint_compile_cmd": null
-		}
-	],
+		"extra_args": {},
+		"selector_overrides": {}
+	},
+
 	"submission_language_ids": {
 		"codeforces": {
 			"cpp": 54,

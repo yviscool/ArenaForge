@@ -2,21 +2,29 @@
 	// Portable defaults are provided at runtime. This file documents the
 	// recommended Linux profile and is opened side-by-side with your user file.
 
+	"preferred_locale": "en",
+	"ui_variant": "terminal",
+	"ui_density": "compact",
+	"credential_backend": "keyring",
+	"lint_enabled": true,
+	"lint_error_region_scope": "invalid.illegal",
+	"lint_warning_region_scope": "constant",
+	"stress_time_limit_seconds": 2,
+	"cpp_complete_enabled": true,
+	"close_sidebar": false,
+
 	"tests_relative_dir": ".arena-forge/tests",
 	"session_relative_dir": ".arena-forge/sessions",
 	"tests_file_suffix": ".tests.json",
 	"contests_root": "~/Contests/ArenaForge",
-	"preferred_locale": "en",
-	"ui_variant": "refined",
-	"ui_density": "comfortable",
-	"credential_backend": "keyring",
-	"run_settings": [
-		{
-			"name": "C++",
-			"extensions": ["cpp"],
-			"compile_cmd": "g++ \"{source_file}\" -std=gnu++17 -O2 -pipe -o \"{file_name}\"",
-			"run_cmd": "./{file_name} {args}",
-			"lint_compile_cmd": "g++ -std=gnu++17 \"{source_file}\" -I \"{source_file_dir}\""
-		}
-	]
+	"default_contest_language": "cpp",
+
+	"formatting": {
+		"format_on_save": false,
+		"timeout_ms": 10000,
+		"show_output_panel_on_error": true,
+		"commands": {},
+		"extra_args": {},
+		"selector_overrides": {}
+	}
 }

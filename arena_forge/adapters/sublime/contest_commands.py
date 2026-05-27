@@ -14,7 +14,7 @@ from arena_forge.adapters.providers.submission_service import (
 )
 
 from .messages import product_log_message, product_status_message, translate
-from .settings_bridge import get_application, get_contests_root
+from .settings_bridge import get_application, get_contests_root, get_default_contest_language
 
 
 class ContestHandlerCommand(sublime_plugin.TextCommand):
@@ -38,7 +38,32 @@ class ContestHandlerCommand(sublime_plugin.TextCommand):
         sublime.run_command("new_window")
         sublime.active_window().set_project_data({"folders": [{"path": str(base)}]})
 
-    def try_init_contest(self, url):
+    def _pick_contest_language(self, url: str) -> None:
+        app = get_application()
+        profiles = app.profiles
+        default_language = get_default_contest_language()
+        selected_index = 0
+        for index, profile in enumerate(profiles):
+            if profile.identifier == default_language:
+                selected_index = index
+                break
+
+        entries = [
+            [f"{profile.name} (.{profile.primary_extension})", f"Formatter: {profile.formatter or 'none'}"]
+            for profile in profiles
+        ]
+
+        def on_done(index: int) -> None:
+            if index < 0:
+                return
+            profile = profiles[index]
+            sublime.set_timeout_async(
+                lambda: self.try_init_contest(url, language_id=profile.identifier)
+            )
+
+        self.view.window().show_quick_panel(entries, on_done, 0, selected_index)
+
+    def try_init_contest(self, url, *, language_id: str):
         app = get_application()
         resolved = app.provider_registry.resolve_url(url)
         self._schedule_status_message(
@@ -65,6 +90,7 @@ class ContestHandlerCommand(sublime_plugin.TextCommand):
         base = app.workspace_scaffolder.scaffold(
             get_contests_root(),
             descriptor,
+            language_id=language_id,
             progress=lambda completed, total, problem: self._schedule_status_message(
                 "status.contest_scaffolding",
                 completed=completed,
@@ -144,7 +170,7 @@ class ContestHandlerCommand(sublime_plugin.TextCommand):
     def run(self, edit, action=None):
         if action == "setup_contest":
             def on_done(url, self=self):
-                sublime.set_timeout_async(lambda self=self, url=url: self.try_init_contest(url))
+                sublime.set_timeout(lambda self=self, url=url: self._pick_contest_language(url))
 
             self.view.window().show_input_panel(
                 translate("prompt.contest_url"),

@@ -1,8 +1,8 @@
 {
 	// User overrides live here.
-	// Portable defaults are injected in code based on your platform.
-	// Credentials are no longer stored here. Use secure credential storage.
+	// Portable multi-language defaults are injected in code based on your platform.
 	// Available locales: en, zh-Hans, ja, ko, ru
+
 	"preferred_locale": "zh-Hans",
 	"ui_variant": "terminal",
 	"ui_density": "compact",
@@ -12,29 +12,32 @@
 	"lint_error_region_scope": "invalid.illegal",
 	"lint_warning_region_scope": "constant",
 
-	"run_settings": [
-		{
-			"name": "C++",
-			"extensions": ["cpp", "cc", "cxx"],
-			"compile_cmd": "g++ \"{source_file}\" -std=c++14 -Wall -Winvalid-pch -finput-charset=UTF-8 -fexec-charset=UTF-8 -O2 -o \"{source_file_dir}\\{file_name}.exe\"",
-			"run_cmd": "\"{source_file_dir}\\{file_name}.exe\" {args}",
-			"lint_compile_cmd": "g++ -std=c++14 -finput-charset=UTF-8 -fexec-charset=UTF-8 -fsyntax-only \"{source_file}\""
-		},
-		{
-			"name": "Python",
-			"extensions": ["py"],
-			"compile_cmd": null,
-			"run_cmd": "python \"{source_file}\"",
-			"lint_compile_cmd": null
-		}
-	],
-
 	"stress_time_limit_seconds": 2,
 	"cpp_complete_enabled": true,
 	"close_sidebar": false,
-	"tests_relative_dir": "tests",
+
+	"tests_relative_dir": ".arena-forge/tests",
 	"session_relative_dir": ".arena-forge/sessions",
 	"tests_file_suffix": ".tests.json",
+	"default_contest_language": "cpp",
+
+	"formatting": {
+		"format_on_save": false,
+		"timeout_ms": 10000,
+		"show_output_panel_on_error": true,
+		"commands": {
+			// "google-java-format": ["java", "-jar", "tools/google-java-format.jar"],
+			// "ktfmt": ["java", "-jar", "tools/ktfmt.jar"]
+		},
+		"extra_args": {
+			// "*": ["--quiet"],
+			// "ruff": ["--line-length", "100"],
+			// "google-java-format": ["--aosp"]
+		},
+		"selector_overrides": {
+			// "oxfmt": ["text.html.handlebars"]
+		}
+	},
 
 	"submission_language_ids": {
 		"codeforces": {

@@ -4,27 +4,56 @@
 
 [![CI](https://github.com/yviscool/ArenaForge/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/yviscool/ArenaForge/actions/workflows/ci.yml)
 
-ArenaForge is a competitive-programming toolkit for Sublime Text.
-It is built for the day-to-day loop of solving problems: open a file, run it quickly, keep sample tests in order, and create a clean workspace from a problem or contest URL.
+ArenaForge is an all-in-one Sublime Text workbench for competitive programming.
+It combines fast local runs, sample management, contest workspace generation, formatter integration, C++ diagnostics, stress testing, and Codeforces submission inside one package.
 
-The package keeps that workflow inside the editor.
-Run history, stress testing, diagnostics, template insertion, contest setup, and Codeforces submission are all part of the same working surface.
+## Quick Links
+
+- [Quickstart](docs/QUICKSTART.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Sublime shell migration notes](docs/SUBLIME_SHELL_MIGRATION.md)
 
 ## What It Does
 
 - Run the current file in a dedicated test panel.
-- Store sample tests and richer session snapshots as JSON files near your source tree.
-- Compare output with expected answers and show the first mismatch position.
-- Keep interactive input history and basic terminal-style editing inside the run panel.
-- Open a dedicated test editor and a separate run-history view for the current source file.
-- Bootstrap contest or problem workspaces from Codeforces, AtCoder, Luogu, and AcWing URLs.
-- Submit Codeforces solutions from inside Sublime Text, with credentials stored through `keyring`.
+- Store tests and session snapshots as JSON files near your source tree.
+- Compare output against expected answers and show the first mismatch.
+- Keep input history and terminal-style editing inside the run panel.
+- Bootstrap contest or problem workspaces from supported OJ URLs.
+- Ask for the target language before creating contest source files.
+- Format supported languages from inside ArenaForge.
+- Show C++ diagnostic markers from `lint_compile_cmd`.
 - Run stress tests with `<task>__Good` and `<task>__Generator`.
-- Insert local algorithm templates and provide lightweight C++ completion helpers.
-- Run C++ diagnostics from `lint_compile_cmd`.
-- Show a simple `Doctor` report for package files, resources, run profiles, and credential backend availability.
+- Submit Codeforces solutions with credentials stored through `keyring`.
+- Generate formatter config files for the current file or whole workspace.
 
-## Current Provider Support
+## Language Support
+
+### Run / Contest Templates
+
+| Language | Run | Contest template | Formatter |
+| --- | --- | --- | --- |
+| C | Yes | Yes | `clang-format` |
+| C++ | Yes | Yes | `clang-format` |
+| Python | Yes | Yes | `ruff format` |
+| Java | Yes | Yes | `google-java-format` |
+| Kotlin | Yes | Yes | `ktfmt` |
+| Go | Yes | Yes | `gofmt` |
+| Rust | Yes | Yes | `rustfmt` |
+| JavaScript | Yes | Yes | `oxfmt` |
+
+### Format-Only Through `oxfmt`
+
+ArenaForge also routes formatting for common web and text formats through `oxfmt`, including:
+
+- TypeScript / TSX
+- JSON / YAML / TOML
+- HTML / Vue / Svelte
+- CSS / SCSS / Less
+- Markdown / MDX
+- GraphQL
+
+## Provider Support
 
 | Provider | Workspace bootstrap | Submission |
 | --- | --- | --- |
@@ -36,115 +65,156 @@ Run history, stress testing, diagnostics, template insertion, contest setup, and
 Codeforces submission needs `requests` and a working `keyring` backend.
 The repository declares `requests` in `dependencies.json`.
 
+## Installation
+
+### Normal Install
+
+1. Put this folder under Sublime Text `Packages/`.
+2. Keep the outer package directory name as `ArenaForge`.
+3. Restart Sublime Text, or run `Tools -> Developer -> Reload Plugins`.
+4. Open the command palette and run `ArenaForge: Open Settings`.
+
+You still need the local toolchains and formatter binaries you want to use, such as `g++`, `python`, `javac`, `ruff`, or `rustfmt`.
+
+### Development Link on Windows
+
+For local development, prefer a junction over manual copies into `Packages/`.
+That keeps Sublime pointed at your working tree and avoids stale package copies.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\link_sublime_package.ps1
+```
+
+With your current layout, that creates:
+
+```text
+C:\software\Sublime Text 4\Data\Packages\ArenaForge
+-> C:\Users\Administrator\Desktop\manage_svn\sub\arena_forge
+```
+
+## Commands
+
+### Run / Contest
+
+- `ArenaForge: Run`
+- `ArenaForge: Setup Contest`
+- `ArenaForge: Submit`
+- `ArenaForge: Configure Credentials`
+- `ArenaForge: Doctor`
+- `ArenaForge: Run History`
+
+### Formatting
+
+- `ArenaForge: Format`
+- `ArenaForge: Format Document`
+- `ArenaForge: Format Selection`
+- `ArenaForge: Diagnose Formatter`
+- `ArenaForge: Formatter Install Guide`
+- `ArenaForge: Create Format Config For Current File`
+- `ArenaForge: Create Workspace Format Configs`
+
+## Recommended Workflow
+
+1. Link the package into Sublime with the junction script if you are developing locally.
+2. Put personal overrides in `Packages/User/ArenaForge.sublime-settings`.
+3. Open a source file such as `A.cpp`, `main.py`, or `Main.java`.
+4. Run `ArenaForge: Run` and edit tests in the run panel.
+5. Run `ArenaForge: Format` when needed, or enable `format_on_save`.
+6. Run `ArenaForge: Setup Contest` when you want a clean workspace from a URL.
+7. Pick the target language in the contest setup prompt.
+8. Run `ArenaForge: Doctor` after changing compiler or formatter paths.
+
+See [Quickstart](docs/QUICKSTART.md) for concrete C++ / Python / Java examples.
+
+## User Settings
+
+The main shipped settings file is `ArenaForge.sublime-settings`.
+Your personal overrides should live in:
+
+```text
+Packages/User/ArenaForge.sublime-settings
+```
+
+Best practice:
+
+- Keep user settings focused on personal paths and workflow switches.
+- Keep formatting style policy in project-native config files such as `.clang-format`, `pyproject.toml`, and `rustfmt.toml`.
+- Use `formatting.commands` for machine-local executable paths or command prefixes.
+- Avoid embedding long formatter style blobs in editor settings.
+
+Example user settings:
+
+```json
+{
+  "preferred_locale": "zh-Hans",
+  "default_contest_language": "cpp",
+  "close_sidebar": false,
+  "formatting": {
+    "format_on_save": true,
+    "commands": {
+      "clang-format": [
+        "C:/Program Files/LLVM/bin/clang-format.exe"
+      ]
+    }
+  }
+}
+```
+
+## Key Settings
+
+- `default_contest_language`: default language highlighted in `Setup Contest`
+- `run_settings`: language profiles for run / compile / template behavior
+- `formatting.format_on_save`: synchronous format before save
+- `formatting.commands`: machine-local formatter command prefixes
+- `formatting.extra_args`: extra runtime flags for formatters
+- `submission_language_ids`: provider-specific submission language mapping
+- `stress_time_limit_seconds`: timeout used by stress testing
+- `tests_relative_dir`, `session_relative_dir`, `tests_file_suffix`: test and snapshot storage layout
+
+## Troubleshooting
+
+### No C++ diagnostic boxes or error markers
+
+ArenaForge currently shows inline diagnostic marks only for C++.
+
+Check:
+
+- `lint_enabled` is `true`
+- your active file is a supported C++ extension such as `.cpp`
+- the C++ profile in `run_settings` still has a valid `lint_compile_cmd`
+- `g++` is callable in the same environment Sublime uses
+- you reloaded plugins after changing settings
+
+If needed, run:
+
+- `ArenaForge: Doctor`
+- `Tools -> Developer -> Reload Plugins`
+
+### Format command does nothing
+
+Check:
+
+- the current syntax is supported by one of the formatter adapters
+- the formatter binary exists on `PATH`, or is configured in `formatting.commands`
+- the file is not in an unsupported selection-format mode
+
+Use `ArenaForge: Diagnose Formatter` to inspect the matched adapter, command, and config file lookup.
+
+### Contest workspace uses the wrong language
+
+Check:
+
+- the language you selected in `ArenaForge: Setup Contest`
+- `default_contest_language` in your user settings
+
 ## Project Layout
 
 - `arena_forge/core`: typed domain models, output checking, and session use cases
 - `arena_forge/adapters`: Sublime integration, providers, storage, runners, i18n, workspace scaffolding, and credential storage
-- `tests`: pytest coverage for providers, storage, settings, run-panel behavior, and command surfaces
-- `docs`: architecture, migration, and i18n notes
-- repo root: Sublime package resources such as keymaps, syntax files, HTML render assets, icons, debuggers, and thin wrapper commands
-
-## Installation
-
-1. Put this folder under your Sublime Text `Packages/` directory.
-2. If you install it manually, rename the outer package folder to `ArenaForge`.
-3. Restart Sublime Text.
-4. Open the command palette and run `ArenaForge: Open Settings`.
-
-You still need local toolchains for the languages you want to run, such as `g++`, `python`, or `javac`.
-
-## Basic Workflow
-
-1. Open a source file such as `A.cpp` or `main.py`.
-2. Run `ArenaForge: Run`.
-3. Add or edit tests in the run panel.
-4. Use `ArenaForge: Setup Contest` when you want to create a contest or problem workspace from a URL.
-5. Use `ArenaForge: Configure Credentials` once before your first Codeforces submission.
-6. Use `ArenaForge: Submit` from a file inside a contest workspace.
-
-Common shortcuts:
-
-- Run current file: `Ctrl+Alt+B` on Windows/Linux, `Ctrl+B` on macOS
-- Add a new test: `Ctrl+Enter`
-- Stop the current process: `Ctrl+C` on all platforms, `Ctrl+X` on Windows/Linux
-- Delete the selected test block: `Ctrl+D`
-- Reorder tests: `Ctrl+Shift+Up` / `Ctrl+Shift+Down` on Windows/Linux, `Ctrl+Super+Up` / `Ctrl+Super+Down` on macOS
-- Toggle the right-side tester panel: `Ctrl+K`, `Ctrl+P` on Windows/Linux, `Super+K`, `Super+P` on macOS
-
-In the run panel, Windows/Linux also support a few terminal-style editing keys:
-
-- Clear all tests: `Ctrl+L`
-- Clear the current input line: `Ctrl+U`
-- Browse input history: `Ctrl+Up` / `Ctrl+Down`
-- Jump to the start or end of the line: `Ctrl+A` / `Ctrl+E`
-- Move or delete by word: `Alt+B`, `Alt+F`, `Ctrl+W`
-
-macOS currently also exposes:
-
-- Run with the debugger: `Ctrl+Shift+B`
-- Toggle inline phantoms: `Ctrl+Super+Shift+H`
-
-For the full list, see:
-
-- `Default (Windows).sublime-keymap`
-- `Default (Linux).sublime-keymap`
-- `Default (OSX).sublime-keymap`
-
-## Configuration
-
-The main settings file is `ArenaForge.sublime-settings`.
-The repository also includes recommended per-platform defaults in:
-
-- `ArenaForge (Windows).sublime-settings`
-- `ArenaForge (Linux).sublime-settings`
-- `ArenaForge (OSX).sublime-settings`
-
-The settings you will most likely touch are:
-
-- `run_settings`: language profiles, file extensions, compile commands, run commands, and optional `lint_compile_cmd`
-- `contests_root`: where generated contest or problem workspaces are created
-- `tests_relative_dir`, `session_relative_dir`, `tests_file_suffix`: where test indexes and session snapshots are stored
-- `preferred_locale`: `en`, `zh-Hans`, `ja`, `ko`, or `ru`
-- `credential_backend`: currently `keyring`
-- `stress_time_limit_seconds`: timeout used by stress tests
-- `algorithms_base`: base directory for local C++ templates or snippets
-- `cpp_complete_enabled` and `cpp_complete_settings`: lightweight C++ completion behavior
-- `submission_language_ids`: per-provider language id mapping for submission
-- `ui_variant` and `ui_density`: basic run-panel presentation
-
-Example:
-
-```json
-{
-  "preferred_locale": "en",
-  "contests_root": "~/Contests/ArenaForge",
-  "tests_relative_dir": ".arena-forge/tests",
-  "session_relative_dir": ".arena-forge/sessions",
-  "stress_time_limit_seconds": 2,
-  "credential_backend": "keyring",
-  "algorithms_base": "Algorithms",
-  "run_settings": [
-    {
-      "name": "C++",
-      "extensions": ["cpp", "cc", "cxx"],
-      "compile_cmd": "g++ \"{source_file}\" -std=gnu++17 -O2 -pipe -o \"{file_name}\"",
-      "run_cmd": "./{file_name} {args}",
-      "lint_compile_cmd": "g++ -std=gnu++17 \"{source_file}\" -I \"{source_file_dir}\""
-    },
-    {
-      "name": "Python",
-      "extensions": ["py"],
-      "compile_cmd": null,
-      "run_cmd": "python \"{source_file}\"",
-      "lint_compile_cmd": null
-    }
-  ]
-}
-```
-
-Tests and session data are stored as normal JSON files next to your working source tree.
-The exact locations depend on your `tests_relative_dir` and `session_relative_dir` settings.
-The shipped settings files use slightly different layouts by platform, so treat the example above as a template, not a required literal copy.
+- `arena_forge/formatting`: formatter adapters, discovery, config generation, and formatting runtime
+- `arena_forge/templates`: built-in contest templates
+- `tests`: pytest coverage for providers, storage, settings, run-panel behavior, and formatting
+- `docs`: architecture, migration notes, and quickstart docs
 
 ## Development
 
@@ -152,7 +222,7 @@ The shipped settings files use slightly different layouts by platform, so treat 
 - Dependency manager: `uv`
 - Runtime dependency: `keyring`
 
-Local setup and verification:
+Local checks:
 
 ```bash
 uv sync --group dev
@@ -161,18 +231,8 @@ uv run pytest -q
 uv run mypy
 ```
 
-CI and release automation:
-
-- Workflow file: `.github/workflows/ci.yml`
-- Triggers: `push`, `pull_request`, and manual `workflow_dispatch`
-- Quality matrix: `ubuntu-latest` and `windows-latest`
-- Checks on both platforms: `ruff`, `pytest`
-- Extra check on Ubuntu: `mypy`
-- Release rule: every push to `main` that passes the quality matrix publishes a GitHub prerelease tagged `ci-<short-sha>`
-- Release asset: `ArenaForge.sublime-package`, built from the tracked package files and attached to that prerelease
-
 ## Thanks
 
 This project builds on ideas and workflow from [FastOlympicCoding](https://github.com/Jatana/FastOlympicCoding) by Jatana.
 
-The current codebase keeps the same competitive-programming focus, but reorganizes the implementation around a typed core, portable JSON storage, and cleaner Sublime adapters.
+The current codebase keeps the competitive-programming focus, but reorganizes the implementation around a typed core, portable JSON storage, integrated formatting, and cleaner Sublime adapters.

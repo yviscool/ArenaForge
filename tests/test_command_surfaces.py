@@ -28,11 +28,15 @@ class CommandSurfaceTests(unittest.TestCase):
         self.assertIn("ArenaForge: Run History / \u8fd0\u884c\u5386\u53f2", captions)
         self.assertIn("ArenaForge: Open History Source / \u6253\u5f00\u5386\u53f2\u6e90\u6587\u4ef6", captions)
         self.assertIn("ArenaForge: Clear All Tests / \u6e05\u7a7a\u5168\u90e8\u6d4b\u8bd5", captions)
+        self.assertIn("ArenaForge: Format", captions)
+        self.assertIn("ArenaForge: Diagnose Formatter", captions)
         self.assertIn("arena_forge_open_settings", commands)
         self.assertIn("arena_forge_doctor", commands)
         self.assertIn("arena_forge_run_history", commands)
         self.assertIn("arena_forge_open_history_source", commands)
         self.assertIn("arena_forge_clear_all_tests", commands)
+        self.assertIn("arena_forge_format", commands)
+        self.assertIn("arena_forge_format_diagnose", commands)
 
     def test_main_menu_groups_package_settings_under_arenaforge(self) -> None:
         payload = json.loads(Path("Main.sublime-menu").read_text(encoding="utf-8"))

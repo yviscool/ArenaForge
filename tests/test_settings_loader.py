@@ -22,6 +22,28 @@ class SettingsLoaderTests(unittest.TestCase):
         self.assertEqual(normalized["ui_variant"], "terminal")
         self.assertEqual(normalized["ui_density"], "compact")
 
+    def test_defaults_fill_default_contest_language_and_formatting(self) -> None:
+        normalized = normalize_settings({}, "linux")
+        self.assertEqual(normalized["default_contest_language"], "cpp")
+        self.assertIn("formatting", normalized)
+        self.assertEqual(normalized["formatting"]["timeout_ms"], 10000)
+
+    def test_formatting_maps_normalize_to_lists(self) -> None:
+        normalized = normalize_settings(
+            {
+                "formatting": {
+                    "commands": {"google-java-format": ["java", "-jar", "tools/google-java-format.jar"]},
+                    "extra_args": {"ruff": "--line-length"},
+                }
+            },
+            "linux",
+        )
+        self.assertEqual(
+            normalized["formatting"]["commands"]["google-java-format"],
+            ["java", "-jar", "tools/google-java-format.jar"],
+        )
+        self.assertEqual(normalized["formatting"]["extra_args"]["ruff"], ["--line-length"])
+
 
 if __name__ == "__main__":
     unittest.main()
