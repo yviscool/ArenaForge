@@ -211,7 +211,9 @@ def _build_request(view: sublime.View, mode: str) -> BuildRequestResult:
         executable_source=executable_info.source,
     )
     extra_args = runtime.extra_args.get("*", ()) + runtime.extra_args.get(adapter.id, ())
-    return replace(request, command=tuple(adapter.build_command(request, extra_args))), executable_info, None
+    command = tuple(adapter.build_command(request, extra_args))
+    executable = command[0] if command else request.executable
+    return replace(request, executable=executable, command=command), executable_info, None
 
 
 def _render_diagnostic(

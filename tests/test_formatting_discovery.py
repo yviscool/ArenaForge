@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from arena_forge.formatting.adapters.java import GoogleJavaFormatAdapter
 from arena_forge.formatting.core.discovery import (
     discover_executable,
     find_named_file_upwards,
@@ -43,6 +44,23 @@ def test_discover_executable_prefers_project_local_binary(tmp_path: Path) -> Non
     )
 
     assert result.executable == str(executable)
+    assert result.source == "project-local"
+
+
+def test_discover_executable_finds_project_local_google_java_format_jar(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    jar_path = project / "tools" / "google-java-format.jar"
+    jar_path.parent.mkdir(parents=True)
+    jar_path.write_text("placeholder", encoding="utf-8")
+
+    result = discover_executable(
+        binary_names=GoogleJavaFormatAdapter.binary_names,
+        project_relpaths=GoogleJavaFormatAdapter().project_binary_relpaths(),
+        override=None,
+        start_dir=str(project),
+    )
+
+    assert result.executable == str(jar_path)
     assert result.source == "project-local"
 
 

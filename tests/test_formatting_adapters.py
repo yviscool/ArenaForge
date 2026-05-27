@@ -108,6 +108,33 @@ def test_java_command_uses_configured_command_prefix() -> None:
     ]
 
 
+def test_java_command_uses_project_local_jar() -> None:
+    request = _request(
+        "google-java-format",
+        "java",
+        "document",
+        (),
+        ("tools/google-java-format.jar",),
+    )
+
+    command = GoogleJavaFormatAdapter().build_command(request, ())
+    assert command == [
+        "java",
+        "-jar",
+        "tools/google-java-format.jar",
+        "-",
+    ]
+
+
+def test_java_install_help_mentions_auto_detected_jar_path() -> None:
+    help_text = GoogleJavaFormatAdapter().build_install_help("Windows")
+
+    assert "Project-local auto-detect path:" in help_text
+    assert "tools/google-java-format.jar" in help_text
+    assert '"google-java-format": ["java", "-jar", "tools/google-java-format.jar"]' in help_text
+    assert "https://github.com/google/google-java-format" in help_text
+
+
 def test_kotlin_command_uses_configured_command_prefix() -> None:
     request = _request("ktfmt", "java", "document", (), ("java", "-jar", "ktfmt.jar"))
 
@@ -118,6 +145,27 @@ def test_kotlin_command_uses_configured_command_prefix() -> None:
         "ktfmt.jar",
         "-",
     ]
+
+
+def test_kotlin_command_uses_project_local_jar() -> None:
+    request = _request("ktfmt", "java", "document", (), ("tools/ktfmt.jar",))
+
+    command = KtfmtAdapter().build_command(request, ())
+    assert command == [
+        "java",
+        "-jar",
+        "tools/ktfmt.jar",
+        "-",
+    ]
+
+
+def test_kotlin_install_help_mentions_auto_detected_jar_path() -> None:
+    help_text = KtfmtAdapter().build_install_help("Darwin")
+
+    assert "Project-local auto-detect path:" in help_text
+    assert "tools/ktfmt.jar" in help_text
+    assert '"ktfmt": ["java", "-jar", "tools/ktfmt.jar"]' in help_text
+    assert "https://github.com/facebook/ktfmt" in help_text
 
 
 def test_oxfmt_command_uses_stdin_filepath() -> None:
