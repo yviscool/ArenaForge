@@ -78,7 +78,7 @@ class RunPanelTester(object):
         try:
             output = proc.read()
             self.__on_out(output)
-        except Exception:
+        except (OSError, ValueError):
             pass
         runtime = int((time() - start_time) * 1000)
         self.__on_stop(proc.is_stopped(), runtime)
@@ -129,14 +129,18 @@ class RunPanelTester(object):
         self.running_new = False
         self._ensure_output_slot(id)
         self.prog_out[id] = ""
-        compile_result = self.process_manager.compile()
-        if compile_result is not None and compile_result[0] != 0:
-            self.prog_out[id] = compile_result[1]
-            self.on_compile_error(id, compile_result[0], compile_result[1])
-            return
-        self.insert_test(id)
-        if type(self.process_manager).__name__ == "ProcessManager":
-            self.schedule_async(self.__process_listener)
+
+        def compile_and_run():
+            compile_result = self.process_manager.compile()
+            if compile_result is not None and compile_result[0] != 0:
+                self.prog_out[id] = compile_result[1]
+                self.on_compile_error(id, compile_result[0], compile_result[1])
+                return
+            self.insert_test(id)
+            if type(self.process_manager).__name__ == "ProcessManager":
+                self.schedule_async(self.__process_listener)
+
+        self.schedule_async(compile_and_run, 0)
 
     def have_pretests(self):
         return self.test_iter < len(self.tests)

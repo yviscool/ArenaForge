@@ -1,6 +1,8 @@
-import sublime, sublime_plugin
+import sublime
+import sublime_plugin
 
 from .settings import is_lang_view
+
 
 class NumberSplit():
 	def prefix_int(s):

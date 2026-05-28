@@ -56,6 +56,17 @@ class JsonRepositoryTests(unittest.TestCase):
             loaded = repository.load(str(source))
             self.assertEqual(loaded, session)
 
+    def test_load_returns_none_for_invalid_snapshot_payload(self) -> None:
+        with local_test_workspace("json-repo-invalid") as root:
+            source = root / "A.cpp"
+            source.write_text("//", encoding="utf-8")
+            repository = JsonSessionRepository(WorkspaceLayout())
+            snapshot_path = repository.layout.snapshot_path_for(str(source))
+            snapshot_path.parent.mkdir(parents=True, exist_ok=True)
+            snapshot_path.write_text("{bad json", encoding="utf-8")
+
+            self.assertIsNone(repository.load(str(source)))
+
 
 if __name__ == "__main__":
     unittest.main()

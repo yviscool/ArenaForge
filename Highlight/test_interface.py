@@ -1,4 +1,3 @@
-import sublime
 from os import path
 
 base = path.dirname(__file__)

@@ -1,19 +1,19 @@
 #!/usr/bin/python
 import ast
+import importlib
+import shlex
+import subprocess
 import sys
-import os
+import threading
 from os import path
+from time import time
 
 base_dir = path.dirname(path.abspath(__file__))
 framework = path.join(base_dir, 'LLDB.framework/Resources/Python')
 
 sys.path.append(framework)
 
-import lldb
-from time import time
-import subprocess
-import threading
-import shlex
+lldb = importlib.import_module("lldb")
 
 
 def encode(s):
@@ -62,7 +62,7 @@ class Debugger(object):
 		PIPE = subprocess.PIPE
 		p = subprocess.Popen(shlex.split(self.COMPILE_CMD.format(name=self.file), posix=True), \
 			shell=False, stdin=PIPE, stdout=PIPE, stderr=subprocess.STDOUT, \
-				cwd=os.path.split(self.file)[0])
+				cwd=path.split(self.file)[0])
 		self.change_state('COMPILING')
 		p.wait()
 		return (p.returncode, p.stdout.read().decode())
@@ -91,12 +91,14 @@ class Debugger(object):
 			broadcaster = process.GetBroadcaster()
 			event = lldb.SBEvent()
 			listener = lldb.SBListener('ExitListener')
-			rc = broadcaster.AddListener(listener, lldb.SBProcess.eBroadcastBitStateChanged)
+			broadcaster.AddListener(listener, lldb.SBProcess.eBroadcastBitStateChanged)
 			while True:
-				if listener.WaitForEventForBroadcasterWithType(lldb.eStateExited,
-															   broadcaster,
-															   lldb.SBProcess.eBroadcastBitStateChanged,
-															   event):
+				if listener.WaitForEventForBroadcasterWithType(
+					lldb.eStateExited,
+					broadcaster,
+					lldb.SBProcess.eBroadcastBitStateChanged,
+					event,
+				):
 					# print _.sbdbg.StateAsCString(process.GetState())
 					if process.GetState() == lldb.eStateExited:
 						_.state = 'EXITED'
@@ -237,11 +239,11 @@ def _console_connecter(debugger):
 	def test(frame_id):
 		thread = debugger.process.GetThreadAtIndex(0)
 		frame = thread.GetFrameAtIndex(frame_id)
-		print frame
-		print frame.arguments
-		print frame.get_all_variables()
-		print "find results"
-		print frame.FindVariable('v')
+		print(frame)
+		print(frame.arguments)
+		print(frame.get_all_variables())
+		print("find results")
+		print(frame.FindVariable('v'))
 
 
 	while True:

@@ -8,7 +8,7 @@ import unittest
 from contextlib import contextmanager
 from unittest.mock import patch
 
-from arena_forge.core.domain import RunHistoryEntry, SessionSnapshot, Verdict
+from arena_forge.core.domain import RunHistoryEntry, SessionSnapshot, TestCase, Verdict
 
 
 class _FakeRepository:
@@ -175,6 +175,34 @@ class RunPanelStateTests(unittest.TestCase):
                 )
 
                 self.assertEqual(repository.save_calls[-1].run_history, (history_entry,))
+
+    def test_load_panel_tests_logs_invalid_payload_and_falls_back_to_snapshot(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            with _patched_sublime():
+                module = importlib.import_module("arena_forge.adapters.sublime.run_panel_state")
+                tests_path = os.path.join(tempdir, "tests.json")
+                with open(tests_path, "w", encoding="utf-8") as handle:
+                    handle.write("{bad json")
+
+                repository = _FakeRepository(
+                    SessionSnapshot(
+                        source_file="main.cpp",
+                        language="cpp",
+                        tests=(TestCase(name="T1", input_text="42"),),
+                    )
+                )
+                logs = []
+                module.product_log_message = lambda key, **kwargs: logs.append((key, kwargs))
+
+                result = module.load_panel_tests(
+                    "main.cpp",
+                    lambda item: item,
+                    repository,
+                    lambda source_file, for_write=False: tests_path,
+                )
+
+                self.assertEqual(result, [{"name": "T1", "test": "42"}])
+                self.assertEqual(logs, [("error.tests_file_invalid", {"path": tests_path})])
 
 
 if __name__ == "__main__":

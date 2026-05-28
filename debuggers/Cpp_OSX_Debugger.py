@@ -1,15 +1,11 @@
-import sublime
-from .debugger_info import Debugger
-
-import os
-from os.path import dirname
-import sys
-from subprocess import Popen, PIPE
+import re
+import shlex
 import subprocess
 from os import path
-import shlex
-import select
-import re
+
+import sublime
+
+from .debugger_info import Debugger
 
 
 class LLDBDebugger(Debugger):
@@ -84,7 +80,6 @@ class LLDBDebugger(Debugger):
 					# print('rtcode -> ', self.rtcode)
 			elif status == 'FINDING_CRASHLINE':
 				# print('finding crash_line')
-				file = path.split(self._file_crash)[1]
 				# self.regex_crash_line = re.compile('\\.cpp:(\d+)')
 				self.crash_line = self.regex_crash_line.search(self.data_buff)
 				if self.crash_line is None:
@@ -134,14 +129,13 @@ class LLDBDebugger(Debugger):
 
 	def compile(self):
 		cmd = 'g++ -std=gnu++11 -g -o main "%s"' % self.file
-		PIPE = subprocess.PIPE
 		# print(dir(self))
 		if self.on_status_change is not None:
 			self.on_status_change('COMPILING')
 		#cwd=os.path.split(self.file)[0], \
 		p = subprocess.Popen(shlex.split(cmd, posix=True), \
-			shell=False, stdin=PIPE, stdout=PIPE, stderr=subprocess.STDOUT, \
-				cwd=os.path.split(self.file)[0])
+			shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, \
+				cwd=path.split(self.file)[0])
 		p.wait()
 		return (p.returncode, p.stdout.read().decode())
 
@@ -149,11 +143,10 @@ class LLDBDebugger(Debugger):
 	def run(self, args=' -debug'):
 		self.analyzer = LLDBDebugger.LLDBAnalyzer(self.on_status_change)
 		cmd = 'lldb main'
-		PIPE = subprocess.PIPE
 		#cwd=os.path.split(self.file)[0], \
 		process = subprocess.Popen(shlex.split(cmd, posix=True), \
-			shell=False, stdin=PIPE, stdout=PIPE, stderr=subprocess.STDOUT, \
-				cwd=os.path.split(self.file)[0])
+			shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, \
+				cwd=path.split(self.file)[0])
 		self.process = process
 		self.miss_cnt = 0
 		out_file = path.join(path.split(self.file)[0], 'output.txt')

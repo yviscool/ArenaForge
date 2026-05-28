@@ -7,7 +7,6 @@ import subprocess
 import zipfile
 from pathlib import Path
 
-
 SKIP_DIR_NAMES = {"__pycache__"}
 SKIP_SUFFIXES = {".pyc", ".pyo"}
 

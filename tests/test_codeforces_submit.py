@@ -1,10 +1,14 @@
 import unittest
 
 from arena_forge.adapters.providers.codeforces_submit import (
+    DEFAULT_HTTP_TIMEOUT_SECONDS,
     STATIC_BFAA,
     build_login_payload,
     build_submit_payload,
     extract_csrf_token,
+    fetch_csrf_token,
+    login,
+    submit,
 )
 
 HTML = """
@@ -45,6 +49,56 @@ class CodeforcesSubmitTests(unittest.TestCase):
         self.assertEqual(payload["submittedProblemIndex"], "A")
         self.assertEqual(payload["programTypeId"], "54")
         self.assertEqual(payload["sourceCodeConfirmed"], "true")
+
+    def test_fetch_csrf_token_uses_default_timeout(self) -> None:
+        class _Response:
+            def __init__(self, text: str) -> None:
+                self.text = text
+
+            def raise_for_status(self) -> None:
+                return None
+
+        class _Session:
+            def __init__(self) -> None:
+                self.get_calls = []
+
+            def get(self, url: str, timeout: int):
+                self.get_calls.append((url, timeout))
+                return _Response(HTML)
+
+        session = _Session()
+        self.assertEqual(fetch_csrf_token(session, "https://codeforces.com/enter"), "csrf-123")
+        self.assertEqual(session.get_calls, [("https://codeforces.com/enter", DEFAULT_HTTP_TIMEOUT_SECONDS)])
+
+    def test_login_and_submit_pass_default_timeout_to_requests(self) -> None:
+        class _Response:
+            def __init__(self, text: str = HTML) -> None:
+                self.text = text
+
+            def raise_for_status(self) -> None:
+                return None
+
+        class _Session:
+            def __init__(self) -> None:
+                self.get_calls = []
+                self.post_calls = []
+
+            def get(self, url: str, timeout: int):
+                self.get_calls.append((url, timeout))
+                return _Response()
+
+            def post(self, url: str, data, timeout: int):
+                self.post_calls.append((url, data, timeout))
+                return _Response()
+
+        session = _Session()
+        login(session, {"username": "tourist", "password": "secret"})
+        submit(session, "1000", "A", 54, "print(42)")
+
+        self.assertEqual(session.get_calls[0][1], DEFAULT_HTTP_TIMEOUT_SECONDS)
+        self.assertEqual(session.get_calls[1][1], DEFAULT_HTTP_TIMEOUT_SECONDS)
+        self.assertEqual(session.post_calls[0][2], DEFAULT_HTTP_TIMEOUT_SECONDS)
+        self.assertEqual(session.post_calls[1][2], DEFAULT_HTTP_TIMEOUT_SECONDS)
 
 
 if __name__ == "__main__":

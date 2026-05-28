@@ -67,19 +67,24 @@ class LayoutListener(sublime_plugin.EventListener):
 		super(LayoutListener, self).__init__()
 	
 	def move_syncer(self, view):
-		try:
-			w = view.window()
-			prop = w.get_view_index(view)
-			# print(view.name())
-			if view.name()[-4:] == '-run':
-				w.set_view_index(view, 1, 0)
-				# print('moved to second group')
-			elif prop[0] == 1:
-				active_view_index = w.get_view_index(w.active_view_in_group(0))[1]
-				# print('moved to first group')
-				w.set_view_index(view, 0, active_view_index + 1)
-		except:
-			pass
+		w = view.window()
+		if w is None:
+			return
+
+		prop = w.get_view_index(view)
+		view_name = view.name() or ''
+		if view_name.endswith('-run'):
+			w.set_view_index(view, 1, 0)
+			return
+
+		if prop[0] != 1:
+			return
+
+		active_view = w.active_view_in_group(0)
+		if active_view is None:
+			return
+		active_view_index = w.get_view_index(active_view)[1]
+		w.set_view_index(view, 0, active_view_index + 1)
 		
 
 	# def on_load(self, view):

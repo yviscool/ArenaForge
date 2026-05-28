@@ -14,6 +14,7 @@ except ModuleNotFoundError:  # pragma: no cover - optional Sublime dependency
 CODEFORCES_LOGIN_URL = "https://codeforces.com/enter"
 CODEFORCES_SUBMIT_URL = "https://codeforces.com/contest/{contest_id}/submit"
 DEFAULT_LANGUAGE_ID = 54
+DEFAULT_HTTP_TIMEOUT_SECONDS = 15
 STATIC_BFAA = "f1b3f18c715565b589b7823cda7448ce"
 
 
@@ -47,7 +48,7 @@ def extract_csrf_token(html: str) -> str:
 
 
 def fetch_csrf_token(session, url: str) -> str:
-    response = session.get(url)
+    response = session.get(url, timeout=DEFAULT_HTTP_TIMEOUT_SECONDS)
     response.raise_for_status()
     return extract_csrf_token(response.text)
 
@@ -101,6 +102,7 @@ def login(session, user: dict[str, str]) -> None:
             username=user["username"],
             password=user["password"],
         ),
+        timeout=DEFAULT_HTTP_TIMEOUT_SECONDS,
     )
     response.raise_for_status()
 
@@ -124,6 +126,7 @@ def submit(
             language_id=language_id,
             source=source,
         ),
+        timeout=DEFAULT_HTTP_TIMEOUT_SECONDS,
     )
     response.raise_for_status()
 

@@ -31,6 +31,14 @@ class SubmissionLanguageError(SubmissionServiceError):
     message_key = "error.submission_language_unsupported"
 
 
+class SubmissionDependencyUnavailableError(SubmissionServiceError):
+    message_key = "error.submission_dependencies_unavailable"
+
+
+class SubmissionTransportError(SubmissionServiceError):
+    message_key = "error.submission_transport_failed"
+
+
 def canonical_language_key(language_name: str) -> str:
     normalized = language_name.strip().lower()
     if "c++" in normalized or normalized == "cpp":
@@ -86,10 +94,18 @@ class ProviderSubmissionService:
         if language_id is None:
             raise SubmissionLanguageError(provider=request.provider_name, language=request.language_name)
 
-        provider.submit_solution(
-            request.contest_id,
-            request.problem_id,
-            language_id,
-            request.code,
-            credentials,
-        )
+        try:
+            provider.submit_solution(
+                request.contest_id,
+                request.problem_id,
+                language_id,
+                request.code,
+                credentials,
+            )
+        except SubmissionServiceError:
+            raise
+        except ModuleNotFoundError as exc:
+            raise SubmissionDependencyUnavailableError(provider=request.provider_name) from exc
+        except Exception as exc:
+            detail = str(exc).strip() or exc.__class__.__name__
+            raise SubmissionTransportError(provider=request.provider_name, detail=detail) from exc

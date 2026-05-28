@@ -15,6 +15,7 @@ from .package_resources import get_plugin_root_dir
 from .settings_bridge import get_settings, is_lang_view
 
 _DIAGNOSTIC_DEBOUNCE_MS = 250
+_DIAGNOSTIC_RUN_FAILURES = (IndexError, KeyError, OSError, ValueError)
 
 
 @dataclass
@@ -35,6 +36,10 @@ def _clear_marks(view) -> None:
     view.erase_regions("error_marks")
     view.erase_regions("warning_marks")
     view.erase_status("compile_error")
+
+
+def _log_parse_errors_failed() -> None:
+    product_log_message("error.parse_errors_failed")
 
 
 class InteliSenseCommand(sublime_plugin.TextCommand):
@@ -130,9 +135,10 @@ class InteliSenseCommand(sublime_plugin.TextCommand):
                 compile_cmd=compile_cmd,
                 source_text=source,
                 source_file_dir=file_dir_path,
+                scratch_label=f"amin-{view.id()}-{generation}",
             )
-        except Exception:
-            sublime.set_timeout(lambda: product_log_message("error.parse_errors_failed"), 0)
+        except _DIAGNOSTIC_RUN_FAILURES:
+            sublime.set_timeout(_log_parse_errors_failed, 0)
             return
 
         sublime.set_timeout(
@@ -168,11 +174,10 @@ class InteliSenseCommand(sublime_plugin.TextCommand):
         if state is None or not state.enabled or state.generation != generation:
             return
 
-        try:
-            errors = report.issues
-        except Exception:
+        errors = getattr(report, "issues", None)
+        if errors is None:
             product_log_message("error.parse_errors_failed")
-            return 0
+            return
 
         state.last_change_count = change_count
         view.erase_regions("warning_marks")

@@ -1,4 +1,5 @@
-import sublime
+import importlib
+
 
 class Debugger(object):
 	"""
@@ -83,7 +84,5 @@ def get_best_debug_module(ext):
 		return dbgs[0]
 	return None
 
-
-
-from . import Cpp_OSX_Debugger
+importlib.import_module(f"{__package__}.Cpp_OSX_Debugger")
 # from . import DebugodPy3Ejector

@@ -37,9 +37,21 @@ class KeyringCredentialStore:
         if keyring is None:
             raise RuntimeError("keyring backend is unavailable")
         service_name = self._service_name(provider_name)
-        keyring.set_password(service_name, "__username__", username)
+        previous_username = keyring.get_password(service_name, "__username__")
         keyring.set_password(service_name, username, secret)
+        if previous_username and previous_username != username:
+            self._delete_secret(service_name, previous_username)
+        keyring.set_password(service_name, "__username__", username)
         return CredentialRecord(username=username, secret=secret)
+
+    def _delete_secret(self, service_name: str, username: str) -> None:
+        delete_password = getattr(keyring, "delete_password", None)
+        if delete_password is None:
+            return
+        try:
+            delete_password(service_name, username)
+        except Exception:
+            return
 
 
 def build_credential_store(service_namespace: str) -> KeyringCredentialStore:

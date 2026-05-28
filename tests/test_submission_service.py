@@ -4,8 +4,10 @@ from arena_forge.adapters.providers.submission_service import (
     CredentialBackendUnavailableError,
     MissingCredentialsError,
     ProviderSubmissionService,
+    SubmissionDependencyUnavailableError,
     SubmissionLanguageError,
     SubmissionRequest,
+    SubmissionTransportError,
     SubmissionUnsupportedError,
 )
 from arena_forge.core.domain import CredentialRecord, ProviderCapabilities, ProviderWorkspaceKind
@@ -30,18 +32,21 @@ class _FakeCredentialStore:
 class _FakeProvider:
     provider_name = "fake"
 
-    def __init__(self):
+    def __init__(self, submit_error=None):
         self.capabilities = ProviderCapabilities(
             workspace_kind=ProviderWorkspaceKind.CONTEST,
             supports_submission=True,
             requires_credentials=True,
         )
         self.calls = []
+        self.submit_error = submit_error
 
     def load_contest(self, contest_id: str):
         raise NotImplementedError
 
     def submit_solution(self, contest_id, problem_id, language_id, code, credentials):
+        if self.submit_error is not None:
+            raise self.submit_error
         self.calls.append((contest_id, problem_id, language_id, code, credentials))
 
 
@@ -102,6 +107,31 @@ class SubmissionServiceTests(unittest.TestCase):
         )
         with self.assertRaises(MissingCredentialsError):
             service.submit(SubmissionRequest("fake", "1", "A", "C++", "code"))
+
+    def test_submit_wraps_missing_dependency_errors(self) -> None:
+        provider = _FakeProvider(submit_error=ModuleNotFoundError("requests"))
+        service = ProviderSubmissionService(
+            _Registry(provider),
+            _FakeCredentialStore(record=CredentialRecord(username="u", secret="s")),
+            {"fake": {"cpp": 1}},
+        )
+
+        with self.assertRaises(SubmissionDependencyUnavailableError):
+            service.submit(SubmissionRequest("fake", "1", "A", "C++", "code"))
+
+    def test_submit_wraps_transport_errors(self) -> None:
+        provider = _FakeProvider(submit_error=RuntimeError("network down"))
+        service = ProviderSubmissionService(
+            _Registry(provider),
+            _FakeCredentialStore(record=CredentialRecord(username="u", secret="s")),
+            {"fake": {"cpp": 1}},
+        )
+
+        with self.assertRaises(SubmissionTransportError) as raised:
+            service.submit(SubmissionRequest("fake", "1", "A", "C++", "code"))
+
+        self.assertEqual(raised.exception.context["provider"], "fake")
+        self.assertEqual(raised.exception.context["detail"], "network down")
 
 
 if __name__ == "__main__":

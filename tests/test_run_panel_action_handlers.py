@@ -54,6 +54,37 @@ class RunPanelActionHandlersTests(unittest.TestCase):
             sync_false = [name for name, handler in handlers.items() if not handler.sync_read_only]
             self.assertEqual(sync_false, ["enable_edit_mode"])
 
+    def test_close_command_logs_process_termination_failures(self) -> None:
+        with _patched_sublime():
+            module = importlib.import_module("arena_forge.adapters.sublime.run_panel_action_handlers")
+            logs = []
+            module.product_log_message = lambda key, **kwargs: logs.append((key, kwargs))
+
+            def fail_terminate() -> None:
+                raise OSError("boom")
+
+            command = types.SimpleNamespace(
+                state=types.SimpleNamespace(tester=types.SimpleNamespace(terminate=fail_terminate)),
+                view=object(),
+            )
+            context = module.RunPanelActionContext(command=command, edit=None, request=object())
+
+            module._close_command(context)
+
+            self.assertEqual(logs, [("error.process_termination_failed", {})])
+
+    def test_close_command_ignores_missing_tester(self) -> None:
+        with _patched_sublime():
+            module = importlib.import_module("arena_forge.adapters.sublime.run_panel_action_handlers")
+            logs = []
+            module.product_log_message = lambda key, **kwargs: logs.append((key, kwargs))
+            command = types.SimpleNamespace(state=types.SimpleNamespace(tester=None), view=object())
+            context = module.RunPanelActionContext(command=command, edit=None, request=object())
+
+            module._close_command(context)
+
+            self.assertEqual(logs, [])
+
 
 if __name__ == "__main__":
     unittest.main()

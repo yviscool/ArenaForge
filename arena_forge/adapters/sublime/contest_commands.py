@@ -105,7 +105,8 @@ class ContestHandlerCommand(sublime_plugin.TextCommand):
         for folder in self.view.window().folders():
             file = path.join(folder, "_contest.sublime-settings")
             if path.exists(file):
-                return sublime.decode_value(open(file).read())
+                with open(file, encoding="utf-8") as handle:
+                    return sublime.decode_value(handle.read())
         return None
 
     def _prompt_and_store_credentials(self, provider_name: str, retry) -> None:
@@ -145,7 +146,7 @@ class ContestHandlerCommand(sublime_plugin.TextCommand):
             return
 
         provider_name = str(settings["provider"])
-        code = self.view.substr(Region(0, int(1e9)))
+        code = self.view.substr(Region(0, self.view.size()))
         last = path.basename(self.view.file_name())
         problem_id = path.splitext(last)[0]
         language_name = app.session_service.ensure_session(self.view.file_name(), app.profiles).language
@@ -166,6 +167,8 @@ class ContestHandlerCommand(sublime_plugin.TextCommand):
                 self._prompt_and_store_credentials(provider_name, do_submit)
             except SubmissionServiceError as exc:
                 product_log_message(exc.message_key, **exc.context)
+
+        do_submit()
 
     def run(self, edit, action=None):
         if action == "setup_contest":

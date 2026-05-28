@@ -46,3 +46,39 @@
   test-action helper modules
 - Added explicit command/action surface tests for `test_manager` and `test_edit`
 - Added `Run History` panel plus source-file reopen entry points
+
+## Iteration 9
+
+- Moved manual run-panel reruns off the synchronous compile path
+- Hardened snapshot and tests-file recovery against invalid JSON payloads
+- Added timeout-aware submission transport and normalized submission error
+  wrapping
+- Switched diagnostics scratch files from a single shared path to per-view
+  labeled files
+- Added regression coverage for run-panel async compile, submission transport,
+  diagnostics scratch paths, credential rotation, and contest submission entry
+  points
+
+## Iteration 10
+
+- Made repo-root Sublime registration shims export imported commands/listeners
+  explicitly via `__all__`
+- Cleared repo-wide `ruff` debt across wrappers and low-risk legacy modules in
+  `Highlight/`, `Modules/`, and `debuggers/`
+- Switched debugger module registration to runtime loading so subclass
+  discovery stays intact without import-order lint violations
+- Normalized legacy `debuggers/debugod.py` enough for Python 3 tooling so
+  `uv run ruff check .` now passes
+
+## Iteration 11
+
+- Narrowed broad exception handling across the targeted Sublime adapter files
+  to explicit recovery paths
+- Removed the remaining blanket `except` usage from
+  `run_panel_action_handlers.py`, `test_editor_dispatch.py`,
+  `messages.py`, `diagnostics_commands.py`, `debug_overlay_commands.py`,
+  `run_panel_tester.py`, and `run_panel_commands.py`
+- Added regression coverage for diagnostics/logging fallbacks, translation
+  fallback, sidebar capability probing, and process-termination recovery
+- Expanded the baseline suite to `196 passed` while keeping `ruff`, `mypy`,
+  and `compileall` green

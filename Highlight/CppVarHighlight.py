@@ -3,7 +3,6 @@
 import re
 from os import path
 
-
 css = open(path.join(path.dirname(__file__), 'cpp_styles.css')).read()
 
 DEF_TYPE = re.compile(r'int|float|double|char')

@@ -32,6 +32,13 @@ class DiagnosticsRunnerTests(unittest.TestCase):
             self.assertEqual(scratch_path, root / "cmp_sense" / "amin.cpp")
             self.assertEqual(scratch_path.read_text(encoding="utf-8"), "int main() {}\n")
 
+    def test_scratch_workspace_sanitizes_unique_labels(self) -> None:
+        with local_test_workspace("diagnostics-scratch-labels") as root:
+            workspace = DiagnosticsScratchWorkspace(root)
+            scratch_path = workspace.write_source("int main() {}\n", label="view:12/34")
+            self.assertEqual(scratch_path.name, "view_12_34.cpp")
+            self.assertEqual(scratch_path.read_text(encoding="utf-8"), "int main() {}\n")
+
     def test_service_runs_command_and_parses_output(self) -> None:
         with local_test_workspace("diagnostics-service") as root:
             service = CompilerDiagnosticsService(

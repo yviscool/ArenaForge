@@ -1,6 +1,5 @@
 from os import path
 
-
 base_dir = path.split(__file__)[0]
 
 def modify_classes(classes):
@@ -16,7 +15,7 @@ def create(s, i, config, classes):
 
 	c = s[i]
 
-	if not c in classes.keys():
+	if c not in classes:
 		return None, i, ''
 
 	template_size = classes[c]['template_size']

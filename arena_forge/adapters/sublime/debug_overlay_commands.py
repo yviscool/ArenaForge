@@ -34,6 +34,12 @@ def show_frame_quick_panel(view, frames, on_select, on_highlight):
     view.window().show_quick_panel(items, on_select, sublime.MONOSPACE_FONT, 0, on_highlight)
 
 
+def _schedule_sidebar_hide(window) -> None:
+    hide_sidebar = getattr(window, "set_sidebar_visible", None)
+    if callable(hide_sidebar):
+        sublime.set_timeout_async(lambda: hide_sidebar(False), 50)
+
+
 class ViewTesterCommand(sublime_plugin.TextCommand):
     ROOT = path.dirname(__file__)
     ruler_opd_panel = 0.68
@@ -61,10 +67,7 @@ class ViewTesterCommand(sublime_plugin.TextCommand):
             self.tied_dbg = dbg_view
             self.have_tied_dbg = True
             if get_settings().get("close_sidebar"):
-                try:
-                    sublime.set_timeout_async(lambda window=window: window.set_sidebar_visible(False), 50)
-                except Exception:
-                    pass
+                _schedule_sidebar_hide(window)
             dbg_view.run_command("toggle_setting", {"setting": "word_wrap"})
 
         if len(window.get_layout()["cols"]) != 3 or window.get_layout()["cols"][1] >= 0.89:

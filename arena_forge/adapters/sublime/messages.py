@@ -46,6 +46,7 @@ _FALLBACKS = {
     "error.contest_not_found": "Contest metadata could not be loaded.",
     "error.session_restore_failed": "Can't restore session",
     "error.submission_dependencies_unavailable": "submission dependencies are unavailable",
+    "error.tests_file_invalid": "tests file is invalid, restoring from session snapshot: {path}",
     "error.contest_settings_missing": "_contest.sublime-settings is not found",
     "error.parse_errors_failed": "can not parse errors",
     "error.process_termination_failed": "process terminating error",
@@ -56,6 +57,7 @@ _FALLBACKS = {
     "error.provider_submission_unsupported": "{provider} does not support submission yet",
     "error.submission_language_unsupported": "{language} is not configured for {provider} submission",
     "error.submission_failed": "submission failed",
+    "error.submission_transport_failed": "submission to {provider} failed: {detail}",
     "error.active_view_required": "an active view is required",
     "error.file_view_required": "open a source file first",
     "prompt.contest_url": "Contest URL",
@@ -126,6 +128,16 @@ _VERDICT_KEY_BY_VALUE = {
     "timeout": "verdict.timeout",
 }
 
+_TRANSLATION_FALLBACK_EXCEPTIONS = (
+    AttributeError,
+    ImportError,
+    KeyError,
+    OSError,
+    RuntimeError,
+    TypeError,
+    ValueError,
+)
+
 
 def translate(key: str, locale: Optional[str] = None, **kwargs: Any) -> str:
     normalized = {name: str(value) for name, value in kwargs.items()}
@@ -133,7 +145,7 @@ def translate(key: str, locale: Optional[str] = None, **kwargs: Any) -> str:
         from .settings_bridge import get_application
 
         return get_application().translator.translate(key, locale=locale, **normalized)
-    except Exception:
+    except _TRANSLATION_FALLBACK_EXCEPTIONS:
         template = _FALLBACKS.get(key, key)
         return template.format(**normalized)
 

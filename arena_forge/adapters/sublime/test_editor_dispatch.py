@@ -28,10 +28,12 @@ def dispatch_test_editor_action(
     view = command.view
 
     def close_command() -> None:
+        tester = command.state.tester
+        if tester is None:
+            return
         try:
-            if command.state.tester is not None:
-                command.state.tester.process_manager.terminate()
-        except Exception:
+            tester.terminate()
+        except (AttributeError, OSError):
             product_log_message("error.process_termination_failed")
 
     def toggle_debugger() -> None:

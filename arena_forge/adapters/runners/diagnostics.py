@@ -66,14 +66,23 @@ class DiagnosticsScratchWorkspace:
     relative_dir: str = "cmp_sense"
     file_name: str = "amin.cpp"
 
-    def scratch_path(self) -> Path:
-        return self.root_dir / self.relative_dir / self.file_name
+    def scratch_path(self, label: Optional[str] = None) -> Path:
+        if label is None:
+            return self.root_dir / self.relative_dir / self.file_name
+        normalized = self._normalize_label(label)
+        suffix = Path(self.file_name).suffix or ".tmp"
+        return self.root_dir / self.relative_dir / f"{normalized}{suffix}"
 
-    def write_source(self, source_text: str) -> Path:
-        scratch_path = self.scratch_path()
+    def write_source(self, source_text: str, *, label: Optional[str] = None) -> Path:
+        scratch_path = self.scratch_path(label=label)
         scratch_path.parent.mkdir(parents=True, exist_ok=True)
         scratch_path.write_text(source_text, encoding="utf-8")
         return scratch_path
+
+    @staticmethod
+    def _normalize_label(label: str) -> str:
+        normalized = re.sub(r"[^A-Za-z0-9_.-]+", "_", label).strip("._")
+        return normalized or "amin"
 
 
 class CompilerDiagnosticsService:
@@ -81,8 +90,15 @@ class CompilerDiagnosticsService:
         self.platform_name = platform_name
         self.scratch_workspace = scratch_workspace
 
-    def run(self, *, compile_cmd: str, source_text: str, source_file_dir: str) -> DiagnosticsReport:
-        scratch_file = self.scratch_workspace.write_source(source_text)
+    def run(
+        self,
+        *,
+        compile_cmd: str,
+        source_text: str,
+        source_file_dir: str,
+        scratch_label: Optional[str] = None,
+    ) -> DiagnosticsReport:
+        scratch_file = self.scratch_workspace.write_source(source_text, label=scratch_label)
         command = compile_cmd.format(source_file=str(scratch_file), source_file_dir=source_file_dir)
         argv = tuple(build_command_argv(command, platform_name=self.platform_name))
         spawn_options = _resolve_subprocess_spawn_options(build_process_spawn_options(self.platform_name))

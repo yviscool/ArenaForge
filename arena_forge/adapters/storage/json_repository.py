@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import json
+import logging
 from typing import Optional
 
 from arena_forge.core.domain import LanguageProfile, SessionSnapshot
 
 from .workspace import WorkspaceLayout
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class JsonSessionRepository:
@@ -19,8 +22,12 @@ class JsonSessionRepository:
         snapshot_path = self.layout.snapshot_path_for(source_file)
         if not snapshot_path.exists():
             return None
-        payload = json.loads(snapshot_path.read_text(encoding="utf-8"))
-        return SessionSnapshot.from_mapping(payload)
+        try:
+            payload = json.loads(snapshot_path.read_text(encoding="utf-8"))
+            return SessionSnapshot.from_mapping(payload)
+        except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
+            _LOGGER.warning("Ignoring invalid session snapshot %s: %s", snapshot_path, exc)
+            return None
 
     def save(self, session: SessionSnapshot) -> None:
         destination = self.layout.ensure_parent(self.layout.snapshot_path_for(session.source_file))

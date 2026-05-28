@@ -93,10 +93,12 @@ def build_test_manager_action_handlers(context: RunPanelActionContext) -> Dict[s
 
 
 def _close_command(context: RunPanelActionContext) -> None:
+    tester = context.command.state.tester
+    if tester is None:
+        return
     try:
-        if context.command.state.tester is not None:
-            context.command.state.tester.process_manager.terminate()
-    except Exception:
+        tester.terminate()
+    except (AttributeError, OSError):
         product_log_message("error.process_termination_failed")
 
 

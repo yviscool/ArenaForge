@@ -13,3 +13,19 @@ from .arena_forge.adapters.sublime.window_commands import (
     ArenaForgeStopStressCommand,
     ArenaForgeSubmitCommand,
 )
+
+__all__ = [
+    "ArenaForgeAutoCommand",
+    "ArenaForgeClearAllTestsCommand",
+    "ArenaForgeConfigureCredentialsCommand",
+    "ArenaForgeDoctorCommand",
+    "ArenaForgeMakeStressCommand",
+    "ArenaForgeOpenHistorySourceCommand",
+    "ArenaForgeOpenSettingsCommand",
+    "ArenaForgeRunCommand",
+    "ArenaForgeRunHistoryCommand",
+    "ArenaForgeSelectFrameCommand",
+    "ArenaForgeSetupContestCommand",
+    "ArenaForgeStopStressCommand",
+    "ArenaForgeSubmitCommand",
+]

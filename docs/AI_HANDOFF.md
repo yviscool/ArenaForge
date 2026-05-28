@@ -158,15 +158,60 @@ Completed:
 Still true:
 
 - root wrappers are intentionally thin
-- `arena_forge/adapters/sublime/run_panel_commands.py` is still the main
-  remaining architectural hotspot
+- the broader run-panel controller flow is still the main remaining
+  architectural hotspot, but `run_panel_commands.py` itself is now a thin
+  registration shell
+
+## Current Working Set
+
+Most recent pass completed:
+
+- narrowed broad exception handling across the Sublime adapter surface:
+  - close actions now only swallow explicit process-termination failures
+  - diagnostics collection now only recovers from expected command/file
+    configuration errors
+  - diagnostics report shape validation no longer uses blanket exception
+    handling
+  - message translation fallback now catches explicit bootstrap/translator
+    failures instead of `Exception`
+  - debug-overlay sidebar hiding now uses capability probing instead of
+    exception swallowing
+- removed the remaining broad `except` / bare `except` usage from targeted
+  Sublime modules, including `run_panel_commands.py` and `run_panel_tester.py`
+- added regression coverage for the new recovery/logging paths
+- full validation now passes with the expanded test suite
+
+Primary files touched in the latest pass:
+
+- `arena_forge/adapters/sublime/run_panel_action_handlers.py`
+- `arena_forge/adapters/sublime/test_editor_dispatch.py`
+- `arena_forge/adapters/sublime/messages.py`
+- `arena_forge/adapters/sublime/diagnostics_commands.py`
+- `arena_forge/adapters/sublime/debug_overlay_commands.py`
+- `arena_forge/adapters/sublime/run_panel_tester.py`
+- `arena_forge/adapters/sublime/run_panel_commands.py`
+
+Latest regression tests added or expanded:
+
+- added:
+  - `tests/test_test_editor_dispatch.py`
+  - `tests/test_messages.py`
+  - `tests/test_diagnostics_commands.py`
+  - `tests/test_debug_overlay_commands.py`
+- expanded:
+  - `tests/test_run_panel_action_handlers.py`
+  - `tests/test_run_panel_tester.py`
 
 ## Validation Baseline
 
 Run from repo root:
 
-- `uv run pytest -q`
-  - expected result during this handoff: `91 passed`
+- `uv run python -m pytest`
+  - expected result during this handoff: `196 passed`
+- `uv run python -m mypy`
+  - expected result: `Success: no issues found in 10 source files`
+- `uv run ruff check .`
+  - expected result: passing
 - `python -m compileall arena_forge tests test_manager.py test_edit.py settings.py ContestHandler.py stress_manager.py Cpp_Intellij_Sense.py olympic_funcs.py Modules/ProcessManager.py`
   - expected result: passing
 
@@ -194,9 +239,17 @@ Run from repo root:
 
 ### 3. Diagnostics scratch file
 
-- `cmp_sense/amin.cpp` is a runtime scratch file
+- `cmp_sense/` is a runtime scratch directory
 - it is intentionally git-ignored
-- `diagnostics_commands.py` rewrites it on each lint pass
+- `diagnostics_commands.py` now writes per-view labeled scratch files such as
+  `amin-<view>-<generation>.cpp`
+
+### 3.5. `uv` trampoline quirk on Windows
+
+- in this environment, `uv run pytest` and `uv run mypy` may fail with:
+  `uv trampoline failed to canonicalize script path`
+- use `uv run python -m pytest` and `uv run python -m mypy` instead
+- keep this in mind before diagnosing false build failures
 
 ### 4. Sublime-dependent imports in tests
 
@@ -204,12 +257,14 @@ Run from repo root:
   for `ProcessManager`
 - this keeps plain Python tests from requiring `sublime`
 
-### 5. Run panel controller size
+### 5. Run panel controller surface
 
-- `arena_forge/adapters/sublime/run_panel_commands.py` is still too large
+- `arena_forge/adapters/sublime/run_panel_commands.py` is now a thin
+  registration shell
 - do not move extracted logic back into it
-- future cleanup should continue shifting state and controller behavior behind
-  `RunPanelControllerState` and adjacent helper modules
+- future cleanup should continue targeting adjacent helper modules such as
+  `run_panel_command_mixin.py`, `run_panel_action_handlers.py`, and
+  `run_panel_session_actions.py`
 
 ## Recommended Do / Do Not
 
@@ -241,14 +296,77 @@ Run from repo root:
    - `arena_forge/adapters/sublime/run_panel_tester.py`
    - `arena_forge/adapters/sublime/run_panel_state.py`
 3. Run:
-   - `uv run pytest -q`
+   - `uv run python -m pytest`
 4. Only then start editing
 
 ## Suggested Next Mission
 
 If continuing immediately, the best next mission is:
 
-1. continue shrinking `arena_forge/adapters/sublime/run_panel_commands.py`
-2. keep moving controller state behind `RunPanelControllerState`
-3. formalize debugger and diagnostics interfaces once the controller cleanup is
-   smaller
+1. continue run-panel helper extraction around `run_panel_commands.py` without
+   moving logic back into the command shell
+2. audit the remaining broad exception sites outside the Sublime shell, starting
+   with:
+   - `arena_forge/adapters/providers/submission_service.py`
+   - `arena_forge/adapters/security/keyring_store.py`
+   - `arena_forge/adapters/providers/atcoder.py`
+3. keep the now-expanded regression and lint baseline green while touching
+   legacy or adapter recovery paths
+
+## Proposed Next Round Plan
+
+### Mission 1: continue run-panel helper extraction
+
+Target files:
+
+- `arena_forge/adapters/sublime/run_panel_command_mixin.py`
+- `arena_forge/adapters/sublime/run_panel_action_handlers.py`
+- `arena_forge/adapters/sublime/run_panel_session_actions.py`
+- `arena_forge/adapters/sublime/run_panel_commands.py`
+
+Goal:
+
+- keep `run_panel_commands.py` as a thin registration surface
+- move any remaining event plumbing or small UI helpers into focused helpers
+  without regressing the current action surface
+
+Validation:
+
+- `uv run python -m pytest tests/test_run_panel_*`
+
+### Mission 2: audit non-Sublime exception boundaries
+
+Target files:
+
+- `arena_forge/adapters/providers/submission_service.py`
+- `arena_forge/adapters/security/keyring_store.py`
+- `arena_forge/adapters/providers/atcoder.py`
+
+Goal:
+
+- replace broad exception swallowing with explicit recovery boundaries
+- preserve the current user-visible failure normalization contracts
+
+Validation:
+
+- add targeted regression tests where behavior changes
+- `uv run python -m pytest`
+
+### Mission 3: keep the lint baseline green
+
+Target files:
+
+- repo root wrappers
+- `Highlight/`
+- `Modules/`
+- `debuggers/`
+
+Goal:
+
+- keep `uv run ruff check .` passing while touching legacy support code
+- prefer small, behavior-preserving cleanup over larger rewrites
+
+Validation:
+
+- `uv run ruff check .`
+- `uv run python -m pytest`
