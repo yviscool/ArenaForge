@@ -13,6 +13,7 @@ from .run_panel_launch_flow import RunPanelLaunchRequest, plan_run_panel_launch
 from .run_panel_logic import (
     build_run_panel_stop_plan,
 )
+from .run_panel_process_actions import schedule_test_manager_command, terminate_command_tester
 from .run_panel_regions import clear_panel_view
 from .run_panel_session_service import create_run_backend, prepare_tests_for_run, select_run_backend
 from .run_panel_state import append_run_history
@@ -123,6 +124,63 @@ def clear_all(command) -> None:
     )
 
 
+def _schedule_rerun(view, command, request, launch_plan) -> None:
+    terminate_command_tester(
+        command,
+        on_failure=lambda: product_log_message("error.process_termination_failed"),
+    )
+    kwargs = launch_plan.command_args or request.to_command_args()
+    schedule_test_manager_command(view, kwargs, delay=30)
+
+
+def _build_run_backend_state(command, launch_session):
+    tests = prepare_tests_for_run(
+        launch_session.run_file,
+        clr_tests=launch_session.clr_tests,
+        test_factory=command.Test,
+        repository=get_session_repository(),
+        tests_file_path_factory=get_tests_file_path,
+    )
+    file_ext = path.splitext(launch_session.run_file)[1][1:]
+    debugger_info = get_debugger_info_module()
+    debug_module = debugger_info.get_best_debug_module(file_ext)
+    backend = select_run_backend(use_debugger=command.state.use_debugger, debug_module=debug_module)
+    process_manager = create_run_backend(
+        backend,
+        run_file=launch_session.run_file,
+        build_sys=launch_session.build_sys,
+        run_settings=get_settings().get("run_settings"),
+    )
+    return tests, process_manager, launch_session.sync_out
+
+
+def _schedule_compile_start(command, view, process_manager, tests, sync_out) -> None:
+    def compile_step(command=command, view=view):
+        compile_result = process_manager.compile()
+        command.change_process_status("COMPILED")
+        command.state.advance_panel_input(0)
+        if compile_result is None or compile_result[0] == 0:
+            command.state.tester = command.Tester(
+                process_manager,
+                command.on_insert,
+                command.on_out,
+                command.on_stop,
+                command.change_process_status,
+                tests=tests,
+                sync_out=sync_out,
+                test_factory=command.Test,
+                on_compile_error=lambda test_id, rtcode, output_text: handle_compile_failure(command, rtcode),
+            )
+            view.settings().set("edit_mode", False)
+            view.run_command("test_manager", {"action": "new_test"})
+        else:
+            view.run_command("test_manager", {"action": "insert_opd_out", "text": "\n" + compile_result[1]})
+            command.set_compile_bar("compilation error", type="error")
+
+    command.set_compile_bar("compiling")
+    sublime.set_timeout_async(compile_step, 10)
+
+
 def make_opd(
     command,
     edit,
@@ -155,9 +213,7 @@ def make_opd(
         return
 
     if launch_plan.action == "rerun":
-        command.state.tester.terminate()
-        kwargs = launch_plan.command_args or request.to_command_args()
-        sublime.set_timeout_async(lambda kwargs=kwargs: view.run_command("test_manager", kwargs), 30)
+        _schedule_rerun(view, command, request, launch_plan)
         return
 
     if view.settings().get("edit_mode"):
@@ -188,58 +244,11 @@ def make_opd(
     if not request.load_session:
         product_log_message("status.session_saved")
 
-    run_file = launch_session.run_file
-    build_sys = launch_session.build_sys
-    clr_tests = launch_session.clr_tests
-    sync_out = launch_session.sync_out
-
     command.prepare_code_view()
 
     if not view.settings().get("word_wrap"):
         view.run_command("toggle_setting", {"setting": "word_wrap"})
 
-    tests = prepare_tests_for_run(
-        run_file,
-        clr_tests=clr_tests,
-        test_factory=command.Test,
-        repository=get_session_repository(),
-        tests_file_path_factory=get_tests_file_path,
-    )
-    file_ext = path.splitext(run_file)[1][1:]
-
     command.change_process_status("COMPILING")
-
-    debugger_info = get_debugger_info_module()
-    debug_module = debugger_info.get_best_debug_module(file_ext)
-    backend = select_run_backend(use_debugger=command.state.use_debugger, debug_module=debug_module)
-    process_manager = create_run_backend(
-        backend,
-        run_file=run_file,
-        build_sys=build_sys,
-        run_settings=get_settings().get("run_settings"),
-    )
-
-    def compile_step(command=command, view=view):
-        compile_result = process_manager.compile()
-        command.change_process_status("COMPILED")
-        command.state.advance_panel_input(0)
-        if compile_result is None or compile_result[0] == 0:
-            command.state.tester = command.Tester(
-                process_manager,
-                command.on_insert,
-                command.on_out,
-                command.on_stop,
-                command.change_process_status,
-                tests=tests,
-                sync_out=sync_out,
-                test_factory=command.Test,
-                on_compile_error=lambda test_id, rtcode, output_text: handle_compile_failure(command, rtcode),
-            )
-            view.settings().set("edit_mode", False)
-            view.run_command("test_manager", {"action": "new_test"})
-        else:
-            view.run_command("test_manager", {"action": "insert_opd_out", "text": "\n" + compile_result[1]})
-            command.set_compile_bar("compilation error", type="error")
-
-    command.set_compile_bar("compiling")
-    sublime.set_timeout_async(compile_step, 10)
+    tests, process_manager, sync_out = _build_run_backend_state(command, launch_session)
+    _schedule_compile_start(command, view, process_manager, tests, sync_out)

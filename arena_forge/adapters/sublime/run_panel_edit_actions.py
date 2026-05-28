@@ -1,7 +1,9 @@
 from __future__ import annotations
 
-import sublime
 from sublime import Region
+
+from .messages import product_log_message
+from .run_panel_process_actions import schedule_test_manager_action, terminate_command_tester
 
 
 def get_begin_region(command, test_id):
@@ -11,8 +13,11 @@ def get_begin_region(command, test_id):
 def enable_edit_mode(command) -> None:
     view = command.view
     if command.state.tester.proc_run:
-        command.state.tester.terminate()
-        sublime.set_timeout_async(lambda: view.run_command("test_manager", {"action": "enable_edit_mode"}), 500)
+        terminate_command_tester(
+            command,
+            on_failure=lambda: product_log_message("error.process_termination_failed"),
+        )
+        schedule_test_manager_action(view, "enable_edit_mode", delay=500)
         return
 
     if view.settings().get("edit_mode"):

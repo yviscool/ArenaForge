@@ -154,7 +154,7 @@ class AtCoderProviderTests(unittest.TestCase):
     def test_load_contest_falls_back_when_print_page_request_fails(self) -> None:
         provider = _FakeAtCoderProvider(
             {
-                "https://atcoder.jp/contests/abc999/tasks_print?lang=en": RuntimeError("boom"),
+                "https://atcoder.jp/contests/abc999/tasks_print?lang=en": OSError("boom"),
                 "https://atcoder.jp/contests/abc999/tasks?lang=en": TASKS_HTML,
                 "https://atcoder.jp/contests/abc999/tasks/abc999_a?lang=en": TASK_HTML,
                 "https://atcoder.jp/contests/abc999/tasks/abc999_b?lang=en": TASK_HTML,
@@ -165,6 +165,16 @@ class AtCoderProviderTests(unittest.TestCase):
 
         self.assertEqual(contest.title, "AtCoder Beginner Contest 999")
         self.assertEqual(tuple(problem.index for problem in contest.problems), ("A", "B"))
+
+    def test_load_contest_does_not_swallow_unexpected_print_page_errors(self) -> None:
+        provider = _FakeAtCoderProvider(
+            {
+                "https://atcoder.jp/contests/abc999/tasks_print?lang=en": TypeError("bad parser wiring"),
+            }
+        )
+
+        with self.assertRaises(TypeError):
+            provider.load_contest("abc999")
 
 
 if __name__ == "__main__":

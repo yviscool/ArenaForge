@@ -19,6 +19,7 @@ from arena_forge.core.domain import (
 
 USER_AGENT = "ArenaForge/3.0 (+https://example.invalid)"
 ATCODER_BASE_URL = "https://atcoder.jp"
+_PRINT_PAGE_FETCH_FAILURES = (OSError, ValueError)
 
 
 @dataclass(frozen=True)
@@ -393,7 +394,7 @@ class AtCoderProvider:
         printed_problems = ()
         try:
             print_html = self._fetch_text(self._contest_print_url(contest_id))
-        except Exception:
+        except _PRINT_PAGE_FETCH_FAILURES:
             print_html = None
         if print_html is not None:
             title = extract_atcoder_contest_title(print_html, contest_id)

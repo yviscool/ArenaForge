@@ -39,6 +39,9 @@ class SubmissionTransportError(SubmissionServiceError):
     message_key = "error.submission_transport_failed"
 
 
+_TRANSPORT_FAILURES = (OSError, ValueError)
+
+
 def canonical_language_key(language_name: str) -> str:
     normalized = language_name.strip().lower()
     if "c++" in normalized or normalized == "cpp":
@@ -106,6 +109,6 @@ class ProviderSubmissionService:
             raise
         except ModuleNotFoundError as exc:
             raise SubmissionDependencyUnavailableError(provider=request.provider_name) from exc
-        except Exception as exc:
+        except _TRANSPORT_FAILURES as exc:
             detail = str(exc).strip() or exc.__class__.__name__
             raise SubmissionTransportError(provider=request.provider_name, detail=detail) from exc

@@ -82,3 +82,16 @@
   fallback, sidebar capability probing, and process-termination recovery
 - Expanded the baseline suite to `196 passed` while keeping `ruff`, `mypy`,
   and `compileall` green
+
+## Iteration 12
+
+- Added `run_panel_process_actions.py` to centralize run-panel tester
+  termination and deferred `test_manager` command scheduling
+- Rewired run-panel close / kill / stop / clear-all / rerun / edit-mode retry
+  flows through the shared lifecycle helper
+- Narrowed the remaining broad exception boundaries in
+  `submission_service.py`, `keyring_store.py`, and `atcoder.py`
+- Added regression coverage for the shared run-panel lifecycle helper and the
+  narrowed provider/security recovery paths
+- Expanded the baseline suite to `204 passed` while keeping `ruff`, `mypy`,
+  and `compileall` green

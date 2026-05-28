@@ -10,6 +10,24 @@ except ModuleNotFoundError:  # pragma: no cover - optional runtime dependency
     keyring = None
 
 
+def _resolve_delete_secret_failures() -> tuple[type[BaseException], ...]:
+    if keyring is None:
+        return (OSError,)
+    errors_module = getattr(keyring, "errors", None)
+    keyring_errors = tuple(
+        error_type
+        for error_type in (
+            getattr(errors_module, "PasswordDeleteError", None),
+            getattr(errors_module, "KeyringError", None),
+        )
+        if isinstance(error_type, type) and issubclass(error_type, BaseException)
+    )
+    return keyring_errors + (OSError,)
+
+
+_DELETE_SECRET_FAILURES = _resolve_delete_secret_failures()
+
+
 class KeyringCredentialStore:
     def __init__(self, service_namespace: str) -> None:
         self.service_namespace = service_namespace
@@ -50,7 +68,7 @@ class KeyringCredentialStore:
             return
         try:
             delete_password(service_name, username)
-        except Exception:
+        except _DELETE_SECRET_FAILURES:
             return
 
 

@@ -18,6 +18,7 @@ from .run_panel_input_actions import (
     move_input_line_end,
     move_input_line_start,
 )
+from .run_panel_process_actions import terminate_command_tester
 from .run_panel_session_actions import make_opd
 from .view_actions import erase_region, replace_all, replace_region, set_cursor_to_end
 
@@ -72,7 +73,7 @@ def build_test_manager_action_handlers(context: RunPanelActionContext) -> Dict[s
         "erase_all": RunPanelActionHandler(lambda ctx: replace_all(ctx.view, ctx.edit, "\n")),
         "show_text": RunPanelActionHandler(_show_text),
         "hide_text": RunPanelActionHandler(_hide_text),
-        "kill_proc": RunPanelActionHandler(lambda ctx: ctx.command.state.tester.terminate()),
+        "kill_proc": RunPanelActionHandler(_kill_process),
         "sync_read_only": RunPanelActionHandler(lambda ctx: ctx.command.sync_read_only()),
         "enable_edit_mode": RunPanelActionHandler(lambda ctx: ctx.command.enable_edit_mode(), sync_read_only=False),
         "set_test_input": RunPanelActionHandler(
@@ -93,13 +94,17 @@ def build_test_manager_action_handlers(context: RunPanelActionContext) -> Dict[s
 
 
 def _close_command(context: RunPanelActionContext) -> None:
-    tester = context.command.state.tester
-    if tester is None:
-        return
-    try:
-        tester.terminate()
-    except (AttributeError, OSError):
-        product_log_message("error.process_termination_failed")
+    terminate_command_tester(
+        context.command,
+        on_failure=lambda: product_log_message("error.process_termination_failed"),
+    )
+
+
+def _kill_process(context: RunPanelActionContext) -> None:
+    terminate_command_tester(
+        context.command,
+        on_failure=lambda: product_log_message("error.process_termination_failed"),
+    )
 
 
 def _toggle_debugger(context: RunPanelActionContext) -> None:

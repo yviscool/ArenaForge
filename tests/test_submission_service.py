@@ -120,7 +120,7 @@ class SubmissionServiceTests(unittest.TestCase):
             service.submit(SubmissionRequest("fake", "1", "A", "C++", "code"))
 
     def test_submit_wraps_transport_errors(self) -> None:
-        provider = _FakeProvider(submit_error=RuntimeError("network down"))
+        provider = _FakeProvider(submit_error=OSError("network down"))
         service = ProviderSubmissionService(
             _Registry(provider),
             _FakeCredentialStore(record=CredentialRecord(username="u", secret="s")),
@@ -132,6 +132,17 @@ class SubmissionServiceTests(unittest.TestCase):
 
         self.assertEqual(raised.exception.context["provider"], "fake")
         self.assertEqual(raised.exception.context["detail"], "network down")
+
+    def test_submit_does_not_wrap_unexpected_programmer_errors(self) -> None:
+        provider = _FakeProvider(submit_error=TypeError("bad call"))
+        service = ProviderSubmissionService(
+            _Registry(provider),
+            _FakeCredentialStore(record=CredentialRecord(username="u", secret="s")),
+            {"fake": {"cpp": 1}},
+        )
+
+        with self.assertRaises(TypeError):
+            service.submit(SubmissionRequest("fake", "1", "A", "C++", "code"))
 
 
 if __name__ == "__main__":

@@ -4,6 +4,7 @@ from typing import Optional
 
 from .command_action_catalog import SUPPORTED_TEST_EDITOR_ACTIONS
 from .messages import product_log_message, status_message
+from .run_panel_process_actions import terminate_tester
 from .view_actions import erase_region, replace_all, replace_region, set_cursor_to_end
 
 
@@ -28,13 +29,10 @@ def dispatch_test_editor_action(
     view = command.view
 
     def close_command() -> None:
-        tester = command.state.tester
-        if tester is None:
-            return
-        try:
-            tester.terminate()
-        except (AttributeError, OSError):
-            product_log_message("error.process_termination_failed")
+        terminate_tester(
+            command.state.tester,
+            on_failure=lambda: product_log_message("error.process_termination_failed"),
+        )
 
     def toggle_debugger() -> None:
         command.state.use_debugger = not command.state.use_debugger

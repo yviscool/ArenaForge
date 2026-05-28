@@ -15,6 +15,7 @@ def _patched_session_action_dependencies():
         "arena_forge.adapters.sublime.root_bridge",
         "arena_forge.adapters.sublime.run_panel_launch_flow",
         "arena_forge.adapters.sublime.run_panel_logic",
+        "arena_forge.adapters.sublime.run_panel_process_actions",
         "arena_forge.adapters.sublime.run_panel_regions",
         "arena_forge.adapters.sublime.run_panel_session_service",
         "arena_forge.adapters.sublime.run_panel_state",
@@ -40,6 +41,10 @@ def _patched_session_action_dependencies():
     )
     sys.modules["arena_forge.adapters.sublime.run_panel_logic"] = types.SimpleNamespace(
         build_run_panel_stop_plan=lambda *args, **kwargs: None
+    )
+    sys.modules["arena_forge.adapters.sublime.run_panel_process_actions"] = types.SimpleNamespace(
+        schedule_test_manager_command=lambda *args, **kwargs: None,
+        terminate_command_tester=lambda *args, **kwargs: None,
     )
     sys.modules["arena_forge.adapters.sublime.run_panel_regions"] = types.SimpleNamespace(
         clear_panel_view=lambda *args, **kwargs: None
@@ -86,6 +91,29 @@ class RunPanelSessionActionsTests(unittest.TestCase):
 
             self.assertIs(module.resolve_stop_evaluation(tester, 0, 0), expected)
             self.assertIsNone(module.resolve_stop_evaluation(tester, 0, 7))
+
+    def test_schedule_rerun_terminates_existing_tester_and_reuses_launch_args(self) -> None:
+        with _patched_session_action_dependencies():
+            module = importlib.import_module("arena_forge.adapters.sublime.run_panel_session_actions")
+            calls = []
+            module.terminate_command_tester = lambda command, **kwargs: calls.append(("terminate", command, kwargs))
+            module.schedule_test_manager_command = lambda view, payload, delay=0: calls.append(
+                ("schedule", view, payload, delay)
+            )
+            view = object()
+            command = object()
+            request = types.SimpleNamespace(to_command_args=lambda: {"action": "make_opd"})
+            launch_plan = types.SimpleNamespace(command_args={"action": "make_opd", "load_session": True})
+
+            module._schedule_rerun(view, command, request, launch_plan)
+
+            self.assertEqual(
+                calls,
+                [
+                    ("terminate", command, {"on_failure": unittest.mock.ANY}),
+                    ("schedule", view, {"action": "make_opd", "load_session": True}, 30),
+                ],
+            )
 
 
 if __name__ == "__main__":

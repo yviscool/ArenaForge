@@ -166,48 +166,49 @@ Still true:
 
 Most recent pass completed:
 
-- narrowed broad exception handling across the Sublime adapter surface:
-  - close actions now only swallow explicit process-termination failures
-  - diagnostics collection now only recovers from expected command/file
-    configuration errors
-  - diagnostics report shape validation no longer uses blanket exception
-    handling
-  - message translation fallback now catches explicit bootstrap/translator
-    failures instead of `Exception`
-  - debug-overlay sidebar hiding now uses capability probing instead of
-    exception swallowing
-- removed the remaining broad `except` / bare `except` usage from targeted
-  Sublime modules, including `run_panel_commands.py` and `run_panel_tester.py`
-- added regression coverage for the new recovery/logging paths
+- added `run_panel_process_actions.py` to centralize run-panel tester
+  termination and deferred `test_manager` command scheduling
+- rewired run-panel close / kill / stop / clear-all / rerun / edit-mode retry
+  flows through the shared process-action helper instead of duplicating
+  per-module process control
+- continued shrinking `run_panel_session_actions.py` by extracting rerun and
+  compile-launch helpers around backend preparation and async start
+- removed the remaining broad exception boundaries in:
+  - `arena_forge/adapters/providers/submission_service.py`
+  - `arena_forge/adapters/security/keyring_store.py`
+  - `arena_forge/adapters/providers/atcoder.py`
+- added regression coverage for the new run-panel lifecycle helper and the
+  narrowed provider/security recovery paths
 - full validation now passes with the expanded test suite
 
 Primary files touched in the latest pass:
 
+- `arena_forge/adapters/sublime/run_panel_process_actions.py`
 - `arena_forge/adapters/sublime/run_panel_action_handlers.py`
 - `arena_forge/adapters/sublime/test_editor_dispatch.py`
-- `arena_forge/adapters/sublime/messages.py`
-- `arena_forge/adapters/sublime/diagnostics_commands.py`
-- `arena_forge/adapters/sublime/debug_overlay_commands.py`
-- `arena_forge/adapters/sublime/run_panel_tester.py`
-- `arena_forge/adapters/sublime/run_panel_commands.py`
+- `arena_forge/adapters/sublime/run_panel_edit_actions.py`
+- `arena_forge/adapters/sublime/run_panel_test_actions.py`
+- `arena_forge/adapters/sublime/run_panel_session_actions.py`
+- `arena_forge/adapters/providers/submission_service.py`
+- `arena_forge/adapters/security/keyring_store.py`
+- `arena_forge/adapters/providers/atcoder.py`
 
 Latest regression tests added or expanded:
 
 - added:
-  - `tests/test_test_editor_dispatch.py`
-  - `tests/test_messages.py`
-  - `tests/test_diagnostics_commands.py`
-  - `tests/test_debug_overlay_commands.py`
+  - `tests/test_run_panel_process_actions.py`
 - expanded:
-  - `tests/test_run_panel_action_handlers.py`
-  - `tests/test_run_panel_tester.py`
+  - `tests/test_run_panel_session_actions.py`
+  - `tests/test_submission_service.py`
+  - `tests/test_keyring_store.py`
+  - `tests/test_atcoder_provider.py`
 
 ## Validation Baseline
 
 Run from repo root:
 
 - `uv run python -m pytest`
-  - expected result during this handoff: `196 passed`
+  - expected result during this handoff: `204 passed`
 - `uv run python -m mypy`
   - expected result: `Success: no issues found in 10 source files`
 - `uv run ruff check .`
@@ -303,13 +304,13 @@ Run from repo root:
 
 If continuing immediately, the best next mission is:
 
-1. continue run-panel helper extraction around `run_panel_commands.py` without
-   moving logic back into the command shell
-2. audit the remaining broad exception sites outside the Sublime shell, starting
-   with:
-   - `arena_forge/adapters/providers/submission_service.py`
-   - `arena_forge/adapters/security/keyring_store.py`
-   - `arena_forge/adapters/providers/atcoder.py`
+1. continue run-panel helper extraction in the still stateful modules:
+   - `arena_forge/adapters/sublime/run_panel_command_mixin.py`
+   - `arena_forge/adapters/sublime/run_panel_edit_actions.py`
+   - `arena_forge/adapters/sublime/run_panel_test_actions.py`
+2. add direct unit coverage for run-panel edit/test action modules, which still
+   contain user-visible control flow but have thinner dedicated tests than the
+   surrounding helper modules
 3. keep the now-expanded regression and lint baseline green while touching
    legacy or adapter recovery paths
 
@@ -321,12 +322,16 @@ Target files:
 
 - `arena_forge/adapters/sublime/run_panel_command_mixin.py`
 - `arena_forge/adapters/sublime/run_panel_action_handlers.py`
+- `arena_forge/adapters/sublime/run_panel_edit_actions.py`
+- `arena_forge/adapters/sublime/run_panel_test_actions.py`
 - `arena_forge/adapters/sublime/run_panel_session_actions.py`
 - `arena_forge/adapters/sublime/run_panel_commands.py`
 
 Goal:
 
 - keep `run_panel_commands.py` as a thin registration surface
+- keep process lifecycle and deferred command scheduling behind dedicated helper
+  modules
 - move any remaining event plumbing or small UI helpers into focused helpers
   without regressing the current action surface
 
@@ -334,23 +339,24 @@ Validation:
 
 - `uv run python -m pytest tests/test_run_panel_*`
 
-### Mission 2: audit non-Sublime exception boundaries
+### Mission 2: expand run-panel action coverage
 
 Target files:
 
-- `arena_forge/adapters/providers/submission_service.py`
-- `arena_forge/adapters/security/keyring_store.py`
-- `arena_forge/adapters/providers/atcoder.py`
+- `tests/test_run_panel_edit_actions.py`
+- `tests/test_run_panel_test_actions.py`
+- `tests/test_run_panel_command_mixin.py`
 
 Goal:
 
-- replace broad exception swallowing with explicit recovery boundaries
-- preserve the current user-visible failure normalization contracts
+- cover edit-mode retry, stop/clear behavior, and any remaining lifecycle
+  transitions that currently rely on indirect coverage
+- keep tests lightweight by stubbing Sublime APIs the same way the current
+  run-panel helper tests do
 
 Validation:
 
-- add targeted regression tests where behavior changes
-- `uv run python -m pytest`
+- `uv run python -m pytest tests/test_run_panel_*`
 
 ### Mission 3: keep the lint baseline green
 
