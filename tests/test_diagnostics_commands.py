@@ -6,14 +6,38 @@ from contextlib import contextmanager
 
 
 class _FakeDiagnosticsView:
-    def __init__(self, view_id: int = 1) -> None:
+    def __init__(
+        self,
+        view_id: int = 1,
+        *,
+        file_name: str = r"C:\repo\main.cpp",
+        source_text: str = "int main() {}\n",
+    ) -> None:
         self._view_id = view_id
+        self._file_name = file_name
+        self._source_text = source_text
+        self._change_count = 0
         self.erased_regions = []
         self.statuses = []
         self.added_regions = []
 
     def id(self) -> int:
         return self._view_id
+
+    def file_name(self) -> str:
+        return self._file_name
+
+    def change_count(self) -> int:
+        return self._change_count
+
+    def set_change_count(self, value: int) -> None:
+        self._change_count = value
+
+    def size(self) -> int:
+        return len(self._source_text)
+
+    def substr(self, region) -> str:
+        return self._source_text
 
     def erase_regions(self, key: str) -> None:
         self.erased_regions.append(key)
@@ -71,6 +95,27 @@ def _patched_sublime():
 
 
 class DiagnosticsCommandsTests(unittest.TestCase):
+    def test_run_sense_reuses_a_stable_scratch_label_for_the_same_view(self) -> None:
+        with _patched_sublime():
+            module = importlib.import_module("arena_forge.adapters.sublime.diagnostics_commands")
+            module._VIEW_STATES.clear()
+            labels = []
+            view = _FakeDiagnosticsView(7)
+            view.set_change_count(1)
+            command = module.InteliSenseCommand.__new__(module.InteliSenseCommand)
+            command.view = view
+            command.get_compile_cmd = lambda: "g++ {source_file}"
+            command._diagnostics_service = lambda: types.SimpleNamespace(
+                run=lambda **kwargs: labels.append(kwargs["scratch_label"])
+                or types.SimpleNamespace(issues=(), output="", command=())
+            )
+
+            command.run_sense(force=True)
+            view.set_change_count(2)
+            command.run_sense(force=True)
+
+            self.assertEqual(labels, ["view-7", "view-7"])
+
     def test_collect_diagnostics_logs_expected_run_failures(self) -> None:
         with _patched_sublime():
             module = importlib.import_module("arena_forge.adapters.sublime.diagnostics_commands")

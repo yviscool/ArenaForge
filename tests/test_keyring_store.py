@@ -24,6 +24,23 @@ class _FakeKeyring:
 
 
 class KeyringStoreTests(unittest.TestCase):
+    def test_is_available_returns_false_when_backend_raises_keyring_error(self) -> None:
+        class _BackendFailure(RuntimeError):
+            pass
+
+        class _BrokenKeyring:
+            class errors:
+                KeyringError = _BackendFailure
+
+            def get_password(self, service_name: str, username: str):
+                raise _BackendFailure("backend missing")
+
+        with patch("arena_forge.adapters.security.keyring_store.keyring", _BrokenKeyring()):
+            store = KeyringCredentialStore("arena")
+            self.assertFalse(store.is_available())
+            with self.assertRaises(RuntimeError):
+                store.get_credentials("codeforces")
+
     def test_set_credentials_replaces_old_secret_when_username_changes(self) -> None:
         fake_keyring = _FakeKeyring()
         fake_keyring.values[("arena:codeforces", "__username__")] = "old-user"
@@ -51,6 +68,25 @@ class KeyringStoreTests(unittest.TestCase):
         self.assertEqual(record.username, "new-user")
         self.assertEqual(fake_keyring.values[("arena:codeforces", "__username__")], "new-user")
         self.assertEqual(fake_keyring.values[("arena:codeforces", "new-user")], "new-secret")
+
+    def test_set_credentials_raises_runtime_error_when_backend_fails(self) -> None:
+        class _BackendFailure(RuntimeError):
+            pass
+
+        class _BrokenKeyring:
+            class errors:
+                KeyringError = _BackendFailure
+
+            def get_password(self, service_name: str, username: str):
+                raise _BackendFailure("backend missing")
+
+            def set_password(self, service_name: str, username: str, secret: str) -> None:
+                raise _BackendFailure("backend missing")
+
+        with patch("arena_forge.adapters.security.keyring_store.keyring", _BrokenKeyring()):
+            store = KeyringCredentialStore("arena")
+            with self.assertRaises(RuntimeError):
+                store.set_credentials("codeforces", "new-user", "new-secret")
 
 
 if __name__ == "__main__":

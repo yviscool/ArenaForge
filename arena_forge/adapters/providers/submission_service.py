@@ -71,12 +71,18 @@ class ProviderSubmissionService:
     def get_credentials(self, provider_name: str) -> Optional[CredentialRecord]:
         if self.credential_store is None or not self.credential_store.is_available():
             return None
-        return self.credential_store.get_credentials(provider_name)
+        try:
+            return self.credential_store.get_credentials(provider_name)
+        except RuntimeError:
+            return None
 
     def set_credentials(self, provider_name: str, username: str, secret: str) -> CredentialRecord:
         if self.credential_store is None or not self.credential_store.is_available():
             raise CredentialBackendUnavailableError()
-        return self.credential_store.set_credentials(provider_name, username, secret)
+        try:
+            return self.credential_store.set_credentials(provider_name, username, secret)
+        except RuntimeError as exc:
+            raise CredentialBackendUnavailableError(provider=provider_name) from exc
 
     def submit(self, request: SubmissionRequest, credentials: Optional[CredentialRecord] = None) -> None:
         provider = self.provider_registry.get(request.provider_name)
@@ -87,7 +93,10 @@ class ProviderSubmissionService:
         if credentials is None:
             if self.credential_store is None or not self.credential_store.is_available():
                 raise CredentialBackendUnavailableError(provider=request.provider_name)
-            credentials = self.credential_store.get_credentials(request.provider_name)
+            try:
+                credentials = self.credential_store.get_credentials(request.provider_name)
+            except RuntimeError as exc:
+                raise CredentialBackendUnavailableError(provider=request.provider_name) from exc
             if credentials is None:
                 raise MissingCredentialsError(provider=request.provider_name)
 

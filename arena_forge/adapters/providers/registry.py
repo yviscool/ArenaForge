@@ -46,9 +46,10 @@ class ProviderRegistry:
     def resolve_url(self, url: str) -> ResolvedContestProvider:
         parsed = urlparse(url)
         host = parsed.netloc.lower()
+        subject = parsed.path or "/"
         for provider_name, binding in self._bindings.items():
             if any(host == candidate or host.endswith("." + candidate) for candidate in binding.hosts):
-                match = re.search(binding.contest_id_pattern, url)
+                match = re.search(binding.contest_id_pattern, subject)
                 if match is None:
                     raise ValueError(f"Could not extract contest id from URL: {url}")
                 groups = match.groups()

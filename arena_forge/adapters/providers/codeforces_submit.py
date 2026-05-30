@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import time
 from html.parser import HTMLParser
 from random import choice
 from string import ascii_letters, digits
 from typing import Optional
+from urllib.parse import quote
 
 try:
     import requests
@@ -13,9 +15,17 @@ except ModuleNotFoundError:  # pragma: no cover - optional Sublime dependency
 
 CODEFORCES_LOGIN_URL = "https://codeforces.com/enter"
 CODEFORCES_SUBMIT_URL = "https://codeforces.com/contest/{contest_id}/submit"
+CODEFORCES_STATUS_API_URL = "https://codeforces.com/api/user.status?handle={handle}&from=1&count={count}"
 DEFAULT_LANGUAGE_ID = 54
 DEFAULT_HTTP_TIMEOUT_SECONDS = 15
+DEFAULT_CONFIRMATION_TIMEOUT_SECONDS = 10.0
+DEFAULT_CONFIRMATION_POLL_INTERVAL_SECONDS = 1.0
+DEFAULT_STATUS_LOOKBACK = 10
 STATIC_BFAA = "f1b3f18c715565b589b7823cda7448ce"
+
+
+class CodeforcesSubmissionError(ValueError):
+    pass
 
 
 class _CsrfTokenParser(HTMLParser):
@@ -51,6 +61,95 @@ def fetch_csrf_token(session, url: str) -> str:
     response = session.get(url, timeout=DEFAULT_HTTP_TIMEOUT_SECONDS)
     response.raise_for_status()
     return extract_csrf_token(response.text)
+
+
+def _status_api_url(username: str, *, count: int) -> str:
+    return CODEFORCES_STATUS_API_URL.format(handle=quote(username, safe=""), count=count)
+
+
+def _recent_submissions(session, username: str, *, count: int = DEFAULT_STATUS_LOOKBACK) -> list[dict[str, object]]:
+    response = session.get(_status_api_url(username, count=count), timeout=DEFAULT_HTTP_TIMEOUT_SECONDS)
+    response.raise_for_status()
+    try:
+        payload = response.json()
+    except ValueError as exc:
+        raise CodeforcesSubmissionError("Codeforces status API returned invalid JSON") from exc
+    if not isinstance(payload, dict):
+        raise CodeforcesSubmissionError("Codeforces status API returned an invalid payload")
+    if payload.get("status") != "OK":
+        comment = str(payload.get("comment") or "unknown status API failure")
+        raise CodeforcesSubmissionError(f"Codeforces status API error: {comment}")
+    result = payload.get("result")
+    if not isinstance(result, list):
+        raise CodeforcesSubmissionError("Codeforces status API payload is missing the result list")
+    return [entry for entry in result if isinstance(entry, dict)]
+
+
+def _submission_id(entry: dict[str, object]) -> Optional[int]:
+    value = entry.get("id")
+    return value if isinstance(value, int) else None
+
+
+def fetch_latest_submission_id(session, username: str) -> Optional[int]:
+    submissions = _recent_submissions(session, username, count=1)
+    if not submissions:
+        return None
+    return _submission_id(submissions[0])
+
+
+def _matches_submission(
+    entry: dict[str, object],
+    *,
+    contest_id: str,
+    problem_id: str,
+    previous_latest_submission_id: Optional[int],
+    submitted_after: int,
+) -> bool:
+    if str(entry.get("contestId") or "") != str(contest_id):
+        return False
+    problem = entry.get("problem")
+    if not isinstance(problem, dict):
+        return False
+    if str(problem.get("index") or "").strip() != str(problem_id):
+        return False
+
+    submission_id = _submission_id(entry)
+    if previous_latest_submission_id is not None and submission_id is not None:
+        return submission_id > previous_latest_submission_id
+
+    created_at = entry.get("creationTimeSeconds")
+    return isinstance(created_at, int) and created_at >= submitted_after
+
+
+def confirm_submission(
+    session,
+    username: str,
+    contest_id: str,
+    problem_id: str,
+    *,
+    previous_latest_submission_id: Optional[int],
+    submitted_after: int,
+    confirmation_timeout_seconds: float = DEFAULT_CONFIRMATION_TIMEOUT_SECONDS,
+    poll_interval_seconds: float = DEFAULT_CONFIRMATION_POLL_INTERVAL_SECONDS,
+) -> None:
+    deadline = time.monotonic() + max(0.0, float(confirmation_timeout_seconds))
+    while True:
+        submissions = _recent_submissions(session, username, count=DEFAULT_STATUS_LOOKBACK)
+        for entry in submissions:
+            if _matches_submission(
+                entry,
+                contest_id=contest_id,
+                problem_id=problem_id,
+                previous_latest_submission_id=previous_latest_submission_id,
+                submitted_after=submitted_after,
+            ):
+                return
+        if time.monotonic() >= deadline:
+            break
+        time.sleep(max(0.0, float(poll_interval_seconds)))
+    raise CodeforcesSubmissionError(
+        f"Codeforces did not confirm the submission for contest {contest_id} problem {problem_id}"
+    )
 
 
 def build_login_payload(*, csrf_token: str, ftaa: str, bfaa: str, username: str, password: str) -> dict[str, str]:
@@ -131,13 +230,45 @@ def submit(
     response.raise_for_status()
 
 
+def submit_and_confirm(
+    session,
+    username: str,
+    contest_id: str,
+    problem_id: str,
+    language_id: int,
+    source: str,
+    *,
+    confirmation_timeout_seconds: float = DEFAULT_CONFIRMATION_TIMEOUT_SECONDS,
+    poll_interval_seconds: float = DEFAULT_CONFIRMATION_POLL_INTERVAL_SECONDS,
+) -> None:
+    previous_latest_submission_id = fetch_latest_submission_id(session, username)
+    submitted_after = int(time.time())
+    submit(session, contest_id, problem_id, language_id, source)
+    confirm_submission(
+        session,
+        username,
+        contest_id,
+        problem_id,
+        previous_latest_submission_id=previous_latest_submission_id,
+        submitted_after=submitted_after,
+        confirmation_timeout_seconds=confirmation_timeout_seconds,
+        poll_interval_seconds=poll_interval_seconds,
+    )
+
+
 def perform_submission(contest_id: str, problem_id: str, code: str, user: dict[str, str]) -> None:
     if requests is None:
         raise ModuleNotFoundError("requests is required for Codeforces submission support")
     session = requests.Session()
     login(session, user)
-    print(f"Logged in as {user['username']}")
-    submit(session, str(contest_id), str(problem_id), DEFAULT_LANGUAGE_ID, code)
+    submit_and_confirm(
+        session,
+        user["username"],
+        str(contest_id),
+        str(problem_id),
+        DEFAULT_LANGUAGE_ID,
+        code,
+    )
 
 
 def get_submission_callable():

@@ -44,7 +44,7 @@ def build_provider_registry() -> ProviderRegistry:
     registry.register(
         CodeforcesProvider(),
         hosts=("codeforces.com", "www.codeforces.com"),
-        contest_id_pattern=r"(?:contest|problemset/problem)/(\d+)|(\d+)",
+        contest_id_pattern=r"^/(?:contest|problemset/problem)/(\d+)(?:/|$)",
     )
     registry.register(
         AtCoderProvider(),

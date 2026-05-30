@@ -18,7 +18,7 @@ from arena_forge.core.domain import (
 )
 
 from .codeforces_submit import login as login_codeforces
-from .codeforces_submit import submit as submit_codeforces
+from .codeforces_submit import submit_and_confirm as submit_codeforces
 
 USER_AGENT = "ArenaForge/3.0 (+https://example.invalid)"
 CODEFORCES_BASE_URL = "https://codeforces.com"
@@ -304,4 +304,11 @@ class CodeforcesProvider:
             session,
             {"username": credentials.username, "password": credentials.secret},
         )
-        submit_codeforces(session, str(contest_id), str(problem_id), int(language_id), code)
+        submit_codeforces(
+            session,
+            credentials.username,
+            str(contest_id),
+            str(problem_id),
+            int(language_id),
+            code,
+        )

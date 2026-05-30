@@ -29,7 +29,7 @@ class DiagnosticsRunnerTests(unittest.TestCase):
         with local_test_workspace("diagnostics-scratch") as root:
             workspace = DiagnosticsScratchWorkspace(root)
             scratch_path = workspace.write_source("int main() {}\n")
-            self.assertEqual(scratch_path, root / "cmp_sense" / "amin.cpp")
+            self.assertEqual(scratch_path, root / ".arena-forge" / "diagnostics" / "amin.cpp")
             self.assertEqual(scratch_path.read_text(encoding="utf-8"), "int main() {}\n")
 
     def test_scratch_workspace_sanitizes_unique_labels(self) -> None:

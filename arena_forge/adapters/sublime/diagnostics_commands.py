@@ -108,11 +108,11 @@ class InteliSenseCommand(sublime_plugin.TextCommand):
             sublime.set_timeout_async(
                 lambda: self._collect_diagnostics(
                     view=view,
-                    compile_cmd=compile_cmd,
-                    source=source,
-                    file_dir_path=file_dir_path,
-                    change_count=change_count,
-                    generation=generation,
+                compile_cmd=compile_cmd,
+                source=source,
+                file_dir_path=file_dir_path,
+                change_count=change_count,
+                generation=generation,
                 ),
                 0,
             )
@@ -135,7 +135,7 @@ class InteliSenseCommand(sublime_plugin.TextCommand):
                 compile_cmd=compile_cmd,
                 source_text=source,
                 source_file_dir=file_dir_path,
-                scratch_label=f"amin-{view.id()}-{generation}",
+                scratch_label=f"view-{view.id()}",
             )
         except _DIAGNOSTIC_RUN_FAILURES:
             sublime.set_timeout(_log_parse_errors_failed, 0)

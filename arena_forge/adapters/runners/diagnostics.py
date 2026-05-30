@@ -63,7 +63,7 @@ class DiagnosticsReport:
 @dataclass(frozen=True)
 class DiagnosticsScratchWorkspace:
     root_dir: Path
-    relative_dir: str = "cmp_sense"
+    relative_dir: str = ".arena-forge/diagnostics"
     file_name: str = "amin.cpp"
 
     def scratch_path(self, label: Optional[str] = None) -> Path:

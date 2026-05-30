@@ -111,13 +111,16 @@ class ContestHandlerCommand(sublime_plugin.TextCommand):
 
     def _prompt_and_store_credentials(self, provider_name: str, retry) -> None:
         app = get_application()
-        credential_store = app.credential_store
-        if not credential_store.is_available():
+        if not app.credential_store.is_available():
             product_log_message("error.credential_backend_unavailable")
             return
 
         def on_secret(secret: str, username: str) -> None:
-            credential_store.set_credentials(provider_name, username, secret)
+            try:
+                app.submission_service.set_credentials(provider_name, username, secret)
+            except SubmissionServiceError as exc:
+                product_log_message(exc.message_key, **exc.context)
+                return
             product_status_message("status.credentials_saved", provider=provider_name)
             retry()
 

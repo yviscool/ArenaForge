@@ -25,6 +25,26 @@ class ProviderRegistryTests(unittest.TestCase):
         resolved = registry.resolve_url("https://codeforces.com/contest/2001/problem/A")
         self.assertEqual(resolved.contest_id, "2001")
 
+    def test_registry_rejects_unrelated_codeforces_urls_even_if_they_contain_digits(self) -> None:
+        registry = ProviderRegistry()
+        registry.register(
+            CodeforcesProvider(),
+            hosts=("codeforces.com", "www.codeforces.com"),
+            contest_id_pattern=r"^/(?:contest|problemset/problem)/(\d+)(?:/|$)",
+        )
+        with self.assertRaises(ValueError):
+            registry.resolve_url("https://codeforces.com/blog/entry/12345")
+
+    def test_registry_rejects_problemset_status_urls(self) -> None:
+        registry = ProviderRegistry()
+        registry.register(
+            CodeforcesProvider(),
+            hosts=("codeforces.com", "www.codeforces.com"),
+            contest_id_pattern=r"^/(?:contest|problemset/problem)/(\d+)(?:/|$)",
+        )
+        with self.assertRaises(ValueError):
+            registry.resolve_url("https://codeforces.com/problemset/status/2000/problem/A")
+
     def test_registry_resolves_atcoder_url(self) -> None:
         registry = ProviderRegistry()
         registry.register(

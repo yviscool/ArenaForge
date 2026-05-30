@@ -3,12 +3,14 @@ import unittest
 from arena_forge.adapters.providers.codeforces_submit import (
     DEFAULT_HTTP_TIMEOUT_SECONDS,
     STATIC_BFAA,
+    CodeforcesSubmissionError,
     build_login_payload,
     build_submit_payload,
     extract_csrf_token,
     fetch_csrf_token,
     login,
     submit,
+    submit_and_confirm,
 )
 
 HTML = """
@@ -99,6 +101,98 @@ class CodeforcesSubmitTests(unittest.TestCase):
         self.assertEqual(session.get_calls[1][1], DEFAULT_HTTP_TIMEOUT_SECONDS)
         self.assertEqual(session.post_calls[0][2], DEFAULT_HTTP_TIMEOUT_SECONDS)
         self.assertEqual(session.post_calls[1][2], DEFAULT_HTTP_TIMEOUT_SECONDS)
+
+    def test_submit_and_confirm_accepts_new_submission_seen_via_status_api(self) -> None:
+        class _Response:
+            def __init__(self, *, text: str = HTML, payload=None) -> None:
+                self.text = text
+                self._payload = payload
+
+            def raise_for_status(self) -> None:
+                return None
+
+            def json(self):
+                if self._payload is None:
+                    raise AssertionError("json() was not expected")
+                return self._payload
+
+        class _Session:
+            def __init__(self) -> None:
+                self.ftaa = "ftaa-1"
+                self.bfaa = STATIC_BFAA
+                self.posts = []
+                self.status_payloads = [
+                    {"status": "OK", "result": [{"id": 100, "contestId": 999, "problem": {"index": "Z"}}]},
+                    {"status": "OK", "result": [{"id": 101, "contestId": 1000, "problem": {"index": "A"}}]},
+                ]
+
+            def get(self, url: str, timeout: int):
+                if "/api/user.status" in url:
+                    return _Response(payload=self.status_payloads.pop(0))
+                return _Response()
+
+            def post(self, url: str, data, timeout: int):
+                self.posts.append((url, data, timeout))
+                return _Response()
+
+        session = _Session()
+        submit_and_confirm(
+            session,
+            "tourist",
+            "1000",
+            "A",
+            54,
+            "print(42)",
+            confirmation_timeout_seconds=0,
+            poll_interval_seconds=0,
+        )
+
+        self.assertEqual(len(session.posts), 1)
+        self.assertEqual(session.posts[0][2], DEFAULT_HTTP_TIMEOUT_SECONDS)
+
+    def test_submit_and_confirm_raises_when_codeforces_never_exposes_a_new_submission(self) -> None:
+        class _Response:
+            def __init__(self, *, text: str = HTML, payload=None) -> None:
+                self.text = text
+                self._payload = payload
+
+            def raise_for_status(self) -> None:
+                return None
+
+            def json(self):
+                if self._payload is None:
+                    raise AssertionError("json() was not expected")
+                return self._payload
+
+        class _Session:
+            def __init__(self) -> None:
+                self.ftaa = "ftaa-1"
+                self.bfaa = STATIC_BFAA
+                self.status_payloads = [
+                    {"status": "OK", "result": [{"id": 100, "contestId": 999, "problem": {"index": "Z"}}]},
+                    {"status": "OK", "result": [{"id": 100, "contestId": 999, "problem": {"index": "Z"}}]},
+                ]
+
+            def get(self, url: str, timeout: int):
+                if "/api/user.status" in url:
+                    return _Response(payload=self.status_payloads.pop(0))
+                return _Response()
+
+            def post(self, url: str, data, timeout: int):
+                return _Response()
+
+        session = _Session()
+        with self.assertRaises(CodeforcesSubmissionError):
+            submit_and_confirm(
+                session,
+                "tourist",
+                "1000",
+                "A",
+                54,
+                "print(42)",
+                confirmation_timeout_seconds=0,
+                poll_interval_seconds=0,
+            )
 
 
 if __name__ == "__main__":
