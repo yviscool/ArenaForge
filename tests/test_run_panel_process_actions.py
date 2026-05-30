@@ -8,15 +8,23 @@ from contextlib import contextmanager
 @contextmanager
 def _patched_sublime():
     original_sublime = sys.modules.get("sublime")
+    original_messages = sys.modules.get("arena_forge.adapters.sublime.shared.messages")
     scheduled = []
     sys.modules["sublime"] = types.SimpleNamespace(
         set_timeout_async=lambda callback, delay=0: scheduled.append((callback, delay))
+    )
+    sys.modules["arena_forge.adapters.sublime.shared.messages"] = types.SimpleNamespace(
+        product_log_message=lambda *args, **kwargs: None
     )
     sys.modules.pop("arena_forge.adapters.sublime.run_panel.process_actions", None)
     try:
         yield scheduled
     finally:
         sys.modules.pop("arena_forge.adapters.sublime.run_panel.process_actions", None)
+        if original_messages is None:
+            sys.modules.pop("arena_forge.adapters.sublime.shared.messages", None)
+        else:
+            sys.modules["arena_forge.adapters.sublime.shared.messages"] = original_messages
         if original_sublime is None:
             sys.modules.pop("sublime", None)
         else:
@@ -50,6 +58,36 @@ class RunPanelProcessActionsTests(unittest.TestCase):
 
             self.assertFalse(result)
             self.assertEqual(failures, ["failed"])
+
+    def test_terminate_tester_with_logging_uses_shared_failure_message(self) -> None:
+        with _patched_sublime():
+            module = importlib.import_module("arena_forge.adapters.sublime.run_panel.process_actions")
+            logs = []
+            sys.modules["arena_forge.adapters.sublime.shared.messages"].product_log_message = (
+                lambda key, **kwargs: logs.append((key, kwargs))
+            )
+
+            result = module.terminate_tester_with_logging(
+                types.SimpleNamespace(terminate=lambda: (_ for _ in ()).throw(OSError("boom")))
+            )
+
+            self.assertFalse(result)
+            self.assertEqual(logs, [("error.process_termination_failed", {})])
+
+    def test_terminate_command_tester_with_logging_uses_command_state(self) -> None:
+        with _patched_sublime():
+            module = importlib.import_module("arena_forge.adapters.sublime.run_panel.process_actions")
+            calls = []
+            command = types.SimpleNamespace(
+                state=types.SimpleNamespace(
+                    tester=types.SimpleNamespace(terminate=lambda: calls.append("terminated"))
+                )
+            )
+
+            result = module.terminate_command_tester_with_logging(command)
+
+            self.assertTrue(result)
+            self.assertEqual(calls, ["terminated"])
 
     def test_schedule_test_manager_action_dispatches_expected_payload(self) -> None:
         with _patched_sublime() as scheduled:

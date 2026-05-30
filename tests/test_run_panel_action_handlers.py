@@ -8,6 +8,7 @@ from contextlib import contextmanager
 @contextmanager
 def _patched_sublime():
     original = sys.modules.get("sublime")
+    original_process_actions = sys.modules.get("arena_forge.adapters.sublime.run_panel.process_actions")
     fake = types.SimpleNamespace(
         Region=lambda a, b=None: (a, b),
         Phantom=object,
@@ -18,14 +19,19 @@ def _patched_sublime():
     )
     sys.modules["sublime"] = fake
     sys.modules.pop("arena_forge.adapters.sublime.run_panel.action_handlers", None)
-    sys.modules.pop("arena_forge.adapters.sublime.messages", None)
+    sys.modules.pop("arena_forge.adapters.sublime.run_panel.process_actions", None)
+    sys.modules.pop("arena_forge.adapters.sublime.shared.messages", None)
     sys.modules.pop("arena_forge.adapters.sublime.view_actions", None)
     try:
         yield
     finally:
         sys.modules.pop("arena_forge.adapters.sublime.run_panel.action_handlers", None)
-        sys.modules.pop("arena_forge.adapters.sublime.messages", None)
+        if original_process_actions is None:
+            sys.modules.pop("arena_forge.adapters.sublime.run_panel.process_actions", None)
+        else:
+            sys.modules["arena_forge.adapters.sublime.run_panel.process_actions"] = original_process_actions
         sys.modules.pop("arena_forge.adapters.sublime.view_actions", None)
+        sys.modules.pop("arena_forge.adapters.sublime.shared.messages", None)
         if original is None:
             sys.modules.pop("sublime", None)
         else:
@@ -58,7 +64,8 @@ class RunPanelActionHandlersTests(unittest.TestCase):
         with _patched_sublime():
             module = importlib.import_module("arena_forge.adapters.sublime.run_panel.action_handlers")
             logs = []
-            module.product_log_message = lambda key, **kwargs: logs.append((key, kwargs))
+            shared = importlib.import_module("arena_forge.adapters.sublime.shared.messages")
+            shared.product_log_message = lambda key, **kwargs: logs.append((key, kwargs))
 
             def fail_terminate() -> None:
                 raise OSError("boom")
@@ -77,7 +84,8 @@ class RunPanelActionHandlersTests(unittest.TestCase):
         with _patched_sublime():
             module = importlib.import_module("arena_forge.adapters.sublime.run_panel.action_handlers")
             logs = []
-            module.product_log_message = lambda key, **kwargs: logs.append((key, kwargs))
+            shared = importlib.import_module("arena_forge.adapters.sublime.shared.messages")
+            shared.product_log_message = lambda key, **kwargs: logs.append((key, kwargs))
             command = types.SimpleNamespace(state=types.SimpleNamespace(tester=None), view=object())
             context = module.RunPanelActionContext(command=command, edit=None, request=object())
 

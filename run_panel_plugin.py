@@ -1,4 +1,4 @@
-from .arena_forge.adapters.sublime.debug_overlay_commands import ViewTesterCommand
+from .arena_forge.adapters.sublime.debug_overlay import DebugOverlayCommand
 from .arena_forge.adapters.sublime.run_panel.commands import (
     CloseListener,
     LayoutListener,
@@ -11,5 +11,5 @@ __all__ = [
     "LayoutListener",
     "ModifiedListener",
     "TestManagerCommand",
-    "ViewTesterCommand",
+    "DebugOverlayCommand",
 ]

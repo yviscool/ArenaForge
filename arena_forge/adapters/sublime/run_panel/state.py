@@ -6,8 +6,8 @@ import sublime
 
 from arena_forge.core.domain import OutputEvaluation, RunHistoryEntry, SessionSnapshot, TestCase
 
-from ..messages import product_log_message
 from ..run_history import coerce_verdict
+from ..shared.messages import product_log_message
 from .rendering import build_accdec_phantom, build_test_config_phantom
 
 

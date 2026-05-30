@@ -2,7 +2,7 @@ import sublime
 import sublime_plugin
 from sublime import PhantomSet
 
-from ..package_resources import ARROW_LEFT_ICON_RESOURCE, ARROW_RIGHT_ICON_RESOURCE
+from ..shared.package_resources import ARROW_LEFT_ICON_RESOURCE, ARROW_RIGHT_ICON_RESOURCE
 from .command_mixin import RunPanelCommandMixin
 from .controller_state import RunPanelControllerState
 from .state import PanelTestState
@@ -51,7 +51,7 @@ class ModifiedListener(sublime_plugin.EventListener):
 
 	def on_hover(self, view, point, hover_zone):
 		if hover_zone == sublime.HOVER_TEXT:
-			view.run_command('view_tester', { 'action': 'get_var_value', 'pos': point })
+			view.run_command('debug_overlay', { 'action': 'get_var_value', 'pos': point })
 
 class CloseListener(sublime_plugin.EventListener):
 	"""Listen to Close"""

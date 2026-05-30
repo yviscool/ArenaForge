@@ -10,9 +10,9 @@ import sublime_plugin
 from arena_forge.adapters.runners import CompilerDiagnosticsService, DiagnosticsScratchWorkspace
 from arena_forge.core.domain import DiagnosticSeverity
 
-from ..messages import product_log_message, status_message, translate
-from ..package_resources import get_plugin_root_dir
-from ..settings_bridge import get_settings, is_lang_view
+from ..shared.messages import product_log_message, status_message, translate
+from ..shared.package_resources import get_plugin_root_dir
+from ..shared.settings_bridge import get_settings, is_lang_view
 
 _DIAGNOSTIC_DEBOUNCE_MS = 250
 _DIAGNOSTIC_RUN_FAILURES = (IndexError, KeyError, OSError, ValueError)
@@ -42,7 +42,7 @@ def _log_parse_errors_failed() -> None:
     product_log_message("error.parse_errors_failed")
 
 
-class InteliSenseCommand(sublime_plugin.TextCommand):
+class IntelliSenseCommand(sublime_plugin.TextCommand):
     def get_compile_cmd(self):
         for option in get_settings().get("run_settings", []):
             if option["name"] == "C++":
@@ -236,19 +236,19 @@ class InteliSenseCommand(sublime_plugin.TextCommand):
         )
 
 
-class SenseListener(sublime_plugin.EventListener):
+class IntelliSenseListener(sublime_plugin.EventListener):
     def on_load(self, view):
         if is_lang_view(view, "C++"):
-            view.run_command("inteli_sense", {"action": "run_sense"})
+            view.run_command("intelli_sense", {"action": "run_sense"})
 
     def on_pre_close(self, view):
         if is_lang_view(view, "C++"):
-            view.run_command("inteli_sense", {"action": "clear_sense_state"})
+            view.run_command("intelli_sense", {"action": "clear_sense_state"})
 
     def on_modified(self, view):
         if is_lang_view(view, "C++"):
-            view.run_command("inteli_sense", {"action": "sync_modified"})
+            view.run_command("intelli_sense", {"action": "sync_modified"})
 
     def on_activated(self, view):
         if is_lang_view(view, "C++"):
-            view.run_command("inteli_sense", {"action": "run_sense"})
+            view.run_command("intelli_sense", {"action": "run_sense"})

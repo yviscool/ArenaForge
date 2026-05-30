@@ -11,19 +11,19 @@ sys.modules.setdefault("sublime_plugin", types.SimpleNamespace(TextCommand=objec
 
 class HistoryCommandTests(unittest.TestCase):
     def test_history_source_key_constant(self) -> None:
-        from arena_forge.adapters.sublime.history_commands import HISTORY_SOURCE_FILE_KEY
+        from arena_forge.adapters.sublime.ui.history_commands import HISTORY_SOURCE_FILE_KEY
 
         self.assertEqual(HISTORY_SOURCE_FILE_KEY, "arena_forge.history_source_file")
 
     def test_build_history_report_handles_empty_snapshot(self) -> None:
-        from arena_forge.adapters.sublime.history_commands import build_history_report
+        from arena_forge.adapters.sublime.ui.history_commands import build_history_report
 
         report = build_history_report("main.cpp", None, product_name="ArenaForge")
         self.assertIn("ArenaForge", report)
         self.assertIn("main.cpp", report)
 
     def test_build_history_report_renders_latest_first(self) -> None:
-        from arena_forge.adapters.sublime.history_commands import build_history_report
+        from arena_forge.adapters.sublime.ui.history_commands import build_history_report
         from arena_forge.core.domain import (
             OutputEvaluation,
             OutputMismatch,

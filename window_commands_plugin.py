@@ -1,4 +1,4 @@
-from .arena_forge.adapters.sublime.window_commands import (
+from .arena_forge.adapters.sublime.ui.window_commands import (
     ArenaForgeAutoCommand,
     ArenaForgeClearAllTestsCommand,
     ArenaForgeConfigureCredentialsCommand,

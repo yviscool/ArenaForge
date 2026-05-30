@@ -8,7 +8,7 @@ from typing import Dict, Iterable, Set
 from arena_forge.product import SUPPORTED_LOCALES
 
 LOCALE_ROOT = Path("arena_forge/locales")
-MESSAGE_SOURCE = Path("arena_forge/adapters/sublime/messages.py")
+MESSAGE_SOURCE = Path("arena_forge/adapters/sublime/shared/messages.py")
 PLACEHOLDER_PATTERN = re.compile(r"\{([a-zA-Z0-9_]+)\}")
 
 
@@ -29,7 +29,7 @@ def _load_sublime_fallbacks() -> Dict[str, str]:
             continue
         catalog = ast.literal_eval(node.value)
         return {str(key): str(value) for key, value in catalog.items()}
-    raise AssertionError("_FALLBACKS not found in messages.py")
+    raise AssertionError("_FALLBACKS not found in shared/messages.py")
 
 
 def _extract_placeholders(value: str) -> Set[str]:

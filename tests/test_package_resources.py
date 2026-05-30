@@ -1,6 +1,6 @@
 import unittest
 
-from arena_forge.adapters.sublime.package_resources import (
+from arena_forge.adapters.sublime.shared.package_resources import (
     ARROW_LEFT_ICON_RESOURCE,
     ARROW_RIGHT_ICON_RESOURCE,
     STRESS_SYNTAX_RESOURCE,
@@ -16,15 +16,15 @@ from arena_forge.adapters.sublime.package_resources import (
 
 class PackageResourcesTests(unittest.TestCase):
     def test_resolve_package_layout_for_repo_root_mount(self) -> None:
-        layout = resolve_package_layout("ArenaForge.arena_forge.adapters.sublime.package_resources")
+        layout = resolve_package_layout("ArenaForge.arena_forge.adapters.sublime.shared.package_resources")
         self.assertEqual(layout, PackageLayout(package_name="ArenaForge", resource_subpath=()))
 
     def test_resolve_package_layout_for_outer_workspace_mount(self) -> None:
-        layout = resolve_package_layout("ArenaForge.arena_forge.arena_forge.adapters.sublime.package_resources")
+        layout = resolve_package_layout("ArenaForge.arena_forge.arena_forge.adapters.sublime.shared.package_resources")
         self.assertEqual(layout, PackageLayout(package_name="ArenaForge", resource_subpath=("arena_forge",)))
 
     def test_resolve_package_layout_for_plain_python_import(self) -> None:
-        layout = resolve_package_layout("arena_forge.adapters.sublime.package_resources")
+        layout = resolve_package_layout("arena_forge.adapters.sublime.shared.package_resources")
         self.assertEqual(layout, PackageLayout(package_name="arena_forge", resource_subpath=()))
 
     def test_build_package_resource_path_normalizes_segments(self) -> None:

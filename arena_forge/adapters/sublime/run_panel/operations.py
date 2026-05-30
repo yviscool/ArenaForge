@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from sublime import Region
 
-from ..messages import status_message
+from ..shared.messages import status_message
 from .logic import resolve_visible_body_text
 
 

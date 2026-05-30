@@ -16,7 +16,7 @@ class _FakeView:
 class RenderAssetsTests(unittest.TestCase):
     def test_render_template_injects_translated_labels(self) -> None:
         sys.modules["sublime"] = types.SimpleNamespace(platform=lambda: "windows")
-        from arena_forge.adapters.sublime import render_assets
+        from arena_forge.adapters.sublime.support import render_assets
 
         original_root = render_assets.ASSET_ROOT
         with local_test_workspace("render-assets-template") as root:
@@ -37,7 +37,7 @@ class RenderAssetsTests(unittest.TestCase):
 
     def test_build_styles_appends_variant_css(self) -> None:
         sys.modules["sublime"] = types.SimpleNamespace(platform=lambda: "windows")
-        from arena_forge.adapters.sublime import render_assets
+        from arena_forge.adapters.sublime.support import render_assets
 
         original_settings = render_assets.get_settings
         original_root = render_assets.ASSET_ROOT
@@ -57,7 +57,7 @@ class RenderAssetsTests(unittest.TestCase):
 
     def test_terminal_variant_adds_monospace_and_zero_radius(self) -> None:
         sys.modules["sublime"] = types.SimpleNamespace(platform=lambda: "windows")
-        from arena_forge.adapters.sublime import render_assets
+        from arena_forge.adapters.sublime.support import render_assets
 
         original_settings = render_assets.get_settings
         render_assets.get_settings = lambda: {"ui_variant": "terminal", "ui_density": "compact"}

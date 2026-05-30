@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import Optional
 
 from ..command_action_catalog import SUPPORTED_TEST_EDITOR_ACTIONS
-from ..messages import product_log_message, status_message
 from ..run_panel.process_actions import terminate_tester
+from ..shared.messages import product_log_message, status_message
 from ..view_actions import erase_region, replace_all, replace_region, set_cursor_to_end
 
 

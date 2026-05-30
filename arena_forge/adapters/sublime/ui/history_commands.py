@@ -5,9 +5,12 @@ from pathlib import Path
 import sublime
 import sublime_plugin
 
-from .messages import translate, translate_verdict
-from .result_display import format_output_evaluation_detail, format_output_evaluation_summary
-from .settings_bridge import get_session_repository
+from ..shared.messages import translate, translate_verdict
+from ..shared.settings_bridge import get_session_repository
+from ..support.result_display import (
+    format_output_evaluation_detail,
+    format_output_evaluation_summary,
+)
 
 HISTORY_SOURCE_FILE_KEY = "arena_forge.history_source_file"
 

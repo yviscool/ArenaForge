@@ -13,6 +13,8 @@ Migration note:
   `arena_forge/adapters/sublime/formatting/`.
 - Contest, diagnostics, and stress commands now live under
   `arena_forge/adapters/sublime/contest/`, `diagnostics/`, and `stress/`.
+- Template and debug-overlay commands now live under
+  `arena_forge/adapters/sublime/template_bridge/` and `debug_overlay/`.
 - Historical references to the old flat paths below are archival context unless explicitly updated.
 
 ## Product Identity
@@ -30,19 +32,21 @@ repo_root/
   arena_forge/              # core + adapters + product defaults + locales
   docs/                     # architecture and migration notes
   tests/                    # pytest suite
-  settings.py               # thin Sublime wrapper
-  ContestHandler.py         # thin Sublime wrapper
-  stress_manager.py         # thin Sublime wrapper
-  Cpp_Intellij_Sense.py     # thin Sublime wrapper
-  olympic_funcs.py          # thin Sublime wrapper
-  test_edit.py              # thin Sublime wrapper
-  test_manager.py           # thin Sublime wrapper
-  arenaforge_window_commands.py
-  NumberSpliter.py
-  Highlight/                # HTML/CSS render assets
+  settings_plugin.py        # thin Sublime wrapper
+  contest_plugin.py         # thin Sublime wrapper
+  stress_plugin.py          # thin Sublime wrapper
+  diagnostics_plugin.py     # thin Sublime wrapper
+  template_plugin.py        # thin Sublime wrapper
+  test_editor_plugin.py     # thin Sublime wrapper
+  run_panel_plugin.py       # thin Sublime wrapper
+  window_commands_plugin.py
+  formatting_plugin.py
+  history_plugin.py
+  number_splitter.py
+  highlight_assets/         # HTML/CSS render assets
   icons/                    # run-panel and debug icons
-  debuggers/                # debugger bridge modules
-  Modules/                  # template generator bridge
+  debug_backends/           # debugger bridge modules
+  plugin_support/           # root-level support bridges
   cmp_sense/                # runtime diagnostics scratch dir
   *.sublime-settings
   *.sublime-keymap
@@ -99,51 +103,55 @@ not back into the repo root.
 Important files:
 
 - `bootstrap.py`
-- `settings_bridge.py`
-- `contest_commands.py`
-- `stress_commands.py`
-- `diagnostics_commands.py`
-- `template_commands.py`
-- `test_editor_commands.py`
-- `run_panel_commands.py`
-- `run_panel_controller_state.py`
-- `run_panel_state.py`
-- `run_panel_tester.py`
-- `run_panel_rendering.py`
-- `run_panel_session_service.py`
-- `run_panel_regions.py`
-- `debug_overlay_commands.py`
+- `shared/settings_bridge.py`
+- `contest/commands.py`
+- `stress/commands.py`
+- `diagnostics/commands.py`
+- `template_bridge/commands.py`
+- `test_editor/commands.py`
+- `run_panel/commands.py`
+- `run_panel/state.py`
+- `run_panel/tester.py`
+- `run_panel/rendering.py`
+- `debug_overlay/commands.py`
+- `ui/window_commands.py`
+- `ui/history_commands.py`
+- `support/render_assets.py`
+- `support/result_display.py`
 - `root_bridge.py`
 
 ## Root Wrappers And Resource Bridges
 
 Thin wrappers at repo root:
 
-- `settings.py`
-- `ContestHandler.py`
-- `stress_manager.py`
-- `Cpp_Intellij_Sense.py`
-- `olympic_funcs.py`
-- `Modules/ProcessManager.py`
-- `test_edit.py`
-- `test_manager.py`
-- `arenaforge_window_commands.py`
+- `settings_plugin.py`
+- `contest_plugin.py`
+- `stress_plugin.py`
+- `diagnostics_plugin.py`
+- `template_plugin.py`
+- `test_editor_plugin.py`
+- `run_panel_plugin.py`
+- `history_plugin.py`
+- `window_commands_plugin.py`
+- `formatting_plugin.py`
+- `number_splitter.py`
 
 Important bridge behavior:
 
 - `arena_forge/adapters/sublime/root_bridge.py` is the approved way for Sublime
-  adapters to reach root resources such as `Highlight.*`, `debuggers.*`, and
-  `Modules.ClassPregen.*`
+  adapters to reach root resources such as
+  `highlight_assets.cpp_var_highlight`, `debug_backends.registry`, and
+  `plugin_support.template_generation.*`
 - non-Sublime modules should not import `root_bridge.py`
 
 ## Active Resources That Must Stay At Repo Root
 
 These are still part of the active runtime path:
 
-- `Highlight/`
+- `highlight_assets/`
 - `icons/`
-- `debuggers/`
-- `Modules/ClassPregen/`
+- `debug_backends/`
+- `plugin_support/template_generation/`
 - `cmp_sense/`
 - `StressSyntax.sublime-syntax`
 - `TestSyntax.sublime-syntax`
@@ -169,61 +177,61 @@ Still true:
 
 - root wrappers are intentionally thin
 - the broader run-panel controller flow is still the main remaining
-  architectural hotspot, but `run_panel_commands.py` itself is now a thin
+  architectural hotspot, but `run_panel/commands.py` itself is now a thin
   registration shell
 
 ## Current Working Set
 
 Most recent pass completed:
 
-- added `run_panel_process_actions.py` to centralize run-panel tester
-  termination and deferred `test_manager` command scheduling
-- rewired run-panel close / kill / stop / clear-all / rerun / edit-mode retry
-  flows through the shared process-action helper instead of duplicating
-  per-module process control
-- continued shrinking `run_panel_session_actions.py` by extracting rerun and
-  compile-launch helpers around backend preparation and async start
-- removed the remaining broad exception boundaries in:
-  - `arena_forge/adapters/providers/submission_service.py`
-  - `arena_forge/adapters/security/keyring_store.py`
-  - `arena_forge/adapters/providers/atcoder.py`
-- added regression coverage for the new run-panel lifecycle helper and the
-  narrowed provider/security recovery paths
+- extracted shared run-panel tester termination logging into
+  `arena_forge/adapters/sublime/run_panel/process_actions.py`
+- rewired `action_handlers.py`, `edit_actions.py`, `session_actions.py`, and
+  `test_actions.py` to use the shared termination helpers instead of repeating
+  inline failure callbacks
+- added direct regression coverage for:
+  - `tests/test_run_panel_edit_actions.py`
+  - `tests/test_run_panel_command_mixin.py`
+  - `tests/test_run_panel_test_actions.py`
+- updated existing run-panel helper tests to match the shared termination flow
 - full validation now passes with the expanded test suite
 
 Primary files touched in the latest pass:
 
-- `arena_forge/adapters/sublime/run_panel_process_actions.py`
-- `arena_forge/adapters/sublime/run_panel_action_handlers.py`
-- `arena_forge/adapters/sublime/test_editor_dispatch.py`
-- `arena_forge/adapters/sublime/run_panel_edit_actions.py`
-- `arena_forge/adapters/sublime/run_panel_test_actions.py`
-- `arena_forge/adapters/sublime/run_panel_session_actions.py`
-- `arena_forge/adapters/providers/submission_service.py`
-- `arena_forge/adapters/security/keyring_store.py`
-- `arena_forge/adapters/providers/atcoder.py`
+- `arena_forge/adapters/sublime/run_panel/process_actions.py`
+- `arena_forge/adapters/sublime/run_panel/action_handlers.py`
+- `arena_forge/adapters/sublime/run_panel/edit_actions.py`
+- `arena_forge/adapters/sublime/run_panel/session_actions.py`
+- `arena_forge/adapters/sublime/run_panel/test_actions.py`
+- `tests/test_run_panel_process_actions.py`
+- `tests/test_run_panel_action_handlers.py`
+- `tests/test_run_panel_session_actions.py`
+- `tests/test_run_panel_edit_actions.py`
+- `tests/test_run_panel_command_mixin.py`
+- `tests/test_run_panel_test_actions.py`
 
 Latest regression tests added or expanded:
 
-- added:
-  - `tests/test_run_panel_process_actions.py`
 - expanded:
+  - `tests/test_run_panel_process_actions.py`
+  - `tests/test_run_panel_action_handlers.py`
   - `tests/test_run_panel_session_actions.py`
-  - `tests/test_submission_service.py`
-  - `tests/test_keyring_store.py`
-  - `tests/test_atcoder_provider.py`
+- added:
+  - `tests/test_run_panel_edit_actions.py`
+  - `tests/test_run_panel_command_mixin.py`
+  - `tests/test_run_panel_test_actions.py`
 
 ## Validation Baseline
 
 Run from repo root:
 
 - `uv run python -m pytest`
-  - expected result during this handoff: `204 passed`
+  - expected result during this handoff: `220 passed`
 - `uv run python -m mypy`
-  - expected result: `Success: no issues found in 10 source files`
+  - expected result: passing
 - `uv run ruff check .`
   - expected result: passing
-- `python -m compileall arena_forge tests test_manager.py test_edit.py settings.py ContestHandler.py stress_manager.py Cpp_Intellij_Sense.py olympic_funcs.py Modules/ProcessManager.py`
+- `python -m compileall arena_forge tests run_panel_plugin.py test_editor_plugin.py settings_plugin.py contest_plugin.py stress_plugin.py diagnostics_plugin.py template_plugin.py formatting_plugin.py history_plugin.py window_commands_plugin.py number_splitter.py`
   - expected result: passing
 
 ## Known Technical Quirks
@@ -252,7 +260,7 @@ Run from repo root:
 
 - `cmp_sense/` is a runtime scratch directory
 - it is intentionally git-ignored
-- `diagnostics_commands.py` now writes per-view labeled scratch files such as
+- `diagnostics/commands.py` now writes per-view labeled scratch files such as
   `amin-<view>-<generation>.cpp`
 
 ### 3.5. `uv` trampoline quirk on Windows
@@ -270,12 +278,12 @@ Run from repo root:
 
 ### 5. Run panel controller surface
 
-- `arena_forge/adapters/sublime/run_panel_commands.py` is now a thin
+- `arena_forge/adapters/sublime/run_panel/commands.py` is now a thin
   registration shell
 - do not move extracted logic back into it
 - future cleanup should continue targeting adjacent helper modules such as
-  `run_panel_command_mixin.py`, `run_panel_action_handlers.py`, and
-  `run_panel_session_actions.py`
+  `run_panel/command_mixin.py`, `run_panel/action_handlers.py`, and
+  `run_panel/session_actions.py`
 
 ## Recommended Do / Do Not
 
@@ -303,9 +311,9 @@ Run from repo root:
    - `docs/SUBLIME_SHELL_MIGRATION.md`
    - this file
 2. Inspect:
-   - `arena_forge/adapters/sublime/run_panel_commands.py`
-   - `arena_forge/adapters/sublime/run_panel_tester.py`
-   - `arena_forge/adapters/sublime/run_panel_state.py`
+   - `arena_forge/adapters/sublime/run_panel/commands.py`
+   - `arena_forge/adapters/sublime/run_panel/tester.py`
+   - `arena_forge/adapters/sublime/run_panel/state.py`
 3. Run:
    - `uv run python -m pytest`
 4. Only then start editing
@@ -314,13 +322,14 @@ Run from repo root:
 
 If continuing immediately, the best next mission is:
 
-1. continue run-panel helper extraction in the still stateful modules:
-   - `arena_forge/adapters/sublime/run_panel_command_mixin.py`
-   - `arena_forge/adapters/sublime/run_panel_edit_actions.py`
-   - `arena_forge/adapters/sublime/run_panel_test_actions.py`
-2. add direct unit coverage for run-panel edit/test action modules, which still
-   contain user-visible control flow but have thinner dedicated tests than the
-   surrounding helper modules
+1. continue run-panel helper extraction around launch and stop orchestration:
+   - `arena_forge/adapters/sublime/run_panel/session_actions.py`
+   - `arena_forge/adapters/sublime/run_panel/action_handlers.py`
+   - `arena_forge/adapters/sublime/run_panel/command_support.py`
+2. expand direct unit coverage around the remaining higher-branching helpers:
+   - `tests/test_run_panel_session_actions.py`
+   - `tests/test_run_panel_display_actions.py`
+   - `tests/test_run_panel_debug_actions.py` if new extraction lands there
 3. keep the now-expanded regression and lint baseline green while touching
    legacy or adapter recovery paths
 
@@ -330,37 +339,36 @@ If continuing immediately, the best next mission is:
 
 Target files:
 
-- `arena_forge/adapters/sublime/run_panel_command_mixin.py`
-- `arena_forge/adapters/sublime/run_panel_action_handlers.py`
-- `arena_forge/adapters/sublime/run_panel_edit_actions.py`
-- `arena_forge/adapters/sublime/run_panel_test_actions.py`
-- `arena_forge/adapters/sublime/run_panel_session_actions.py`
-- `arena_forge/adapters/sublime/run_panel_commands.py`
+- `arena_forge/adapters/sublime/run_panel/action_handlers.py`
+- `arena_forge/adapters/sublime/run_panel/session_actions.py`
+- `arena_forge/adapters/sublime/run_panel/command_support.py`
+- `arena_forge/adapters/sublime/run_panel/display_actions.py`
+- `arena_forge/adapters/sublime/run_panel/commands.py`
 
 Goal:
 
-- keep `run_panel_commands.py` as a thin registration surface
+- keep `run_panel/commands.py` as a thin registration surface
 - keep process lifecycle and deferred command scheduling behind dedicated helper
   modules
-- move any remaining event plumbing or small UI helpers into focused helpers
+- keep launch/stop/render orchestration moving toward smaller focused helpers
   without regressing the current action surface
 
 Validation:
 
 - `uv run python -m pytest tests/test_run_panel_*`
 
-### Mission 2: expand run-panel action coverage
+### Mission 2: expand run-panel helper coverage
 
 Target files:
 
-- `tests/test_run_panel_edit_actions.py`
-- `tests/test_run_panel_test_actions.py`
-- `tests/test_run_panel_command_mixin.py`
+- `tests/test_run_panel_session_actions.py`
+- `tests/test_run_panel_display_actions.py`
+- `tests/test_run_panel_process_actions.py`
 
 Goal:
 
-- cover edit-mode retry, stop/clear behavior, and any remaining lifecycle
-  transitions that currently rely on indirect coverage
+- cover launch rerun/error branches, display update behavior, and any remaining
+  lifecycle transitions that still rely on indirect coverage
 - keep tests lightweight by stubbing Sublime APIs the same way the current
   run-panel helper tests do
 
@@ -373,9 +381,9 @@ Validation:
 Target files:
 
 - repo root wrappers
-- `Highlight/`
-- `Modules/`
-- `debuggers/`
+- `highlight_assets/`
+- `plugin_support/`
+- `debug_backends/`
 
 Goal:
 

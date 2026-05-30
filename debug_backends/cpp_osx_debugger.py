@@ -5,7 +5,7 @@ from os import path
 
 import sublime
 
-from .debugger_info import Debugger
+from .registry import Debugger
 
 
 class LLDBDebugger(Debugger):

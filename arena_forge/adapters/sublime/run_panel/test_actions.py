@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from sublime import Region
 
-from ..messages import product_log_message
 from .operations import delete_selected_tests, swap_selected_tests, toggle_test_fold
-from .process_actions import terminate_tester
+from .process_actions import terminate_tester_with_logging
 
 
 def toggle_fold(command, test_id) -> None:
@@ -36,7 +35,7 @@ def handle_test_event(command, test_id, event: str) -> None:
     elif event == "test-edit":
         open_test_edit(command, test_id)
     elif event == "test-stop":
-        terminate_tester(tester, on_failure=lambda: product_log_message("error.process_termination_failed"))
+        terminate_tester_with_logging(tester)
     elif event == "test-run":
         if not tester.tests[test_id].fold:
             toggle_fold(command, test_id)
@@ -176,7 +175,7 @@ def clear_all_tests(command) -> None:
     if tester is None:
         return
     if tester.proc_run:
-        terminate_tester(tester, on_failure=lambda: product_log_message("error.process_termination_failed"))
+        terminate_tester_with_logging(tester)
     tester.tests = []
     tester.prog_out = []
     tester.test_iter = 0

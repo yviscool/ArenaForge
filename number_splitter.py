@@ -1,10 +1,10 @@
 import sublime
 import sublime_plugin
 
-from .settings import is_lang_view
+from .settings_plugin import is_lang_view
 
 
-class NumberSplit():
+class NumberSplitter:
 	def prefix_int(s):
 		i = 0
 		while i < len(s) and s[i].isdigit():
@@ -28,14 +28,14 @@ class NumberSplit():
 		regions = []
 		for x in nums:
 			s = view.substr(x)
-			p = NumberSplit.prefix_int(s)
+			p = NumberSplitter.prefix_int(s)
 			s = s[:p]
-			seps = NumberSplit.get_separators(s)
+			seps = NumberSplitter.get_separators(s)
 			seps = [y + x.a for y in seps]
 			for sep in seps:
 				regions.append(sublime.Region(sep, sep + 1))
 		# print(regions)
-		view.add_regions('NumberSpliter2', regions, 'constant.numeric.c', '', \
+		view.add_regions('number_splitter_regions', regions, 'constant.numeric.c', '', \
 				sublime.DRAW_STIPPLED_UNDERLINE | sublime.DRAW_NO_FILL | sublime.DRAW_NO_OUTLINE)
 
 
@@ -48,20 +48,20 @@ class ModifyListener(sublime_plugin.EventListener):
 
 	# def on_post_save_async(self, view):
 	# 	if get_syntax(view) == 'cpp':
-	# 		view.run_command('inteli_sense', {'action': 'run_sense'})
+	# 		view.run_command('intelli_sense', {'action': 'run_sense'})
 	
 	def on_load(self, view):
 		if is_supported_lang(view):
-			NumberSplit.highlight(view)
+			NumberSplitter.highlight(view)
 
 	def on_modified(self, view):
 		if is_supported_lang(view):
-			NumberSplit.highlight(view)
+			NumberSplitter.highlight(view)
 
 	# def on_deactivated(self, view):
 		# if is_supported_lang(view):
-			# view.run_command('inteli_sense', {'action': 'stop_sense'})
+			# view.run_command('intelli_sense', {'action': 'stop_sense'})
 
 	def on_activated(self, view):
 		if is_supported_lang(view):
-			NumberSplit.highlight(view)
+			NumberSplitter.highlight(view)

@@ -84,5 +84,5 @@ def get_best_debug_module(ext):
 		return dbgs[0]
 	return None
 
-importlib.import_module(f"{__package__}.Cpp_OSX_Debugger")
+importlib.import_module(f"{__package__}.cpp_osx_debugger")
 # from . import DebugodPy3Ejector

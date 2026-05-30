@@ -1,5 +1,13 @@
 # Sublime Shell Migration
 
+Status note:
+- The root Sublime bridge files referenced below were later renamed to a
+  consistent `*_plugin.py` scheme.
+- Historical mentions of names like `ContestHandler.py` and `test_manager.py`
+  are archival context unless explicitly updated.
+- The debugger support directory was later renamed from `debuggers/` to
+  `debug_backends/`.
+
 ## Short Answer
 
 Yes, the ArenaForge kernel is formed enough to begin a large shell migration.

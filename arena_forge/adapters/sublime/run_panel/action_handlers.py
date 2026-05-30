@@ -6,7 +6,7 @@ from typing import Any, Callable, Dict
 from sublime import Region
 
 from ..command_action_catalog import SUPPORTED_TEST_MANAGER_ACTIONS
-from ..messages import product_log_message, status_message
+from ..shared.messages import status_message
 from ..view_actions import erase_region, replace_all, replace_region, set_cursor_to_end
 from .action_request import RunPanelActionRequest
 from .input_actions import (
@@ -19,7 +19,7 @@ from .input_actions import (
     move_input_line_end,
     move_input_line_start,
 )
-from .process_actions import terminate_command_tester
+from .process_actions import terminate_command_tester_with_logging
 from .session_actions import make_opd
 
 
@@ -94,17 +94,11 @@ def build_test_manager_action_handlers(context: RunPanelActionContext) -> Dict[s
 
 
 def _close_command(context: RunPanelActionContext) -> None:
-    terminate_command_tester(
-        context.command,
-        on_failure=lambda: product_log_message("error.process_termination_failed"),
-    )
+    terminate_command_tester_with_logging(context.command)
 
 
 def _kill_process(context: RunPanelActionContext) -> None:
-    terminate_command_tester(
-        context.command,
-        on_failure=lambda: product_log_message("error.process_termination_failed"),
-    )
+    terminate_command_tester_with_logging(context.command)
 
 
 def _toggle_debugger(context: RunPanelActionContext) -> None:

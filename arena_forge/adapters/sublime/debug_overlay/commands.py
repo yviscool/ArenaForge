@@ -7,10 +7,10 @@ from os import path
 import sublime
 import sublime_plugin
 
-from .messages import status_message
-from .package_resources import ARROW_RIGHT_ICON_RESOURCE, TEST_SYNTAX_RESOURCE
-from .root_bridge import get_highlight_function
-from .settings_bridge import get_settings
+from ..root_bridge import get_highlight_function
+from ..shared.messages import status_message
+from ..shared.package_resources import ARROW_RIGHT_ICON_RESOURCE, TEST_SYNTAX_RESOURCE
+from ..shared.settings_bridge import get_settings
 
 
 def split_frame_description(desc):
@@ -40,7 +40,7 @@ def _schedule_sidebar_hide(window) -> None:
         sublime.set_timeout_async(lambda: hide_sidebar(False), 50)
 
 
-class ViewTesterCommand(sublime_plugin.TextCommand):
+class DebugOverlayCommand(sublime_plugin.TextCommand):
     ROOT = path.dirname(__file__)
     ruler_opd_panel = 0.68
     have_tied_dbg = False
@@ -139,7 +139,7 @@ class ViewTesterCommand(sublime_plugin.TextCommand):
             view.show_at_center(point)
             view.sel().clear()
             view.sel().add(view.line(point))
-            view.run_command("view_tester", {"action": "show_crash_line", "crash_line": int(frames[idx]["line"])})
+            view.run_command("debug_overlay", {"action": "show_crash_line", "crash_line": int(frames[idx]["line"])})
             dbg_view.run_command("test_manager", {"action": "select_frame", "frame_id": idx})
 
         def on_highlight(idx, frames=frames):

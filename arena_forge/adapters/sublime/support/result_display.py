@@ -4,7 +4,7 @@ from typing import Optional
 
 from arena_forge.core.domain import OutputEvaluation, OutputReferenceKind, Verdict
 
-from .messages import translate, translate_verdict
+from ..shared.messages import translate, translate_verdict
 
 
 def format_output_evaluation_summary(evaluation: Optional[OutputEvaluation]) -> str:

@@ -2,12 +2,12 @@ import sublime
 import sublime_plugin
 from sublime import PhantomSet, Region
 
-from ..messages import translate_status_code
-from ..package_resources import ARROW_LEFT_ICON_RESOURCE, ARROW_RIGHT_ICON_RESOURCE, TEST_SYNTAX_RESOURCE
 from ..run_panel.logic import display_test_number
 from ..run_panel.rendering import build_test_edit_header_phantom
 from ..run_panel.state import persist_panel_tests
-from ..settings_bridge import get_session_repository, get_tests_file_path, infer_language_name
+from ..shared.messages import translate_status_code
+from ..shared.package_resources import ARROW_LEFT_ICON_RESOURCE, ARROW_RIGHT_ICON_RESOURCE, TEST_SYNTAX_RESOURCE
+from ..shared.settings_bridge import get_session_repository, get_tests_file_path, infer_language_name
 from .controller_state import TestEditorControllerState
 from .dispatch import dispatch_test_editor_action
 

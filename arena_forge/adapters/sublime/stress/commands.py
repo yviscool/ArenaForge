@@ -9,9 +9,9 @@ import sublime_plugin
 
 from arena_forge.adapters.runners import ProcessManager
 
-from ..messages import error_message, status_message
-from ..package_resources import STRESS_SYNTAX_RESOURCE
-from ..settings_bridge import get_settings
+from ..shared.messages import error_message, status_message
+from ..shared.package_resources import STRESS_SYNTAX_RESOURCE
+from ..shared.settings_bridge import get_settings
 
 
 class StressManagerCommand(sublime_plugin.TextCommand):

@@ -1,3 +1,3 @@
-from .commands import InteliSenseCommand, SenseListener
+from .commands import IntelliSenseCommand, IntelliSenseListener
 
-__all__ = ["InteliSenseCommand", "SenseListener"]
+__all__ = ["IntelliSenseCommand", "IntelliSenseListener"]

@@ -11,7 +11,7 @@ from arena_forge.core.domain import Verdict
 def _patched_session_action_dependencies():
     module_names = (
         "sublime",
-        "arena_forge.adapters.sublime.messages",
+        "arena_forge.adapters.sublime.shared.messages",
         "arena_forge.adapters.sublime.root_bridge",
         "arena_forge.adapters.sublime.run_panel.launch_flow",
         "arena_forge.adapters.sublime.run_panel.logic",
@@ -19,7 +19,7 @@ def _patched_session_action_dependencies():
         "arena_forge.adapters.sublime.run_panel.regions",
         "arena_forge.adapters.sublime.run_panel.session_service",
         "arena_forge.adapters.sublime.run_panel.state",
-        "arena_forge.adapters.sublime.settings_bridge",
+        "arena_forge.adapters.sublime.shared.settings_bridge",
         "arena_forge.adapters.sublime.run_panel.session_actions",
     )
     originals = {name: sys.modules.get(name) for name in module_names}
@@ -28,7 +28,7 @@ def _patched_session_action_dependencies():
         set_timeout=lambda callback, delay=0: None,
         set_timeout_async=lambda callback, delay=0: None,
     )
-    sys.modules["arena_forge.adapters.sublime.messages"] = types.SimpleNamespace(
+    sys.modules["arena_forge.adapters.sublime.shared.messages"] = types.SimpleNamespace(
         product_log_message=lambda *args, **kwargs: None,
         translate=lambda key, **kwargs: key,
     )
@@ -44,7 +44,7 @@ def _patched_session_action_dependencies():
     )
     sys.modules["arena_forge.adapters.sublime.run_panel.process_actions"] = types.SimpleNamespace(
         schedule_test_manager_command=lambda *args, **kwargs: None,
-        terminate_command_tester=lambda *args, **kwargs: None,
+        terminate_command_tester_with_logging=lambda *args, **kwargs: None,
     )
     sys.modules["arena_forge.adapters.sublime.run_panel.regions"] = types.SimpleNamespace(
         clear_panel_view=lambda *args, **kwargs: None
@@ -57,7 +57,7 @@ def _patched_session_action_dependencies():
     sys.modules["arena_forge.adapters.sublime.run_panel.state"] = types.SimpleNamespace(
         append_run_history=lambda *args, **kwargs: None
     )
-    sys.modules["arena_forge.adapters.sublime.settings_bridge"] = types.SimpleNamespace(
+    sys.modules["arena_forge.adapters.sublime.shared.settings_bridge"] = types.SimpleNamespace(
         get_session_repository=lambda: None,
         get_settings=lambda: None,
         get_tests_file_path=lambda *args, **kwargs: None,
@@ -96,7 +96,7 @@ class RunPanelSessionActionsTests(unittest.TestCase):
         with _patched_session_action_dependencies():
             module = importlib.import_module("arena_forge.adapters.sublime.run_panel.session_actions")
             calls = []
-            module.terminate_command_tester = lambda command, **kwargs: calls.append(("terminate", command, kwargs))
+            module.terminate_command_tester_with_logging = lambda command: calls.append(("terminate", command))
             module.schedule_test_manager_command = lambda view, payload, delay=0: calls.append(
                 ("schedule", view, payload, delay)
             )
@@ -110,7 +110,7 @@ class RunPanelSessionActionsTests(unittest.TestCase):
             self.assertEqual(
                 calls,
                 [
-                    ("terminate", command, {"on_failure": unittest.mock.ANY}),
+                    ("terminate", command),
                     ("schedule", view, {"action": "make_opd", "load_session": True}, 30),
                 ],
             )

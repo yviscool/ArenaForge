@@ -9,7 +9,7 @@
 	},
 	{ 
 		"keys": ["tab"], 
-		"command": "olympic_funcs",
+		"command": "template_bridge",
 		"args": {
 			"action": "insert_template"
 		},
@@ -440,7 +440,7 @@
 	// Toggle Right panel
 	{
 		"keys": ["ctrl+k", "ctrl+p"],
-		"command": "view_tester",
+		"command": "debug_overlay",
 		"args": {
 			"action": "sync_opdebugs"
 		}

@@ -6,7 +6,7 @@ import sublime
 
 from arena_forge.core.services import evaluate_output_result
 
-from ..messages import status_message
+from ..shared.messages import status_message
 
 
 class RunPanelTester(object):

@@ -5,16 +5,16 @@ from pathlib import Path
 import sublime
 import sublime_plugin
 
-from .doctor_report import build_doctor_report
-from .messages import status_message, translate
-from .package_resources import (
+from ..doctor_report import build_doctor_report
+from ..shared.messages import status_message, translate
+from ..shared.package_resources import (
     STRESS_SYNTAX_RESOURCE,
     TEST_SYNTAX_RESOURCE,
     get_package_resource_root,
     get_plugin_package_name,
     get_plugin_root_dir,
 )
-from .settings_bridge import get_application, get_contests_root
+from ..shared.settings_bridge import get_application, get_contests_root
 
 
 def _ensure_view(window):
@@ -38,7 +38,7 @@ def _active_file_view(window):
 
 class ArenaForgeOpenSettingsCommand(sublime_plugin.WindowCommand):
     def run(self) -> None:
-        _ensure_view(self.window).run_command("olympic_funcs", {"action": "open_settings"})
+        _ensure_view(self.window).run_command("template_bridge", {"action": "open_settings"})
 
 
 class ArenaForgeAutoCommand(sublime_plugin.WindowCommand):
@@ -46,7 +46,7 @@ class ArenaForgeAutoCommand(sublime_plugin.WindowCommand):
         view = _active_file_view(self.window)
         if view is None:
             return
-        view.run_command("olympic_funcs", {"action": "show_funcs"})
+        view.run_command("template_bridge", {"action": "show_funcs"})
 
 
 class ArenaForgeRunCommand(sublime_plugin.WindowCommand):
@@ -58,7 +58,7 @@ class ArenaForgeRunCommand(sublime_plugin.WindowCommand):
         if "TestSyntax" in syntax:
             view.run_command("test_manager", {"action": "make_opd", "load_session": True, "use_debugger": False})
         else:
-            view.run_command("view_tester", {"action": "make_opd"})
+            view.run_command("debug_overlay", {"action": "make_opd"})
 
 
 class ArenaForgeSelectFrameCommand(sublime_plugin.WindowCommand):
@@ -66,7 +66,7 @@ class ArenaForgeSelectFrameCommand(sublime_plugin.WindowCommand):
         view = _active_file_view(self.window)
         if view is None:
             return
-        view.run_command("view_tester", {"action": "show_frames"})
+        view.run_command("debug_overlay", {"action": "show_frames"})
 
 
 class ArenaForgeMakeStressCommand(sublime_plugin.WindowCommand):

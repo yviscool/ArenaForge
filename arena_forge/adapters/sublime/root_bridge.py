@@ -25,12 +25,12 @@ def import_root_module(module_name: str):
 
 
 def get_debugger_info_module():
-    return import_root_module("debuggers.debugger_info")
+    return import_root_module("debug_backends.registry")
 
 
 def get_highlight_function():
-    return import_root_module("Highlight.CppVarHighlight").highlight
+    return import_root_module("highlight_assets.cpp_var_highlight").highlight
 
 
 def get_template_generator():
-    return import_root_module("Modules.ClassPregen.ClassPregen").gen
+    return import_root_module("plugin_support.template_generation.generator").gen

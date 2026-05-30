@@ -7,14 +7,17 @@ from sublime import Region
 
 from arena_forge.core.domain import OutputEvaluation, Verdict
 
-from ..messages import product_log_message, translate
 from ..root_bridge import get_debugger_info_module
-from ..settings_bridge import get_session_repository, get_settings, get_tests_file_path
+from ..shared.messages import product_log_message, translate
+from ..shared.settings_bridge import get_session_repository, get_settings, get_tests_file_path
 from .launch_flow import RunPanelLaunchRequest, plan_run_panel_launch
 from .logic import (
     build_run_panel_stop_plan,
 )
-from .process_actions import schedule_test_manager_command, terminate_command_tester
+from .process_actions import (
+    schedule_test_manager_command,
+    terminate_command_tester_with_logging,
+)
 from .regions import clear_panel_view
 from .session_service import create_run_backend, prepare_tests_for_run, select_run_backend
 from .state import append_run_history
@@ -105,7 +108,7 @@ def handle_process_stop(command, rtcode, runtime, crash_line=None, compile_faile
     if crash_line is not None:
         for subview in view.window().views():
             if subview.id() == command.state.code_view_id:
-                subview.run_command("view_tester", {"action": "show_crash_line", "crash_line": crash_line})
+                subview.run_command("debug_overlay", {"action": "show_crash_line", "crash_line": crash_line})
 
 
 def handle_compile_failure(command, rtcode) -> None:
@@ -125,10 +128,7 @@ def clear_all(command) -> None:
 
 
 def _schedule_rerun(view, command, request, launch_plan) -> None:
-    terminate_command_tester(
-        command,
-        on_failure=lambda: product_log_message("error.process_termination_failed"),
-    )
+    terminate_command_tester_with_logging(command)
     kwargs = launch_plan.command_args or request.to_command_args()
     schedule_test_manager_command(view, kwargs, delay=30)
 

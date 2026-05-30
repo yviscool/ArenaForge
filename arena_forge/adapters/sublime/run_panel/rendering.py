@@ -4,9 +4,9 @@ from html import escape
 
 from sublime import LAYOUT_BLOCK, Phantom, Region
 
-from ..messages import translate
-from ..render_assets import build_styles, render_template
-from ..result_display import (
+from ..shared.messages import translate
+from ..support.render_assets import build_styles, render_template
+from ..support.result_display import (
     format_output_evaluation_detail,
     format_output_evaluation_summary,
     result_summary_css_class,

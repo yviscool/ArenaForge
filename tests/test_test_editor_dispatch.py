@@ -14,13 +14,13 @@ def _patched_sublime():
         error_message=lambda message: None,
     )
     sys.modules.pop("arena_forge.adapters.sublime.test_editor.dispatch", None)
-    sys.modules.pop("arena_forge.adapters.sublime.messages", None)
+    sys.modules.pop("arena_forge.adapters.sublime.shared.messages", None)
     sys.modules.pop("arena_forge.adapters.sublime.view_actions", None)
     try:
         yield
     finally:
         sys.modules.pop("arena_forge.adapters.sublime.test_editor.dispatch", None)
-        sys.modules.pop("arena_forge.adapters.sublime.messages", None)
+        sys.modules.pop("arena_forge.adapters.sublime.shared.messages", None)
         sys.modules.pop("arena_forge.adapters.sublime.view_actions", None)
         if original_sublime is None:
             sys.modules.pop("sublime", None)

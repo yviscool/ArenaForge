@@ -4,10 +4,10 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Optional
 
-from .messages import translate
-from .settings_bridge import get_settings, root_dir
+from ..shared.messages import translate
+from ..shared.settings_bridge import get_settings, root_dir
 
-ASSET_ROOT = Path(root_dir) / "Highlight"
+ASSET_ROOT = Path(root_dir) / "highlight_assets"
 THEME_STYLES = {
     "Spacegray Light.sublime-theme": "test_styles_spacegraylight.css",
     "Spacegray.sublime-theme": "test_styles_spacegray.css",

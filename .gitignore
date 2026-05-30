@@ -11,5 +11,5 @@ pytest-cache-files-*/
 Thumbs.db
 cmp_sense/amin.cpp
 cmp_sense/amin-*.cpp
-debuggers/LLDB.framework
-debuggers/DebugodPy3Ejector.py
+debug_backends/LLDB.framework
+debug_backends/DebugodPy3Ejector.py

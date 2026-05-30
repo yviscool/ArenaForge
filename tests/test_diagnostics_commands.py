@@ -62,7 +62,7 @@ class _FakeDiagnosticsView:
 def _patched_sublime():
     original_sublime = sys.modules.get("sublime")
     original_sublime_plugin = sys.modules.get("sublime_plugin")
-    original_settings_bridge = sys.modules.get("arena_forge.adapters.sublime.settings_bridge")
+    original_settings_bridge = sys.modules.get("arena_forge.adapters.sublime.shared.settings_bridge")
     sys.modules["sublime"] = types.SimpleNamespace(
         Region=lambda begin, end=None: (begin, end),
         platform=lambda: "windows",
@@ -71,7 +71,7 @@ def _patched_sublime():
         DRAW_NO_FILL=0,
     )
     sys.modules["sublime_plugin"] = types.SimpleNamespace(TextCommand=object, EventListener=object)
-    sys.modules["arena_forge.adapters.sublime.settings_bridge"] = types.SimpleNamespace(
+    sys.modules["arena_forge.adapters.sublime.shared.settings_bridge"] = types.SimpleNamespace(
         get_settings=lambda: {"lint_enabled": True, "run_settings": []},
         is_lang_view=lambda view, lang: False,
     )
@@ -89,9 +89,9 @@ def _patched_sublime():
         else:
             sys.modules["sublime_plugin"] = original_sublime_plugin
         if original_settings_bridge is None:
-            sys.modules.pop("arena_forge.adapters.sublime.settings_bridge", None)
+            sys.modules.pop("arena_forge.adapters.sublime.shared.settings_bridge", None)
         else:
-            sys.modules["arena_forge.adapters.sublime.settings_bridge"] = original_settings_bridge
+            sys.modules["arena_forge.adapters.sublime.shared.settings_bridge"] = original_settings_bridge
 
 
 class DiagnosticsCommandsTests(unittest.TestCase):
@@ -102,7 +102,7 @@ class DiagnosticsCommandsTests(unittest.TestCase):
             labels = []
             view = _FakeDiagnosticsView(7)
             view.set_change_count(1)
-            command = module.InteliSenseCommand.__new__(module.InteliSenseCommand)
+            command = module.IntelliSenseCommand.__new__(module.IntelliSenseCommand)
             command.view = view
             command.get_compile_cmd = lambda: "g++ {source_file}"
             command._diagnostics_service = lambda: types.SimpleNamespace(
@@ -121,7 +121,7 @@ class DiagnosticsCommandsTests(unittest.TestCase):
             module = importlib.import_module("arena_forge.adapters.sublime.diagnostics.commands")
             logs = []
             module.product_log_message = lambda key, **kwargs: logs.append((key, kwargs))
-            command = module.InteliSenseCommand.__new__(module.InteliSenseCommand)
+            command = module.IntelliSenseCommand.__new__(module.IntelliSenseCommand)
             command._diagnostics_service = lambda: types.SimpleNamespace(
                 run=lambda **kwargs: (_ for _ in ()).throw(OSError("boom"))
             )
@@ -145,7 +145,7 @@ class DiagnosticsCommandsTests(unittest.TestCase):
             module.product_log_message = lambda key, **kwargs: logs.append((key, kwargs))
             view = _FakeDiagnosticsView(11)
             module._VIEW_STATES[11] = module._DiagnosticsState(enabled=True, generation=3)
-            command = module.InteliSenseCommand.__new__(module.InteliSenseCommand)
+            command = module.IntelliSenseCommand.__new__(module.IntelliSenseCommand)
 
             command._apply_diagnostics(
                 view=view,

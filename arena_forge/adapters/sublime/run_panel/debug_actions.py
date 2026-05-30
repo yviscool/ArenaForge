@@ -23,14 +23,14 @@ def redirect_var_value(command, var_name, pos=None) -> None:
     value = command.state.tester.process_manager.get_var_value(var_name)
     for view in command.view.window().views():
         if view.id() == command.state.code_view_id:
-            view.run_command("view_tester", {"action": "show_var_value", "value": value, "pos": pos})
+            view.run_command("debug_overlay", {"action": "show_var_value", "value": value, "pos": pos})
 
 
 def redirect_frames(command) -> None:
     frames = read_frames(command.state.tester.process_manager)
     for view in command.view.window().views():
         if view.id() == command.state.code_view_id:
-            view.run_command("view_tester", {"action": "show_frames", "frames": frames})
+            view.run_command("debug_overlay", {"action": "show_frames", "frames": frames})
 
 
 def select_frame(command, frame_id) -> None:

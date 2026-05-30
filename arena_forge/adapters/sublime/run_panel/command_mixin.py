@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ..messages import status_message
+from ..shared.messages import status_message
 from .action_request import RunPanelActionRequest
 from .command_support import (
     add_transient_region as add_run_panel_transient_region,

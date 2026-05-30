@@ -13,8 +13,8 @@ from arena_forge.adapters.providers.submission_service import (
     SubmissionServiceError,
 )
 
-from ..messages import product_log_message, product_status_message, translate
-from ..settings_bridge import get_application, get_contests_root, get_default_contest_language
+from ..shared.messages import product_log_message, product_status_message, translate
+from ..shared.settings_bridge import get_application, get_contests_root, get_default_contest_language
 
 
 class ContestHandlerCommand(sublime_plugin.TextCommand):

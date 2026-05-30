@@ -7,7 +7,7 @@ import sublime
 import sublime_plugin
 from sublime import Region
 
-from arena_forge.adapters.sublime.settings_bridge import (
+from ..shared.settings_bridge import (
     default_settings_file,
     get_algorithm_properties_path,
     get_settings,
@@ -15,12 +15,12 @@ from arena_forge.adapters.sublime.settings_bridge import (
     root_dir,
     settings_file,
 )
-from .root_bridge import get_template_generator
+from ..root_bridge import get_template_generator
 
 gen_template = get_template_generator()
 
 
-class OlympicFuncsCommand(sublime_plugin.TextCommand):
+class TemplateBridgeCommand(sublime_plugin.TextCommand):
     ROOT = dirname(__file__)
 
     def run(self, edit, action=None, clr_tests=False, text=None, sync_out=True, reselect=False, smart_fold=False):
@@ -84,13 +84,13 @@ class OlympicFuncsCommand(sublime_plugin.TextCommand):
 
             def on_done(ind, initial=view.substr(view.sel()[0])):
                 if ind == -1:
-                    self.view.run_command("olympic_funcs", {"text": initial, "action": "insert", "reselect": True})
+                    self.view.run_command("template_bridge", {"text": initial, "action": "insert", "reselect": True})
 
             def on_highlight(ind, codes=codes, view=view):
                 if path.isfile(codes[ind]):
                     with open(codes[ind], "r", encoding="utf-8") as handle:
                         code = handle.read()
-                    view.run_command("olympic_funcs", {"text": code, "action": "insert", "reselect": True, "smart_fold": True})
+                    view.run_command("template_bridge", {"text": code, "action": "insert", "reselect": True, "smart_fold": True})
 
             wind.show_quick_panel(entries, on_done, 1, 0, on_highlight)
             return
@@ -108,19 +108,19 @@ class OlympicFuncsCommand(sublime_plugin.TextCommand):
             sublime.active_window().set_view_index(options_view, 1, 0)
 
 
-class GenListener(sublime_plugin.EventListener):
+class TemplateCompletionListener(sublime_plugin.EventListener):
     def try_expand(self, prefix):
         return gen_template(prefix, get_settings().get("cpp_complete_settings"))
 
     def on_text_command(self, view, command_name, args):
-        if command_name == "view_tester":
+        if command_name == "debug_overlay":
             ext = path.splitext(view.file_name())[1][1:]
             if args["action"] == "make_opd":
                 if not is_run_supported_ext(ext):
-                    return ("olympic_funcs", {"action": "pass"})
+                    return ("template_bridge", {"action": "pass"})
             elif args["action"] == "toggle_using_debugger":
                 if ext != "cpp":
-                    return ("olympic_funcs", {"action": "pass"})
+                    return ("template_bridge", {"action": "pass"})
 
     def on_modified(self, view):
         if not len(view.sel()) or view.scope_name(view.sel()[0].a).find("source.c") == -1:
