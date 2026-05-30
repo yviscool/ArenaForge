@@ -88,7 +88,7 @@ def renumerate_tests(command, edit, max_nth_test):
         view.erase_regions(begin_key)
         view.add_regions(command.REGION_BEGIN_KEY % current, [begin_region], *command.REGION_BEGIN_PROP)
 
-        line_regions = view.get_regions("line_%d" % current)
+        line_regions = view.get_regions("line_%d" % index)
         view.erase_regions("line_%d" % index)
         view.add_regions("line_%d" % current, line_regions, *command.REGION_LINE_PROP)
 

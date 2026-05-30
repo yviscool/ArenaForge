@@ -41,12 +41,29 @@ class RunPanelTester(object):
         self.schedule_async = schedule_async or sublime.set_timeout_async
         self.show_status = show_status or (lambda: status_message("status.process_already_running"))
         self.on_compile_error = on_compile_error or (lambda test_id, return_code, output_text: None)
-        if type(self.process_manager).__name__ != "ProcessManager":
+        if not self._uses_process_listener():
             self.process_manager.set_calls(self.__on_out, self.__on_stop, on_status_change)
 
     def _ensure_output_slot(self, index):
         while len(self.prog_out) <= index:
             self.prog_out.append("")
+
+    def _uses_process_listener(self):
+        return type(self.process_manager).__name__ == "ProcessManager"
+
+    def _schedule_process_listener_if_needed(self):
+        if self._uses_process_listener():
+            self.schedule_async(self.__process_listener)
+
+    def _start_test_process(self, id):
+        if self._uses_process_listener():
+            self.on_status_change("RUNNING")
+
+        self.proc_run = True
+        self.process_manager.run()
+        test_input = self.tests[id].test_string
+        self.process_manager.write(test_input)
+        self.on_insert(test_input)
 
     def __on_stop(self, rtcode, runtime=-1, crash_line=None):
         self.prog_out[self.running_test] = self.prog_out[self.running_test].rstrip()
@@ -55,7 +72,7 @@ class RunPanelTester(object):
         if self.running_new:
             self.test_iter += 1
 
-        if type(self.process_manager).__name__ == "ProcessManager":
+        if self._uses_process_listener():
             self.on_status_change("STOPPED")
 
         self.on_stop(rtcode, runtime, crash_line=crash_line)
@@ -67,21 +84,24 @@ class RunPanelTester(object):
     def __process_listener(self):
         proc = self.process_manager
         start_time = time()
-        while proc.is_stopped() is None:
+        stop_code = proc.is_stopped()
+        while stop_code is None:
             if self.sync_out:
                 output = proc.read(bfsize=1)
             else:
                 output = proc.read(bfsize=4096)
             if not output:
+                stop_code = proc.is_stopped()
                 continue
             self.__on_out(output)
+            stop_code = proc.is_stopped()
         try:
             output = proc.read()
             self.__on_out(output)
         except (OSError, ValueError):
             pass
         runtime = int((time() - start_time) * 1000)
-        self.__on_stop(proc.is_stopped(), runtime)
+        self.__on_stop(stop_code, runtime)
 
     def insert(self, s, call_on_insert=False):
         if self.proc_run:
@@ -93,13 +113,7 @@ class RunPanelTester(object):
     def insert_test(self, id=None):
         if id is None:
             id = self.test_iter
-        if type(self.process_manager).__name__ == "ProcessManager":
-            self.on_status_change("RUNNING")
-
-        self.proc_run = True
-        self.process_manager.run()
-        self.process_manager.write(self.tests[id].test_string)
-        self.on_insert(self.tests[id].test_string)
+        self._start_test_process(id)
 
     def next_test(self, tie_pos, cb):
         if self.proc_run:
@@ -117,8 +131,7 @@ class RunPanelTester(object):
 
         def go(self=self, cb=cb):
             self.insert_test()
-            if type(self.process_manager).__name__ == "ProcessManager":
-                self.schedule_async(self.__process_listener)
+            self._schedule_process_listener_if_needed()
             cb()
 
         self.schedule_async(go, 10)
@@ -137,8 +150,7 @@ class RunPanelTester(object):
                 self.on_compile_error(id, compile_result[0], compile_result[1])
                 return
             self.insert_test(id)
-            if type(self.process_manager).__name__ == "ProcessManager":
-                self.schedule_async(self.__process_listener)
+            self._schedule_process_listener_if_needed()
 
         self.schedule_async(compile_and_run, 0)
 

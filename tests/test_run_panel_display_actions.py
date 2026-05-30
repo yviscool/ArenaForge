@@ -18,15 +18,44 @@ class _FakePhantomSet:
         self.updated = list(items)
 
 
+class _FakeRegion:
+    def __init__(self, a, b=None):
+        self.a = a
+        self.b = a if b is None else b
+
+    def __eq__(self, other):
+        return isinstance(other, _FakeRegion) and (self.a, self.b) == (other.a, other.b)
+
+    def __repr__(self):
+        return f"_FakeRegion(a={self.a}, b={self.b})"
+
+
+class _FakeSelection(list):
+    def add(self, region):
+        self.append(region)
+
+
 class _FakeView:
-    def __init__(self):
+    def __init__(self, *, size=0):
         self._settings = {"hide_phantoms": False}
+        self._size = size
+        self.added_regions = []
+        self._selection = _FakeSelection()
 
     def settings(self):
         return self
 
     def get(self, key):
         return self._settings.get(key)
+
+    def size(self):
+        return self._size
+
+    def add_regions(self, key, regions, *props):
+        self.added_regions.append((key, list(regions), props))
+
+    def sel(self):
+        return self._selection
 
 
 class _FakeTest:
@@ -52,7 +81,7 @@ def _patched_sublime():
         PhantomSet=_FakePhantomSet,
         LAYOUT_BLOCK=0,
         Phantom=lambda *args, **kwargs: None,
-        Region=lambda *args, **kwargs: None,
+        Region=_FakeRegion,
     )
     sys.modules["sublime"] = fake
     sys.modules["arena_forge.adapters.sublime.run_panel.rendering"] = types.SimpleNamespace(
@@ -200,6 +229,85 @@ class RunPanelDisplayActionsTests(unittest.TestCase):
                 self.assertEqual(command.state.test_phantoms[0].updated, ["config:t1:0:0:True"])
             finally:
                 module.build_panel_render_entries = original_builder
+
+    def test_update_configs_expands_capacity_and_renders_accdec_and_next_test(self) -> None:
+        with _patched_sublime():
+            module = importlib.import_module("arena_forge.adapters.sublime.run_panel.display_actions")
+            original_builder = module.build_panel_render_entries
+            try:
+                test = _FakeTest("t1")
+                module.build_panel_render_entries = lambda *args, **kwargs: (
+                    SimpleNamespace(
+                        test_id=0,
+                        config_point=2,
+                        running=False,
+                        accdec_point=5,
+                        accdec_action="accept",
+                    ),
+                )
+                command = SimpleNamespace(
+                    view=_FakeView(size=12),
+                    on_test_action=lambda *args: None,
+                    on_accdec_action=lambda *args: None,
+                    state=SimpleNamespace(
+                        tester=SimpleNamespace(
+                            tests=[test],
+                            prog_out=["answer"],
+                            proc_run=False,
+                            running_test=None,
+                            test_iter=1,
+                        ),
+                        test_phantoms=[],
+                    ),
+                )
+
+                module.update_configs(command)
+
+                self.assertEqual(len(command.state.test_phantoms), 3)
+                self.assertEqual(command.state.test_phantoms[0].updated, ["config:t1:0:2:False"])
+                self.assertEqual(command.state.test_phantoms[1].updated, ["accdec:t1:0:5:accept"])
+                self.assertEqual(command.state.test_phantoms[2].updated, ["next-test"])
+                self.assertEqual(test.config_calls, 1)
+                self.assertEqual(test.accdec_calls, 1)
+                self.assertEqual(len(command.state._test_phantom_signatures), 3)
+            finally:
+                module.build_panel_render_entries = original_builder
+
+    def test_start_new_test_sets_input_cursor_and_refreshes_configs(self) -> None:
+        with _patched_sublime():
+            module = importlib.import_module("arena_forge.adapters.sublime.run_panel.display_actions")
+            update_calls = []
+            original_update = module.update_configs
+            try:
+                module.update_configs = lambda command, update_last=None: update_calls.append((command, update_last))
+                next_test_calls = []
+                view = _FakeView(size=9)
+                view.sel().add(_FakeRegion(1, 1))
+                command = SimpleNamespace(
+                    view=view,
+                    REGION_BEGIN_PROP=("scope", "icon", 1),
+                    state=SimpleNamespace(
+                        begin_panel_input=lambda point: next_test_calls.append(("begin", point)),
+                        tester=SimpleNamespace(
+                            next_test=lambda tie_pos, callback: (
+                                next_test_calls.append(("next_test", tie_pos)),
+                                callback(),
+                            ),
+                        ),
+                    ),
+                )
+
+                module.start_new_test(command, edit="EDIT")
+
+                self.assertEqual(next_test_calls, [("begin", 9), ("next_test", 8)])
+                self.assertEqual(
+                    view.added_regions,
+                    [("type", [_FakeRegion(9, 9)], (("scope", "icon", 1)))],
+                )
+                self.assertEqual(view.sel(), [_FakeRegion(9, 9)])
+                self.assertEqual(update_calls, [(command, True)])
+            finally:
+                module.update_configs = original_update
 
 
 if __name__ == "__main__":

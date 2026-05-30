@@ -66,6 +66,39 @@ class _FakeProcessManager:
         self.calls.append("terminate")
 
 
+class ProcessManager:
+    def __init__(self, compile_result=None, chunks=None, stop_codes=None):
+        self.calls = []
+        self.compile_result = compile_result
+        self.chunks = list(chunks or [])
+        self.stop_codes = list(stop_codes or [])
+        self.read_sizes = []
+
+    def run(self):
+        self.calls.append("run")
+
+    def write(self, value: str):
+        self.calls.append(("write", value))
+
+    def compile(self):
+        self.calls.append("compile")
+        return self.compile_result
+
+    def terminate(self):
+        self.calls.append("terminate")
+
+    def is_stopped(self):
+        if self.stop_codes:
+            return self.stop_codes.pop(0)
+        return 0
+
+    def read(self, bfsize=None):
+        self.read_sizes.append(bfsize)
+        if self.chunks:
+            return self.chunks.pop(0)
+        return ""
+
+
 class _FakeStreamingProcessManager:
     def __init__(self, chunks, stop_codes):
         self.chunks = list(chunks)
@@ -166,6 +199,53 @@ class RunPanelTesterTests(unittest.TestCase):
             self.assertEqual(messages, ["process already running"])
             self.assertEqual(len(tester.tests), 1)
 
+    def test_next_test_requires_factory_when_allocating_new_slot(self) -> None:
+        with _patched_sublime():
+            module = importlib.import_module("arena_forge.adapters.sublime.run_panel.tester")
+            tester = module.RunPanelTester(
+                _FakeProcessManager(),
+                on_insert=lambda chunk: None,
+                on_out=lambda chunk: None,
+                on_stop=lambda *args, **kwargs: None,
+                on_status_change=lambda status: None,
+                tests=[],
+                test_factory=None,
+                schedule_async=lambda callback, delay=0: callback(),
+                show_status=lambda: None,
+            )
+
+            with self.assertRaisesRegex(RuntimeError, "Test state factory unavailable"):
+                tester.next_test(1, lambda: None)
+
+    def test_next_test_schedules_process_listener_for_native_process_manager(self) -> None:
+        with _patched_sublime():
+            module = importlib.import_module("arena_forge.adapters.sublime.run_panel.tester")
+            process = ProcessManager()
+            callbacks = []
+            statuses = []
+            tester = module.RunPanelTester(
+                process,
+                on_insert=lambda chunk: None,
+                on_out=lambda chunk: None,
+                on_stop=lambda *args, **kwargs: None,
+                on_status_change=statuses.append,
+                tests=[],
+                test_factory=_DummyTest,
+                schedule_async=lambda callback, delay=0: callbacks.append((callback, delay)),
+                show_status=lambda: None,
+            )
+
+            tester.next_test(3, lambda: statuses.append("updated"))
+
+            self.assertEqual(len(callbacks), 1)
+            go, delay = callbacks.pop(0)
+            self.assertEqual(delay, 10)
+            go()
+
+            self.assertEqual(process.calls, ["run", ("write", "")])
+            self.assertEqual(statuses, ["RUNNING", "updated"])
+            self.assertEqual(len(callbacks), 1)
+
     def test_run_test_compiles_resets_output_and_starts_process(self) -> None:
         with _patched_sublime():
             module = importlib.import_module("arena_forge.adapters.sublime.run_panel.tester")
@@ -218,6 +298,37 @@ class RunPanelTesterTests(unittest.TestCase):
 
             self.assertEqual(process.calls, ["compile", "run", ("write", "abc")])
 
+    def test_run_test_schedules_process_listener_after_successful_compile_for_native_process_manager(self) -> None:
+        with _patched_sublime():
+            module = importlib.import_module("arena_forge.adapters.sublime.run_panel.tester")
+            process = ProcessManager()
+            callbacks = []
+            statuses = []
+            tester = module.RunPanelTester(
+                process,
+                on_insert=lambda chunk: None,
+                on_out=lambda chunk: None,
+                on_stop=lambda *args, **kwargs: None,
+                on_status_change=statuses.append,
+                tests=[_DummyTest("abc")],
+                test_factory=_DummyTest,
+                schedule_async=lambda callback, delay=0: callbacks.append((callback, delay)),
+                show_status=lambda: None,
+            )
+
+            tester.run_test(0)
+
+            self.assertEqual(statuses, ["COMPILE"])
+            self.assertEqual(len(callbacks), 1)
+
+            compile_and_run, delay = callbacks.pop(0)
+            self.assertEqual(delay, 0)
+            compile_and_run()
+
+            self.assertEqual(process.calls, ["compile", "run", ("write", "abc")])
+            self.assertEqual(statuses, ["COMPILE", "RUNNING"])
+            self.assertEqual(len(callbacks), 1)
+
     def test_run_test_reports_compile_error_without_starting_process(self) -> None:
         with _patched_sublime():
             module = importlib.import_module("arena_forge.adapters.sublime.run_panel.tester")
@@ -246,6 +357,24 @@ class RunPanelTesterTests(unittest.TestCase):
             self.assertEqual(tester.prog_out[0], "boom")
             self.assertEqual(compile_errors, [(0, 1, "boom")])
             self.assertEqual(statuses, ["COMPILE"])
+
+    def test_set_tests_requires_factory_when_unset(self) -> None:
+        with _patched_sublime():
+            module = importlib.import_module("arena_forge.adapters.sublime.run_panel.tester")
+            tester = module.RunPanelTester(
+                _FakeProcessManager(),
+                on_insert=lambda chunk: None,
+                on_out=lambda chunk: None,
+                on_stop=lambda *args, **kwargs: None,
+                on_status_change=lambda status: None,
+                tests=[],
+                test_factory=None,
+                schedule_async=lambda callback, delay=0: callback(),
+                show_status=lambda: None,
+            )
+
+            with self.assertRaisesRegex(RuntimeError, "Test state factory unavailable"):
+                tester.set_tests(["x"])
 
     def test_set_tests_rebuilds_output_slots_and_iteration(self) -> None:
         with _patched_sublime():
@@ -293,6 +422,33 @@ class RunPanelTesterTests(unittest.TestCase):
             self.assertEqual(process.read_sizes[:2], [4096, 4096])
             self.assertEqual(outputs[:2], ["first", "second"])
             self.assertTrue(stops)
+
+    def test_process_listener_uses_single_char_reads_and_preserves_first_stop_code(self) -> None:
+        with _patched_sublime():
+            module = importlib.import_module("arena_forge.adapters.sublime.run_panel.tester")
+            process = ProcessManager(chunks=["x", "tail"], stop_codes=[None, 7, 9])
+            outputs = []
+            stops = []
+            tester = module.RunPanelTester(
+                process,
+                on_insert=lambda chunk: None,
+                on_out=outputs.append,
+                on_stop=lambda *args, **kwargs: stops.append(args),
+                on_status_change=lambda status: None,
+                tests=[_DummyTest("abc")],
+                test_factory=_DummyTest,
+                sync_out=True,
+                schedule_async=lambda callback, delay=0: callback(),
+                show_status=lambda: None,
+            )
+            tester.running_test = 0
+            tester.prog_out = [""]
+
+            tester._RunPanelTester__process_listener()
+
+            self.assertEqual(process.read_sizes, [1, None])
+            self.assertEqual(outputs, ["x", "tail"])
+            self.assertEqual(stops[0][0], 7)
 
     def test_process_listener_ignores_final_pipe_read_failures(self) -> None:
         with _patched_sublime():
