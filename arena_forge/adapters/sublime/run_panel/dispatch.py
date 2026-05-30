@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from .run_panel_action_handlers import RunPanelActionContext, build_test_manager_action_handlers
-from .run_panel_action_request import RunPanelActionRequest
+from .action_handlers import RunPanelActionContext, build_test_manager_action_handlers
+from .action_request import RunPanelActionRequest
 
 
 def dispatch_test_manager_action(

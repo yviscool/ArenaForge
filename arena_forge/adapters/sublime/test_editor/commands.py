@@ -1,14 +1,15 @@
-import sublime, sublime_plugin
-from sublime import Region, PhantomSet
+import sublime
+import sublime_plugin
+from sublime import PhantomSet, Region
 
-from .messages import translate_status_code
-from .package_resources import ARROW_LEFT_ICON_RESOURCE, ARROW_RIGHT_ICON_RESOURCE, TEST_SYNTAX_RESOURCE
-from .run_panel_logic import display_test_number
-from .test_editor_dispatch import dispatch_test_editor_action
-from .test_editor_controller_state import TestEditorControllerState
-from .run_panel_rendering import build_test_edit_header_phantom
-from .run_panel_state import persist_panel_tests
-from .settings_bridge import get_session_repository, get_tests_file_path, infer_language_name
+from ..messages import translate_status_code
+from ..package_resources import ARROW_LEFT_ICON_RESOURCE, ARROW_RIGHT_ICON_RESOURCE, TEST_SYNTAX_RESOURCE
+from ..run_panel.logic import display_test_number
+from ..run_panel.rendering import build_test_edit_header_phantom
+from ..run_panel.state import persist_panel_tests
+from ..settings_bridge import get_session_repository, get_tests_file_path, infer_language_name
+from .controller_state import TestEditorControllerState
+from .dispatch import dispatch_test_editor_action
 
 
 class TestEditCommand(sublime_plugin.TextCommand):
@@ -59,7 +60,6 @@ class TestEditCommand(sublime_plugin.TextCommand):
 		self.state.tester.insert(to_shove + '\n')
 
 	def insert_cb(self, edit):
-		v = self.view
 		s = sublime.get_clipboard()
 		lst = s.split('\n')
 		for i in range(len(lst) - 1):
@@ -129,17 +129,6 @@ class TestEditCommand(sublime_plugin.TextCommand):
 		if view.settings().get('edit_mode'):
 			view.set_read_only(False)
 			return
-		have_sel_no_end = False
-		for sel in view.sel():
-			if sel.begin() != view.size():
-				have_sel_no_end = True
-				break
-
-		end_cursor = len(view.sel()) and \
-			((self.state.tester is None) or (not self.state.tester.proc_run)) and \
-			view.size() == view.sel()[0].a
-
-		# view.set_read_only(have_sel_no_end or end_cursor)
 
 	def run(self, edit, action=None, run_file=None, build_sys=None, text=None, clr_tests=False, \
 			test='', source_view_id=None, var_name=None, test_id=None, pos=None, \

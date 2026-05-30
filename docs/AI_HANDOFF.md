@@ -5,6 +5,16 @@
 This document is the authoritative local handoff for the next AI agent.
 Read it before making structural changes.
 
+Migration note:
+- The old flat Sublime adapter files named `run_panel_*.py` and `test_editor_*.py` were removed.
+- Their code now lives under `arena_forge/adapters/sublime/run_panel/` and
+  `arena_forge/adapters/sublime/test_editor/`.
+- Formatting commands were moved from `format_commands.py` to
+  `arena_forge/adapters/sublime/formatting/`.
+- Contest, diagnostics, and stress commands now live under
+  `arena_forge/adapters/sublime/contest/`, `diagnostics/`, and `stress/`.
+- Historical references to the old flat paths below are archival context unless explicitly updated.
+
 ## Product Identity
 
 - Product name: `ArenaForge`

@@ -13,13 +13,13 @@ def _patched_sublime():
         status_message=lambda message: None,
         error_message=lambda message: None,
     )
-    sys.modules.pop("arena_forge.adapters.sublime.test_editor_dispatch", None)
+    sys.modules.pop("arena_forge.adapters.sublime.test_editor.dispatch", None)
     sys.modules.pop("arena_forge.adapters.sublime.messages", None)
     sys.modules.pop("arena_forge.adapters.sublime.view_actions", None)
     try:
         yield
     finally:
-        sys.modules.pop("arena_forge.adapters.sublime.test_editor_dispatch", None)
+        sys.modules.pop("arena_forge.adapters.sublime.test_editor.dispatch", None)
         sys.modules.pop("arena_forge.adapters.sublime.messages", None)
         sys.modules.pop("arena_forge.adapters.sublime.view_actions", None)
         if original_sublime is None:
@@ -31,7 +31,7 @@ def _patched_sublime():
 class TestEditorDispatchTests(unittest.TestCase):
     def test_close_action_logs_process_termination_failures(self) -> None:
         with _patched_sublime():
-            module = importlib.import_module("arena_forge.adapters.sublime.test_editor_dispatch")
+            module = importlib.import_module("arena_forge.adapters.sublime.test_editor.dispatch")
             logs = []
             module.product_log_message = lambda key, **kwargs: logs.append((key, kwargs))
 
@@ -50,7 +50,7 @@ class TestEditorDispatchTests(unittest.TestCase):
 
     def test_close_action_ignores_missing_tester(self) -> None:
         with _patched_sublime():
-            module = importlib.import_module("arena_forge.adapters.sublime.test_editor_dispatch")
+            module = importlib.import_module("arena_forge.adapters.sublime.test_editor.dispatch")
             logs = []
             module.product_log_message = lambda key, **kwargs: logs.append((key, kwargs))
             command = types.SimpleNamespace(

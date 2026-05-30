@@ -1,6 +1,6 @@
 import unittest
 
-from arena_forge.adapters.sublime.run_panel_action_request import RunPanelActionRequest
+from arena_forge.adapters.sublime.run_panel.action_request import RunPanelActionRequest
 
 
 class RunPanelActionRequestTests(unittest.TestCase):

@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
-from .run_panel_controller_state import RunPanelLaunchSession
+from .controller_state import RunPanelLaunchSession
 
 
 @dataclass(frozen=True)

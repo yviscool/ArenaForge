@@ -7,17 +7,17 @@ from sublime import Region
 
 from arena_forge.core.domain import OutputEvaluation, Verdict
 
-from .messages import product_log_message, translate
-from .root_bridge import get_debugger_info_module
-from .run_panel_launch_flow import RunPanelLaunchRequest, plan_run_panel_launch
-from .run_panel_logic import (
+from ..messages import product_log_message, translate
+from ..root_bridge import get_debugger_info_module
+from ..settings_bridge import get_session_repository, get_settings, get_tests_file_path
+from .launch_flow import RunPanelLaunchRequest, plan_run_panel_launch
+from .logic import (
     build_run_panel_stop_plan,
 )
-from .run_panel_process_actions import schedule_test_manager_command, terminate_command_tester
-from .run_panel_regions import clear_panel_view
-from .run_panel_session_service import create_run_backend, prepare_tests_for_run, select_run_backend
-from .run_panel_state import append_run_history
-from .settings_bridge import get_session_repository, get_settings, get_tests_file_path
+from .process_actions import schedule_test_manager_command, terminate_command_tester
+from .regions import clear_panel_view
+from .session_service import create_run_backend, prepare_tests_for_run, select_run_backend
+from .state import append_run_history
 
 
 def resolve_stop_evaluation(tester, test_id, rtcode, *, compile_failed=False):

@@ -107,11 +107,11 @@ def _patched_sublime():
         status_message=lambda message: None,
     )
     sys.modules["sublime"] = fake
-    sys.modules.pop("arena_forge.adapters.sublime.run_panel_tester", None)
+    sys.modules.pop("arena_forge.adapters.sublime.run_panel.tester", None)
     try:
         yield
     finally:
-        sys.modules.pop("arena_forge.adapters.sublime.run_panel_tester", None)
+        sys.modules.pop("arena_forge.adapters.sublime.run_panel.tester", None)
         if original is None:
             sys.modules.pop("sublime", None)
         else:
@@ -121,7 +121,7 @@ def _patched_sublime():
 class RunPanelTesterTests(unittest.TestCase):
     def test_next_test_creates_test_and_starts_process(self) -> None:
         with _patched_sublime():
-            module = importlib.import_module("arena_forge.adapters.sublime.run_panel_tester")
+            module = importlib.import_module("arena_forge.adapters.sublime.run_panel.tester")
             process = _FakeProcessManager()
             inserted = []
             stopped = []
@@ -147,7 +147,7 @@ class RunPanelTesterTests(unittest.TestCase):
 
     def test_next_test_reports_running_state_without_mutation(self) -> None:
         with _patched_sublime():
-            module = importlib.import_module("arena_forge.adapters.sublime.run_panel_tester")
+            module = importlib.import_module("arena_forge.adapters.sublime.run_panel.tester")
             process = _FakeProcessManager()
             messages = []
             tester = module.RunPanelTester(
@@ -168,7 +168,7 @@ class RunPanelTesterTests(unittest.TestCase):
 
     def test_run_test_compiles_resets_output_and_starts_process(self) -> None:
         with _patched_sublime():
-            module = importlib.import_module("arena_forge.adapters.sublime.run_panel_tester")
+            module = importlib.import_module("arena_forge.adapters.sublime.run_panel.tester")
             process = _FakeProcessManager()
             statuses = []
             tester = module.RunPanelTester(
@@ -192,7 +192,7 @@ class RunPanelTesterTests(unittest.TestCase):
 
     def test_run_test_defers_compile_to_async_scheduler(self) -> None:
         with _patched_sublime():
-            module = importlib.import_module("arena_forge.adapters.sublime.run_panel_tester")
+            module = importlib.import_module("arena_forge.adapters.sublime.run_panel.tester")
             process = _FakeProcessManager()
             callbacks = []
             statuses = []
@@ -220,7 +220,7 @@ class RunPanelTesterTests(unittest.TestCase):
 
     def test_run_test_reports_compile_error_without_starting_process(self) -> None:
         with _patched_sublime():
-            module = importlib.import_module("arena_forge.adapters.sublime.run_panel_tester")
+            module = importlib.import_module("arena_forge.adapters.sublime.run_panel.tester")
             process = _FakeProcessManager(compile_result=(1, "boom"))
             compile_errors = []
             statuses = []
@@ -249,7 +249,7 @@ class RunPanelTesterTests(unittest.TestCase):
 
     def test_set_tests_rebuilds_output_slots_and_iteration(self) -> None:
         with _patched_sublime():
-            module = importlib.import_module("arena_forge.adapters.sublime.run_panel_tester")
+            module = importlib.import_module("arena_forge.adapters.sublime.run_panel.tester")
             process = _FakeProcessManager()
             tester = module.RunPanelTester(
                 process,
@@ -270,7 +270,7 @@ class RunPanelTesterTests(unittest.TestCase):
 
     def test_process_listener_uses_chunked_reads_when_sync_out_is_disabled(self) -> None:
         with _patched_sublime():
-            module = importlib.import_module("arena_forge.adapters.sublime.run_panel_tester")
+            module = importlib.import_module("arena_forge.adapters.sublime.run_panel.tester")
             process = _FakeStreamingProcessManager(["first", "second", ""], [None, None, 0])
             outputs = []
             stops = []
@@ -296,7 +296,7 @@ class RunPanelTesterTests(unittest.TestCase):
 
     def test_process_listener_ignores_final_pipe_read_failures(self) -> None:
         with _patched_sublime():
-            module = importlib.import_module("arena_forge.adapters.sublime.run_panel_tester")
+            module = importlib.import_module("arena_forge.adapters.sublime.run_panel.tester")
             process = _FakeReadFailingProcessManager(["first", ""], [None, 0])
             outputs = []
             stops = []

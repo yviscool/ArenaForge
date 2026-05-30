@@ -1,3 +1,3 @@
-from .arena_forge.adapters.sublime.diagnostics_commands import InteliSenseCommand, SenseListener
+from .arena_forge.adapters.sublime.diagnostics import InteliSenseCommand, SenseListener
 
 __all__ = ["InteliSenseCommand", "SenseListener"]

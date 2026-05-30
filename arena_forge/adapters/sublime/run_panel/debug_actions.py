@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from .debug_protocol import read_frames, supports_variable_inspection
-from .debug_protocol import select_frame as select_debugger_frame
+from ..debug_protocol import read_frames, supports_variable_inspection
+from ..debug_protocol import select_frame as select_debugger_frame
 
 
 def get_view_by_id(command, view_id):

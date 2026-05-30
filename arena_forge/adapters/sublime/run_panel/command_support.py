@@ -5,11 +5,11 @@ from random import randint
 import sublime
 from sublime import Region
 
-from .messages import translate_status_code
-from .run_panel_input_actions import push_input_history
-from .run_panel_rendering import build_compile_bar_phantom
-from .run_panel_session_service import save_tests_for_run
-from .settings_bridge import get_session_repository, get_tests_file_path, infer_language_name
+from ..messages import translate_status_code
+from ..settings_bridge import get_session_repository, get_tests_file_path, infer_language_name
+from .input_actions import push_input_history
+from .rendering import build_compile_bar_phantom
+from .session_service import save_tests_for_run
 
 
 def insert_panel_input(command, edit, text=None) -> None:

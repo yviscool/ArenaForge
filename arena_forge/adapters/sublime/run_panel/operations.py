@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from sublime import Region
 
-from .messages import status_message
-from .run_panel_logic import resolve_visible_body_text
+from ..messages import status_message
+from .logic import resolve_visible_body_text
 
 
 def toggle_test_fold(command, test_id):

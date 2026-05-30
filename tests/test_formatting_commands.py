@@ -75,7 +75,7 @@ class _FakeView:
 
 
 @contextmanager
-def _patched_format_commands_module():
+def _patched_request_builder_module():
     original_sublime = sys.modules.get("sublime")
     original_sublime_plugin = sys.modules.get("sublime_plugin")
     fake_sublime = types.SimpleNamespace(
@@ -91,11 +91,11 @@ def _patched_format_commands_module():
     )
     sys.modules["sublime"] = fake_sublime
     sys.modules["sublime_plugin"] = fake_sublime_plugin
-    sys.modules.pop("arena_forge.adapters.sublime.format_commands", None)
+    sys.modules.pop("arena_forge.adapters.sublime.formatting.request_builder", None)
     try:
-        yield importlib.import_module("arena_forge.adapters.sublime.format_commands")
+        yield importlib.import_module("arena_forge.adapters.sublime.formatting.request_builder")
     finally:
-        sys.modules.pop("arena_forge.adapters.sublime.format_commands", None)
+        sys.modules.pop("arena_forge.adapters.sublime.formatting.request_builder", None)
         if original_sublime is None:
             sys.modules.pop("sublime", None)
         else:
@@ -143,7 +143,7 @@ def test_build_request_uses_project_local_jvm_formatter_jar(
     jar_path.write_text("placeholder", encoding="utf-8")
 
     clear_discovery_caches()
-    with _patched_format_commands_module() as module:
+    with _patched_request_builder_module() as module:
         monkeypatch.setattr(module, "load_runtime_settings", lambda _view: RuntimeSettings())
         monkeypatch.setattr(
             module,

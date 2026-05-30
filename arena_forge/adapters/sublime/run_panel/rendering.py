@@ -4,14 +4,14 @@ from html import escape
 
 from sublime import LAYOUT_BLOCK, Phantom, Region
 
-from .messages import translate
-from .render_assets import build_styles, render_template
-from .result_display import (
+from ..messages import translate
+from ..render_assets import build_styles, render_template
+from ..result_display import (
     format_output_evaluation_detail,
     format_output_evaluation_summary,
     result_summary_css_class,
 )
-from .run_panel_logic import display_test_number
+from .logic import display_test_number
 
 
 def _build_result_block(state) -> str:

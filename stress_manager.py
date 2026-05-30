@@ -1,3 +1,3 @@
-from .arena_forge.adapters.sublime.stress_commands import StressListener, StressManagerCommand
+from .arena_forge.adapters.sublime.stress import StressListener, StressManagerCommand
 
 __all__ = ["StressListener", "StressManagerCommand"]

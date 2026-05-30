@@ -12,11 +12,11 @@ def _patched_sublime():
     sys.modules["sublime"] = types.SimpleNamespace(
         set_timeout_async=lambda callback, delay=0: scheduled.append((callback, delay))
     )
-    sys.modules.pop("arena_forge.adapters.sublime.run_panel_process_actions", None)
+    sys.modules.pop("arena_forge.adapters.sublime.run_panel.process_actions", None)
     try:
         yield scheduled
     finally:
-        sys.modules.pop("arena_forge.adapters.sublime.run_panel_process_actions", None)
+        sys.modules.pop("arena_forge.adapters.sublime.run_panel.process_actions", None)
         if original_sublime is None:
             sys.modules.pop("sublime", None)
         else:
@@ -26,7 +26,7 @@ def _patched_sublime():
 class RunPanelProcessActionsTests(unittest.TestCase):
     def test_terminate_tester_returns_true_on_success(self) -> None:
         with _patched_sublime():
-            module = importlib.import_module("arena_forge.adapters.sublime.run_panel_process_actions")
+            module = importlib.import_module("arena_forge.adapters.sublime.run_panel.process_actions")
             calls = []
             tester = types.SimpleNamespace(terminate=lambda: calls.append("terminated"))
 
@@ -37,7 +37,7 @@ class RunPanelProcessActionsTests(unittest.TestCase):
 
     def test_terminate_tester_calls_failure_callback_for_expected_errors(self) -> None:
         with _patched_sublime():
-            module = importlib.import_module("arena_forge.adapters.sublime.run_panel_process_actions")
+            module = importlib.import_module("arena_forge.adapters.sublime.run_panel.process_actions")
             failures = []
 
             def fail_terminate() -> None:
@@ -53,7 +53,7 @@ class RunPanelProcessActionsTests(unittest.TestCase):
 
     def test_schedule_test_manager_action_dispatches_expected_payload(self) -> None:
         with _patched_sublime() as scheduled:
-            module = importlib.import_module("arena_forge.adapters.sublime.run_panel_process_actions")
+            module = importlib.import_module("arena_forge.adapters.sublime.run_panel.process_actions")
             calls = []
             view = types.SimpleNamespace(run_command=lambda name, payload: calls.append((name, payload)))
 
@@ -67,7 +67,7 @@ class RunPanelProcessActionsTests(unittest.TestCase):
 
     def test_schedule_test_manager_command_preserves_full_command_payload(self) -> None:
         with _patched_sublime() as scheduled:
-            module = importlib.import_module("arena_forge.adapters.sublime.run_panel_process_actions")
+            module = importlib.import_module("arena_forge.adapters.sublime.run_panel.process_actions")
             calls = []
             view = types.SimpleNamespace(run_command=lambda name, payload: calls.append((name, payload)))
 

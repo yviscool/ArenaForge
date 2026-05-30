@@ -1,11 +1,13 @@
-import sublime, sublime_plugin
+import sublime
+import sublime_plugin
 from sublime import PhantomSet
 
-from .run_panel_command_mixin import RunPanelCommandMixin
-from .run_panel_controller_state import RunPanelControllerState
-from .package_resources import ARROW_LEFT_ICON_RESOURCE, ARROW_RIGHT_ICON_RESOURCE
-from .run_panel_state import PanelTestState
-from .run_panel_tester import RunPanelTester
+from ..package_resources import ARROW_LEFT_ICON_RESOURCE, ARROW_RIGHT_ICON_RESOURCE
+from .command_mixin import RunPanelCommandMixin
+from .controller_state import RunPanelControllerState
+from .state import PanelTestState
+from .tester import RunPanelTester
+
 
 class TestManagerCommand(RunPanelCommandMixin, sublime_plugin.TextCommand):
 	BEGIN_TEST_STRING = 'Test %d {'

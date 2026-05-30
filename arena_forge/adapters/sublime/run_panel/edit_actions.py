@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from sublime import Region
 
-from .messages import product_log_message
-from .run_panel_process_actions import schedule_test_manager_action, terminate_command_tester
+from ..messages import product_log_message
+from .process_actions import schedule_test_manager_action, terminate_command_tester
 
 
 def get_begin_region(command, test_id):

@@ -1,6 +1,6 @@
 import unittest
 
-from arena_forge.adapters.sublime.run_panel_controller_state import (
+from arena_forge.adapters.sublime.run_panel.controller_state import (
     RunPanelControllerState,
     RunPanelInputHistoryState,
 )

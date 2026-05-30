@@ -5,10 +5,11 @@ from typing import Any, Callable, Dict
 
 from sublime import Region
 
-from .command_action_catalog import SUPPORTED_TEST_MANAGER_ACTIONS
-from .messages import product_log_message, status_message
-from .run_panel_action_request import RunPanelActionRequest
-from .run_panel_input_actions import (
+from ..command_action_catalog import SUPPORTED_TEST_MANAGER_ACTIONS
+from ..messages import product_log_message, status_message
+from ..view_actions import erase_region, replace_all, replace_region, set_cursor_to_end
+from .action_request import RunPanelActionRequest
+from .input_actions import (
     clear_current_input,
     delete_previous_word,
     history_next,
@@ -18,9 +19,8 @@ from .run_panel_input_actions import (
     move_input_line_end,
     move_input_line_start,
 )
-from .run_panel_process_actions import terminate_command_tester
-from .run_panel_session_actions import make_opd
-from .view_actions import erase_region, replace_all, replace_region, set_cursor_to_end
+from .process_actions import terminate_command_tester
+from .session_actions import make_opd
 
 
 @dataclass(frozen=True)

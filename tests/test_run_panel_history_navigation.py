@@ -1,6 +1,6 @@
 import unittest
 
-from arena_forge.adapters.sublime.run_panel_input_actions import navigate_history
+from arena_forge.adapters.sublime.run_panel.input_actions import navigate_history
 
 
 class RunPanelHistoryNavigationTests(unittest.TestCase):

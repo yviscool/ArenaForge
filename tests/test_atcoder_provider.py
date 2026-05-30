@@ -56,8 +56,8 @@ PRINT_HTML = """
       <div id="task-statement">
         <span class="lang">
           <span class="lang-ja">
-            <h3>入力例 1</h3><pre>ignore</pre>
-            <h3>出力例 1</h3><pre>ignore</pre>
+            <h3>閸忋儱濮忔笟?1</h3><pre>ignore</pre>
+            <h3>閸戝搫濮忔笟?1</h3><pre>ignore</pre>
           </span>
           <span class="lang-en">
             <h3>Sample Input 1</h3><pre>1 2<br />3</pre>

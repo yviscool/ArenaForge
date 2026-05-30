@@ -17,13 +17,13 @@ def _patched_sublime():
         error_message=lambda message: None,
     )
     sys.modules["sublime"] = fake
-    sys.modules.pop("arena_forge.adapters.sublime.run_panel_action_handlers", None)
+    sys.modules.pop("arena_forge.adapters.sublime.run_panel.action_handlers", None)
     sys.modules.pop("arena_forge.adapters.sublime.messages", None)
     sys.modules.pop("arena_forge.adapters.sublime.view_actions", None)
     try:
         yield
     finally:
-        sys.modules.pop("arena_forge.adapters.sublime.run_panel_action_handlers", None)
+        sys.modules.pop("arena_forge.adapters.sublime.run_panel.action_handlers", None)
         sys.modules.pop("arena_forge.adapters.sublime.messages", None)
         sys.modules.pop("arena_forge.adapters.sublime.view_actions", None)
         if original is None:
@@ -35,7 +35,7 @@ def _patched_sublime():
 class RunPanelActionHandlersTests(unittest.TestCase):
     def test_registry_matches_supported_action_surface(self) -> None:
         with _patched_sublime():
-            module = importlib.import_module("arena_forge.adapters.sublime.run_panel_action_handlers")
+            module = importlib.import_module("arena_forge.adapters.sublime.run_panel.action_handlers")
             catalog = importlib.import_module("arena_forge.adapters.sublime.command_action_catalog")
             context = module.RunPanelActionContext(command=object(), edit=object(), request=object())
 
@@ -45,7 +45,7 @@ class RunPanelActionHandlersTests(unittest.TestCase):
 
     def test_enable_edit_mode_is_the_only_handler_that_skips_read_only_sync(self) -> None:
         with _patched_sublime():
-            module = importlib.import_module("arena_forge.adapters.sublime.run_panel_action_handlers")
+            module = importlib.import_module("arena_forge.adapters.sublime.run_panel.action_handlers")
             context = module.RunPanelActionContext(command=object(), edit=object(), request=object())
 
             handlers = module.build_test_manager_action_handlers(context)
@@ -56,7 +56,7 @@ class RunPanelActionHandlersTests(unittest.TestCase):
 
     def test_close_command_logs_process_termination_failures(self) -> None:
         with _patched_sublime():
-            module = importlib.import_module("arena_forge.adapters.sublime.run_panel_action_handlers")
+            module = importlib.import_module("arena_forge.adapters.sublime.run_panel.action_handlers")
             logs = []
             module.product_log_message = lambda key, **kwargs: logs.append((key, kwargs))
 
@@ -75,7 +75,7 @@ class RunPanelActionHandlersTests(unittest.TestCase):
 
     def test_close_command_ignores_missing_tester(self) -> None:
         with _patched_sublime():
-            module = importlib.import_module("arena_forge.adapters.sublime.run_panel_action_handlers")
+            module = importlib.import_module("arena_forge.adapters.sublime.run_panel.action_handlers")
             logs = []
             module.product_log_message = lambda key, **kwargs: logs.append((key, kwargs))
             command = types.SimpleNamespace(state=types.SimpleNamespace(tester=None), view=object())

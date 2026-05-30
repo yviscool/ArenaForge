@@ -18,6 +18,8 @@ from arena_forge.core.domain import (
 
 USER_AGENT = "ArenaForge/3.0 (+https://example.invalid)"
 ACWING_BASE_URL = "https://www.acwing.com"
+ACWING_INPUT_HEADING = "\u8f93\u5165\u6837\u4f8b"
+ACWING_OUTPUT_HEADING = "\u8f93\u51fa\u6837\u4f8b"
 
 
 class _AcWingSamplesParser(HTMLParser):
@@ -61,9 +63,9 @@ class _AcWingSamplesParser(HTMLParser):
     def handle_endtag(self, tag: str) -> None:
         if tag in {"h3", "h4"} and self._in_heading:
             heading = " ".join(unescape("".join(self._heading_chunks)).split())
-            if "Sample Input" in heading or "输入样例" in heading:
+            if "Sample Input" in heading or ACWING_INPUT_HEADING in heading:
                 self._current_side = "input"
-            elif "Sample Output" in heading or "输出样例" in heading:
+            elif "Sample Output" in heading or ACWING_OUTPUT_HEADING in heading:
                 self._current_side = "output"
             else:
                 self._current_side = None

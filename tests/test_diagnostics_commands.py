@@ -75,11 +75,11 @@ def _patched_sublime():
         get_settings=lambda: {"lint_enabled": True, "run_settings": []},
         is_lang_view=lambda view, lang: False,
     )
-    sys.modules.pop("arena_forge.adapters.sublime.diagnostics_commands", None)
+    sys.modules.pop("arena_forge.adapters.sublime.diagnostics.commands", None)
     try:
         yield
     finally:
-        sys.modules.pop("arena_forge.adapters.sublime.diagnostics_commands", None)
+        sys.modules.pop("arena_forge.adapters.sublime.diagnostics.commands", None)
         if original_sublime is None:
             sys.modules.pop("sublime", None)
         else:
@@ -97,7 +97,7 @@ def _patched_sublime():
 class DiagnosticsCommandsTests(unittest.TestCase):
     def test_run_sense_reuses_a_stable_scratch_label_for_the_same_view(self) -> None:
         with _patched_sublime():
-            module = importlib.import_module("arena_forge.adapters.sublime.diagnostics_commands")
+            module = importlib.import_module("arena_forge.adapters.sublime.diagnostics.commands")
             module._VIEW_STATES.clear()
             labels = []
             view = _FakeDiagnosticsView(7)
@@ -118,7 +118,7 @@ class DiagnosticsCommandsTests(unittest.TestCase):
 
     def test_collect_diagnostics_logs_expected_run_failures(self) -> None:
         with _patched_sublime():
-            module = importlib.import_module("arena_forge.adapters.sublime.diagnostics_commands")
+            module = importlib.import_module("arena_forge.adapters.sublime.diagnostics.commands")
             logs = []
             module.product_log_message = lambda key, **kwargs: logs.append((key, kwargs))
             command = module.InteliSenseCommand.__new__(module.InteliSenseCommand)
@@ -139,7 +139,7 @@ class DiagnosticsCommandsTests(unittest.TestCase):
 
     def test_apply_diagnostics_logs_invalid_report_shape(self) -> None:
         with _patched_sublime():
-            module = importlib.import_module("arena_forge.adapters.sublime.diagnostics_commands")
+            module = importlib.import_module("arena_forge.adapters.sublime.diagnostics.commands")
             module._VIEW_STATES.clear()
             logs = []
             module.product_log_message = lambda key, **kwargs: logs.append((key, kwargs))

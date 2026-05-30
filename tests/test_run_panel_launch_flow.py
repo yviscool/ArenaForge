@@ -1,7 +1,7 @@
 import unittest
 
-from arena_forge.adapters.sublime.run_panel_controller_state import RunPanelLaunchSession
-from arena_forge.adapters.sublime.run_panel_launch_flow import (
+from arena_forge.adapters.sublime.run_panel.controller_state import RunPanelLaunchSession
+from arena_forge.adapters.sublime.run_panel.launch_flow import (
     RunPanelLaunchRequest,
     plan_run_panel_launch,
 )

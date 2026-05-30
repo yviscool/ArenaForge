@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from sublime import Region
 
-from .messages import product_log_message
-from .run_panel_operations import delete_selected_tests, swap_selected_tests, toggle_test_fold
-from .run_panel_process_actions import terminate_tester
+from ..messages import product_log_message
+from .operations import delete_selected_tests, swap_selected_tests, toggle_test_fold
+from .process_actions import terminate_tester
 
 
 def toggle_fold(command, test_id) -> None:

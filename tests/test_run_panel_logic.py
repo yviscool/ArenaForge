@@ -2,7 +2,7 @@ import unittest
 from dataclasses import dataclass
 from typing import Optional
 
-from arena_forge.adapters.sublime.run_panel_logic import (
+from arena_forge.adapters.sublime.run_panel.logic import (
     build_finished_display_layout,
     build_panel_render_entries,
     build_run_panel_stop_plan,

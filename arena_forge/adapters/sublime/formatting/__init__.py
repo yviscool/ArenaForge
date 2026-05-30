@@ -1,4 +1,4 @@
-from .arena_forge.adapters.sublime.formatting import (
+from .commands import (
     ArenaForgeFormatApplyResultCommand,
     ArenaForgeFormatCommand,
     ArenaForgeFormatCreateConfigCommand,

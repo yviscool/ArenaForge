@@ -216,6 +216,10 @@ Check:
 
 - `arena_forge/core`: typed domain models, output checking, and session use cases
 - `arena_forge/adapters`: Sublime integration, providers, storage, runners, i18n, workspace scaffolding, and credential storage
+- `arena_forge/adapters/sublime/run_panel`: run-panel command orchestration, state, rendering, and session flow
+- `arena_forge/adapters/sublime/test_editor`: dedicated test-editor commands and dispatch
+- `arena_forge/adapters/sublime/formatting`: formatting request building, command execution, panel output, and config generation
+- `arena_forge/adapters/sublime/contest`, `diagnostics`, `stress`: domain-specific Sublime command packages
 - `arena_forge/formatting`: formatter adapters, discovery, config generation, and formatting runtime
 - `arena_forge/templates`: built-in contest templates
 - `tests`: pytest coverage for providers, storage, settings, run-panel behavior, and formatting

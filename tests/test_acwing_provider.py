@@ -9,9 +9,9 @@ HTML = """
   </head>
   <body>
     <section>
-      <h3>输入样例：</h3>
+      <h3>\u8f93\u5165\u6837\u4f8b\uff1a</h3>
       <pre>1 2</pre>
-      <h3>输出样例：</h3>
+      <h3>\u8f93\u51fa\u6837\u4f8b\uff1a</h3>
       <pre>3</pre>
       <h3>Sample Input 2</h3>
       <pre>a &lt; b</pre>

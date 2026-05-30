@@ -34,11 +34,11 @@ def _patched_sublime():
     fake_sublime_plugin = types.SimpleNamespace(TextCommand=object)
     sys.modules["sublime"] = fake_sublime
     sys.modules["sublime_plugin"] = fake_sublime_plugin
-    sys.modules.pop("arena_forge.adapters.sublime.contest_commands", None)
+    sys.modules.pop("arena_forge.adapters.sublime.contest.commands", None)
     try:
         yield
     finally:
-        sys.modules.pop("arena_forge.adapters.sublime.contest_commands", None)
+        sys.modules.pop("arena_forge.adapters.sublime.contest.commands", None)
         if original_sublime is None:
             sys.modules.pop("sublime", None)
         else:
@@ -52,7 +52,7 @@ def _patched_sublime():
 class ContestCommandsTests(unittest.TestCase):
     def test_submit_current_view_dispatches_submission_request(self) -> None:
         with _patched_sublime():
-            module = importlib.import_module("arena_forge.adapters.sublime.contest_commands")
+            module = importlib.import_module("arena_forge.adapters.sublime.contest.commands")
             requests = []
             statuses = []
             app = types.SimpleNamespace(

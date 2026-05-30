@@ -1,6 +1,6 @@
 import unittest
 
-from arena_forge.adapters.sublime.run_panel_session_service import (
+from arena_forge.adapters.sublime.run_panel.session_service import (
     RunPanelBackendSelection,
     create_run_backend,
     plan_test_bootstrap,

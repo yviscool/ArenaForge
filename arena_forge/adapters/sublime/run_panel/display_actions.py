@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from sublime import PhantomSet, Region
 
-from .run_panel_logic import build_panel_render_entries
-from .run_panel_rendering import build_next_test_title_phantom
+from .logic import build_panel_render_entries
+from .rendering import build_next_test_title_phantom
 
 _UNKNOWN_PHANTOM_SIGNATURE = object()
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from sublime import Region
 
-from .run_panel_logic import resolve_visible_body_text
+from .logic import resolve_visible_body_text
 
 
 def compute_tie_pos(tester, index):

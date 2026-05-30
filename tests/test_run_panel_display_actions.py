@@ -47,7 +47,7 @@ class _FakeTest:
 @contextmanager
 def _patched_sublime():
     original = sys.modules.get("sublime")
-    original_rendering = sys.modules.get("arena_forge.adapters.sublime.run_panel_rendering")
+    original_rendering = sys.modules.get("arena_forge.adapters.sublime.run_panel.rendering")
     fake = types.SimpleNamespace(
         PhantomSet=_FakePhantomSet,
         LAYOUT_BLOCK=0,
@@ -55,18 +55,18 @@ def _patched_sublime():
         Region=lambda *args, **kwargs: None,
     )
     sys.modules["sublime"] = fake
-    sys.modules["arena_forge.adapters.sublime.run_panel_rendering"] = types.SimpleNamespace(
+    sys.modules["arena_forge.adapters.sublime.run_panel.rendering"] = types.SimpleNamespace(
         build_next_test_title_phantom=lambda *args, **kwargs: "next-test"
     )
-    sys.modules.pop("arena_forge.adapters.sublime.run_panel_display_actions", None)
+    sys.modules.pop("arena_forge.adapters.sublime.run_panel.display_actions", None)
     try:
         yield
     finally:
-        sys.modules.pop("arena_forge.adapters.sublime.run_panel_display_actions", None)
+        sys.modules.pop("arena_forge.adapters.sublime.run_panel.display_actions", None)
         if original_rendering is None:
-            sys.modules.pop("arena_forge.adapters.sublime.run_panel_rendering", None)
+            sys.modules.pop("arena_forge.adapters.sublime.run_panel.rendering", None)
         else:
-            sys.modules["arena_forge.adapters.sublime.run_panel_rendering"] = original_rendering
+            sys.modules["arena_forge.adapters.sublime.run_panel.rendering"] = original_rendering
         if original is None:
             sys.modules.pop("sublime", None)
         else:
@@ -76,7 +76,7 @@ def _patched_sublime():
 class RunPanelDisplayActionsTests(unittest.TestCase):
     def test_update_configs_clears_stale_phantoms_when_update_last_true(self) -> None:
         with _patched_sublime():
-            module = importlib.import_module("arena_forge.adapters.sublime.run_panel_display_actions")
+            module = importlib.import_module("arena_forge.adapters.sublime.run_panel.display_actions")
             original_builder = module.build_panel_render_entries
             try:
                 module.build_panel_render_entries = lambda *args, **kwargs: (
@@ -120,7 +120,7 @@ class RunPanelDisplayActionsTests(unittest.TestCase):
 
     def test_update_configs_skips_unchanged_slots_on_repeated_refresh(self) -> None:
         with _patched_sublime():
-            module = importlib.import_module("arena_forge.adapters.sublime.run_panel_display_actions")
+            module = importlib.import_module("arena_forge.adapters.sublime.run_panel.display_actions")
             original_builder = module.build_panel_render_entries
             try:
                 test = _FakeTest("t1")
@@ -159,7 +159,7 @@ class RunPanelDisplayActionsTests(unittest.TestCase):
 
     def test_update_configs_refreshes_hidden_slots_without_rebuilding_visible_content(self) -> None:
         with _patched_sublime():
-            module = importlib.import_module("arena_forge.adapters.sublime.run_panel_display_actions")
+            module = importlib.import_module("arena_forge.adapters.sublime.run_panel.display_actions")
             original_builder = module.build_panel_render_entries
             try:
                 test = _FakeTest("t1")

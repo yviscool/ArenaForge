@@ -10,9 +10,9 @@ import sublime_plugin
 from arena_forge.adapters.runners import CompilerDiagnosticsService, DiagnosticsScratchWorkspace
 from arena_forge.core.domain import DiagnosticSeverity
 
-from .messages import product_log_message, status_message, translate
-from .package_resources import get_plugin_root_dir
-from .settings_bridge import get_settings, is_lang_view
+from ..messages import product_log_message, status_message, translate
+from ..package_resources import get_plugin_root_dir
+from ..settings_bridge import get_settings, is_lang_view
 
 _DIAGNOSTIC_DEBOUNCE_MS = 250
 _DIAGNOSTIC_RUN_FAILURES = (IndexError, KeyError, OSError, ValueError)
