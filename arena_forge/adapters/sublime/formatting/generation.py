@@ -26,6 +26,7 @@ from arena_forge.formatting.core.templates import (
     template_files_for_workspace,
 )
 
+from ..shared.messages import translate
 from .presentation import _show_output_panel, _status
 
 
@@ -52,7 +53,7 @@ def _status_from_materialized(materialized: Tuple[MaterializedTemplate, ...]) ->
         count = sum(1 for item in materialized if item.status == status)
         if count:
             parts.append(f"{label} {count}")
-    return ", ".join(parts) if parts else "no config files were generated"
+    return ", ".join(parts) if parts else translate("status.no_config_files_generated")
 
 
 def _render_generation_result(
@@ -150,7 +151,7 @@ def run_generation_wizard(
         adapter_id=adapter.id if adapter else None,
     )
     if not targets:
-        _status("open a file or workspace folder before generating configs.")
+        _status(translate("status.open_file_or_workspace"))
         return
 
     presets = preset_options()
@@ -214,7 +215,7 @@ def run_generation_wizard(
             templates=templates,
         )
         _show_output_panel(window, render_generation_plan(plan))
-        if not sublime.ok_cancel_dialog("Apply this ArenaForge formatter config generation plan?", "Apply"):
+        if not sublime.ok_cancel_dialog(translate("prompt.apply_generation_plan"), "Apply"):
             return
         _apply_generation_plan(window, plan, include_existing=not workspace_mode)
 

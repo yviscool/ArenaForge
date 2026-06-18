@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable, Optional
 
+from arena_forge.adapters.i18n.catalog import translate_catalog as translate
+
 try:
     from arena_forge.adapters.runners import ProcessManager
 except ImportError:  # pragma: no cover - depends on Sublime host runtime
@@ -68,7 +70,7 @@ def save_tests_for_run(source_file, tests, repository, infer_language_name, test
 
 def create_process_manager(run_file, build_sys, run_settings):
     if ProcessManager is None:
-        raise RuntimeError("ProcessManager is unavailable outside the Sublime host")
+        raise RuntimeError(translate("error.process_manager_unavailable"))
     return ProcessManager(run_file, build_sys, run_settings=run_settings)
 
 
@@ -88,6 +90,6 @@ def create_run_backend(
 ):
     if selection.kind == "debugger":
         if selection.debug_module is None:
-            raise RuntimeError("Debugger backend selection requires a debugger module")
+            raise RuntimeError(translate("error.debugger_module_required"))
         return selection.debug_module(run_file)
     return process_manager_factory(run_file, build_sys, run_settings)

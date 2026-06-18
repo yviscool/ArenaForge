@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
+from arena_forge.adapters.i18n.catalog import translate_catalog as translate
+
 from .controller_state import RunPanelLaunchSession
 
 
@@ -30,7 +32,7 @@ class RunPanelLaunchRequest:
 
     def to_launch_session(self) -> RunPanelLaunchSession:
         if self.run_file is None:
-            raise ValueError("run_file is required for a fresh run-panel launch")
+            raise ValueError(translate("error.run_file_required"))
         return RunPanelLaunchSession(
             run_file=self.run_file,
             build_sys=self.build_sys,

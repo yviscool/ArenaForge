@@ -214,7 +214,7 @@ class RunPanelTesterTests(unittest.TestCase):
                 show_status=lambda: None,
             )
 
-            with self.assertRaisesRegex(RuntimeError, "Test state factory unavailable"):
+            with self.assertRaisesRegex(RuntimeError, "test state factory unavailable"):
                 tester.next_test(1, lambda: None)
 
     def test_next_test_schedules_process_listener_for_native_process_manager(self) -> None:
@@ -373,7 +373,7 @@ class RunPanelTesterTests(unittest.TestCase):
                 show_status=lambda: None,
             )
 
-            with self.assertRaisesRegex(RuntimeError, "Test state factory unavailable"):
+            with self.assertRaisesRegex(RuntimeError, "test state factory unavailable"):
                 tester.set_tests(["x"])
 
     def test_set_tests_rebuilds_output_slots_and_iteration(self) -> None:

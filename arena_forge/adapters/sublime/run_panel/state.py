@@ -7,7 +7,7 @@ import sublime
 from arena_forge.core.domain import OutputEvaluation, RunHistoryEntry, SessionSnapshot, TestCase
 
 from ..run_history import coerce_verdict
-from ..shared.messages import product_log_message
+from ..shared.messages import product_log_message, translate
 from .rendering import build_accdec_phantom, build_test_config_phantom
 
 
@@ -146,11 +146,11 @@ def _read_panel_tests_payload(path):
 def _decode_panel_tests_payload(payload_text):
     payload = sublime.decode_value(payload_text)
     if not isinstance(payload, list):
-        raise ValueError("tests payload must be a list")
+        raise ValueError(translate("error.tests_payload_must_be_list"))
     decoded = []
     for item in payload:
         if not isinstance(item, dict):
-            raise ValueError("test payload entries must be objects")
+            raise ValueError(translate("error.test_payload_entries_must_be_objects"))
         if not str(item.get("test", "")).strip():
             continue
         decoded.append(item)

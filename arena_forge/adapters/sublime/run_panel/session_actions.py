@@ -114,7 +114,7 @@ def handle_process_stop(command, rtcode, runtime, crash_line=None, compile_faile
 def handle_compile_failure(command, rtcode) -> None:
     command.change_process_status("STOPPED")
     handle_process_stop(command, rtcode, 0, compile_failed=True)
-    command.set_compile_bar("compilation error", type="error")
+    command.set_compile_bar(translate("error.compilation_error"), type="error")
 
 
 def clear_all(command) -> None:
@@ -175,9 +175,9 @@ def _schedule_compile_start(command, view, process_manager, tests, sync_out) -> 
             view.run_command("test_manager", {"action": "new_test"})
         else:
             view.run_command("test_manager", {"action": "insert_opd_out", "text": "\n" + compile_result[1]})
-            command.set_compile_bar("compilation error", type="error")
+            command.set_compile_bar(translate("error.compilation_error"), type="error")
 
-    command.set_compile_bar("compiling")
+    command.set_compile_bar(translate("status.compiling"))
     sublime.set_timeout_async(compile_step, 10)
 
 
@@ -233,12 +233,12 @@ def make_opd(
                 "scroll_to_end": False,
             },
         )
-        command.set_compile_bar("session restore failed", type="error")
+        command.set_compile_bar(translate("error.session_restore_failed"), type="error")
         return
 
     launch_session = launch_plan.session
     if launch_session is None:
-        raise RuntimeError("Run-panel launch plan did not provide a launch session")
+        raise RuntimeError(translate("error.no_launch_session"))
 
     command.state.set_launch_session(launch_session)
     if not request.load_session:

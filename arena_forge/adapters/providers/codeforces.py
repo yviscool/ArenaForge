@@ -8,6 +8,7 @@ from typing import Callable, Dict, Iterable, List, Optional, Tuple
 from urllib.parse import urljoin
 from urllib.request import Request, urlopen
 
+from arena_forge.adapters.i18n.catalog import translate_catalog as translate
 from arena_forge.core.domain import (
     ContestDescriptor,
     ContestProblem,
@@ -298,7 +299,7 @@ class CodeforcesProvider:
         from .codeforces_submit import requests
 
         if requests is None:
-            raise ModuleNotFoundError("requests is required for Codeforces submission support")
+            raise ModuleNotFoundError(translate("error.requests_required_for_codeforces"))
         session = requests.Session()
         login_codeforces(
             session,

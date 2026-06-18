@@ -4,6 +4,8 @@ import json
 from pathlib import Path
 from typing import Optional
 
+_DEFAULT_LOCALE_DIRECTORY = Path(__file__).resolve().parents[2] / "locales"
+
 
 class JsonCatalogTranslator:
     def __init__(self, locale_directory: str, default_locale: str = "en"):
@@ -14,8 +16,13 @@ class JsonCatalogTranslator:
     def _load(self, locale: str) -> dict[str, str]:
         if locale not in self._cache:
             path = self.locale_directory / f"{locale}.json"
-            with path.open("r", encoding="utf-8") as handle:
-                self._cache[locale] = json.load(handle)
+            try:
+                with path.open("r", encoding="utf-8") as handle:
+                    self._cache[locale] = json.load(handle)
+            except FileNotFoundError:
+                if locale != self.default_locale:
+                    return self._load(self.default_locale)
+                raise
         return self._cache[locale]
 
     def translate(self, key: str, locale: Optional[str] = None, **kwargs: str) -> str:
@@ -27,3 +34,11 @@ class JsonCatalogTranslator:
         elif template is None:
             template = key
         return template.format(**kwargs)
+
+
+def translate_catalog(key: str, locale: Optional[str] = None, **kwargs: str) -> str:
+    return JsonCatalogTranslator(str(_DEFAULT_LOCALE_DIRECTORY), default_locale="en").translate(
+        key,
+        locale=locale,
+        **kwargs,
+    )

@@ -58,14 +58,30 @@ class OxcFormatAdapter(FormatterAdapter):
         command.extend(extra_args)
         return command
 
-    def build_install_help(self, platform_name: str) -> str:
+    def build_install_help(self, platform_name: str, translate=None) -> str:
         del platform_name
+        title = (
+            translate("formatting.install_guide_recommended_project_install")
+            if translate
+            else "Recommended project-local install command:"
+        )
+        note = (
+            translate("formatting.install_guide_official_docs_pnpm")
+            if translate
+            else "Official docs show pnpm examples;"
+        )
+        equivalent = (
+            translate("formatting.install_guide_official_docs_equivalent")
+            if translate
+            else "the npm command above is the equivalent inference."
+        )
+        docs = translate("formatting.install_guide_docs", url=self.docs_url) if translate else f"Docs: {self.docs_url}"
         return "\n".join(
             (
-                "Recommended project-local install command:",
+                title,
                 "  npm install --save-dev oxfmt",
-                "Official docs show pnpm examples;",
-                "the npm command above is the equivalent inference.",
-                f"Docs: {self.docs_url}",
+                note,
+                equivalent,
+                docs,
             )
         )

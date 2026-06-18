@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from html import unescape
 from urllib.request import Request, urlopen
 
+from arena_forge.adapters.i18n.catalog import translate_catalog as translate
 from arena_forge.core.domain import (
     ContestDescriptor,
     ContestProblem,
@@ -22,7 +23,7 @@ def extract_luogu_problem(payload: dict[str, object]) -> tuple[str, str, tuple[T
     current_data = payload.get("currentData", payload)
     problem = current_data.get("problem") if isinstance(current_data, dict) else None
     if not isinstance(problem, dict):
-        raise ValueError("Luogu response payload does not include problem data")
+        raise ValueError(translate("error.invalid_luogu_problem_payload"))
     problem_id = str(problem.get("pid") or problem.get("id") or "Problem")
     title = str(problem.get("title") or problem_id)
     samples_payload = problem.get("samples") or ()
@@ -74,4 +75,4 @@ class LuoguProvider:
         code: str,
         credentials: CredentialRecord,
     ) -> None:
-        raise NotImplementedError("Luogu submission is not implemented")
+        raise NotImplementedError(translate("error.luogu_submission_unimplemented"))

@@ -278,7 +278,7 @@ class RunPanelSessionActionsTests(unittest.TestCase):
                 [
                     ("status", "STOPPED"),
                     ("stop", command, 9, 0, True),
-                    ("bar", "compilation error", "error"),
+                    ("bar", "error.compilation_error", "error"),
                 ],
             )
 
@@ -482,7 +482,7 @@ class RunPanelSessionActionsTests(unittest.TestCase):
 
             module._schedule_compile_start(command, view, process_manager, ["T1"], True)
 
-            self.assertEqual(created["compile_bars"], [("compiling", "")])
+            self.assertEqual(created["compile_bars"], [("status.compiling", "")])
             self.assertEqual(len(scheduled), 1)
             callback, delay = scheduled.pop(0)
             self.assertEqual(delay, 10)
@@ -497,6 +497,7 @@ class RunPanelSessionActionsTests(unittest.TestCase):
             self.assertEqual(created["kwargs"]["test_factory"], "TEST_FACTORY")
             self.assertFalse(view.settings().get("edit_mode"))
             self.assertEqual(view.commands, [("test_manager", {"action": "new_test"})])
+            self.assertEqual(created["compile_bars"], [("status.compiling", "")])
 
             created["kwargs"]["on_compile_error"](3, 17, "boom")
             self.assertEqual(compile_failure_calls, [(command, 17)])
@@ -530,7 +531,10 @@ class RunPanelSessionActionsTests(unittest.TestCase):
 
             self.assertEqual(command.status, "COMPILED")
             self.assertEqual(state.advance_panel_input_calls, [0])
-            self.assertEqual(command.compile_bars, [("compiling", ""), ("compilation error", "error")])
+            self.assertEqual(
+                command.compile_bars,
+                [("status.compiling", ""), ("error.compilation_error", "error")],
+            )
             self.assertEqual(view.commands, [("test_manager", {"action": "insert_opd_out", "text": "\nboom"})])
             self.assertIsNone(command.state.tester)
             self.assertTrue(view.settings().get("edit_mode"))
@@ -584,7 +588,10 @@ class RunPanelSessionActionsTests(unittest.TestCase):
 
             module.make_opd(command, edit="EDIT", load_session=True)
 
-            self.assertEqual(calls, [("apply", None), ("clear", command), ("bar", "session restore failed", "error")])
+            self.assertEqual(
+                calls,
+                [("apply", None), ("clear", command), ("bar", "translated:error.session_restore_failed", "error")],
+            )
             self.assertEqual(view.scratch_values, [True])
             self.assertEqual(view.get_status("opd_info"), "opdebugger-file")
             self.assertEqual(
@@ -679,7 +686,7 @@ class RunPanelSessionActionsTests(unittest.TestCase):
                 apply_edit_changes=lambda: None,
             )
 
-            with self.assertRaisesRegex(RuntimeError, "Run-panel launch plan did not provide a launch session"):
+            with self.assertRaisesRegex(RuntimeError, "error.no_launch_session"):
                 module.make_opd(command, edit="EDIT", run_file="main.cpp")
 
 

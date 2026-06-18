@@ -30,13 +30,28 @@ class RustFormatAdapter(FormatterAdapter):
         command.extend(extra_args)
         return command
 
-    def build_install_help(self, platform_name: str) -> str:
+    def build_install_help(self, platform_name: str, translate=None) -> str:
         del platform_name
+        title = (
+            translate("formatting.install_guide_recommended_install")
+            if translate
+            else "Recommended install command:"
+        )
+        docs = (
+            translate("formatting.install_guide_docs", url=self.docs_url)
+            if translate
+            else f"Docs: {self.docs_url}"
+        )
+        note = (
+            translate("formatting.install_guide_official_docs_equivalent")
+            if translate
+            else "rustfmt is installed as a Rust toolchain component."
+        )
         return "\n".join(
             (
-                "Recommended install command:",
+                title,
                 "  rustup component add rustfmt",
-                "rustfmt is installed as a Rust toolchain component.",
-                f"Docs: {self.docs_url}",
+                note,
+                docs,
             )
         )

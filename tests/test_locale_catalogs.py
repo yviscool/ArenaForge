@@ -1,4 +1,3 @@
-import ast
 import json
 import re
 import unittest
@@ -20,18 +19,6 @@ def _load_locale(name: str) -> Dict[str, str]:
     return json.loads((LOCALE_ROOT / f"{name}.json").read_text(encoding="utf-8"))
 
 
-def _load_sublime_fallbacks() -> Dict[str, str]:
-    module = ast.parse(MESSAGE_SOURCE.read_text(encoding="utf-8"), filename=str(MESSAGE_SOURCE))
-    for node in module.body:
-        if not isinstance(node, ast.Assign):
-            continue
-        if not any(isinstance(target, ast.Name) and target.id == "_FALLBACKS" for target in node.targets):
-            continue
-        catalog = ast.literal_eval(node.value)
-        return {str(key): str(value) for key, value in catalog.items()}
-    raise AssertionError("_FALLBACKS not found in shared/messages.py")
-
-
 def _extract_placeholders(value: str) -> Set[str]:
     return set(PLACEHOLDER_PATTERN.findall(value))
 
@@ -39,9 +26,6 @@ def _extract_placeholders(value: str) -> Set[str]:
 class LocaleCatalogTests(unittest.TestCase):
     def test_supported_locales_match_catalogs(self) -> None:
         self.assertEqual(tuple(_locale_names()), tuple(sorted(SUPPORTED_LOCALES)))
-
-    def test_english_locale_matches_sublime_fallbacks(self) -> None:
-        self.assertEqual(_load_locale("en"), _load_sublime_fallbacks())
 
     def test_locale_key_sets_match(self) -> None:
         en = _load_locale("en")

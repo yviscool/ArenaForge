@@ -9,6 +9,7 @@ from pathlib import Path
 from time import perf_counter
 from typing import List, Optional
 
+from arena_forge.adapters.i18n.catalog import translate_catalog as translate
 from arena_forge.core.domain import CommandExecution, LanguageProfile, TestRunResult, Verdict
 
 
@@ -115,7 +116,7 @@ def run_once(
     timeout_seconds: Optional[float] = None,
 ) -> TestRunResult:
     if not profile.run_cmd:
-        raise ValueError(f"Language profile {profile.name!r} has no run command")
+        raise ValueError(translate("error.no_runnable_command_configured", file=source_file))
 
     command = render_command(profile.run_cmd, source_file)
     argv = build_command_argv(command, platform_name=platform_name)
@@ -153,7 +154,7 @@ def run_once(
             runtime_ms=runtime_ms,
             verdict=Verdict.TIMEOUT,
             command=tuple(argv),
-            message=f"Timed out after {timeout_seconds} seconds",
+            message=translate("error.process_timed_out", timeout_seconds=timeout_seconds or 0),
         )
 
 
@@ -164,7 +165,7 @@ def build_interactive_process(
     platform_name: Optional[str] = None,
 ) -> subprocess.Popen[str]:
     if not profile.run_cmd:
-        raise ValueError(f"Language profile {profile.name!r} has no run command")
+        raise ValueError(translate("error.no_runnable_command_configured", file=source_file))
 
     merged_args = " ".join(args or ())
     command = render_command(profile.run_cmd, source_file, args=merged_args)

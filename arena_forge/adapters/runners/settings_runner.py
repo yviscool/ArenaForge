@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Optional
 
+from arena_forge.adapters.i18n.catalog import translate_catalog as translate
 from arena_forge.core.domain import LanguageProfile
 from arena_forge.core.services import select_language_profile
 
@@ -33,7 +34,7 @@ class SettingsBackedRunner:
                 str(profile.submission_key or "").strip().lower(),
             }:
                 return profile
-        raise ValueError(f"Unsupported language profile: {language}")
+        raise ValueError(translate("error.unsupported_language_profile", language=language))
 
     def profile_for_source(self, source_file: str) -> LanguageProfile:
         return select_language_profile(source_file, self.profiles)

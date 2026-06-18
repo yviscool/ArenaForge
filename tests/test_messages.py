@@ -1,8 +1,10 @@
 import importlib
+import json
 import sys
 import types
 import unittest
 from contextlib import contextmanager
+from pathlib import Path
 
 
 @contextmanager
@@ -30,28 +32,41 @@ def _patched_messages(settings_bridge_module):
 
 
 class MessagesTests(unittest.TestCase):
-    def test_translate_falls_back_when_application_is_unavailable(self) -> None:
-        def raise_runtime_error():
-            raise RuntimeError("not initialized")
-
-        with _patched_messages(types.SimpleNamespace(get_application=raise_runtime_error)):
+    def test_translate_reads_default_locale_when_application_is_unavailable(self) -> None:
+        with _patched_messages(
+            types.SimpleNamespace(get_application=lambda: (_ for _ in ()).throw(RuntimeError("not initialized")))
+        ):
             module = importlib.import_module("arena_forge.adapters.sublime.shared.messages")
 
             result = module.translate("status.running")
+            en_catalog = json.loads(Path("arena_forge/locales/en.json").read_text(encoding="utf-8"))
+            self.assertEqual(result, en_catalog["status.running"])
 
-            self.assertEqual(result, "Running")
-
-    def test_translate_falls_back_when_translator_raises_value_error(self) -> None:
-        translator = types.SimpleNamespace(
-            translate=lambda *args, **kwargs: (_ for _ in ()).throw(ValueError("bad locale payload"))
-        )
-        application = types.SimpleNamespace(translator=translator)
-        with _patched_messages(types.SimpleNamespace(get_application=lambda: application)):
+    def test_translate_uses_requested_locale_when_available(self) -> None:
+        with _patched_messages(
+            types.SimpleNamespace(get_application=lambda: (_ for _ in ()).throw(RuntimeError("not initialized")))
+        ):
             module = importlib.import_module("arena_forge.adapters.sublime.shared.messages")
 
-            result = module.translate("status.stopped")
+            result = module.translate("status.stopped", locale="zh-Hans")
 
-            self.assertEqual(result, "Stopped")
+            self.assertEqual(result, "已停止")
+
+    def test_translate_prefers_application_locale(self) -> None:
+        calls = []
+
+        class _Translator:
+            def translate(self, key, locale=None, **kwargs):
+                calls.append((key, locale, kwargs))
+                return f"{locale}:{key}"
+
+        with _patched_messages(
+            types.SimpleNamespace(get_application=lambda: types.SimpleNamespace(translator=_Translator()))
+        ):
+            module = importlib.import_module("arena_forge.adapters.sublime.shared.messages")
+
+            self.assertEqual(module.translate("status.running"), "None:status.running")
+            self.assertEqual(calls, [("status.running", None, {})])
 
 
 if __name__ == "__main__":

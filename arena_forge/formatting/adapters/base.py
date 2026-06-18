@@ -29,5 +29,5 @@ class FormatterAdapter(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def build_install_help(self, platform_name: str) -> str:
+    def build_install_help(self, platform_name: str, translate=None) -> str:
         raise NotImplementedError

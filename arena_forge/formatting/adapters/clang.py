@@ -37,18 +37,28 @@ class ClangFormatAdapter(FormatterAdapter):
         command.extend(extra_args)
         return command
 
-    def build_install_help(self, platform_name: str) -> str:
+    def build_install_help(self, platform_name: str, translate=None) -> str:
         if platform_name == "Windows":
             command = "winget install LLVM.LLVM"
         elif platform_name == "Darwin":
             command = "brew install clang-format"
         else:
             command = "sudo apt install clang-format"
+        title = (
+            translate("formatting.install_guide_recommended_install")
+            if translate
+            else "Recommended install command:"
+        )
+        docs = (
+            translate("formatting.install_guide_docs", url=self.docs_url)
+            if translate
+            else f"Docs: {self.docs_url}"
+        )
 
         return "\n".join(
             (
-                "Recommended install command:",
+                title,
                 f"  {command}",
-                f"Docs: {self.docs_url}",
+                docs,
             )
         )

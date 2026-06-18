@@ -9,6 +9,7 @@ from arena_forge.formatting.adapters.base import FormatterAdapter
 from arena_forge.formatting.core.contracts import ExecutableDiscovery, FormatRequest, FormatResult
 from arena_forge.formatting.core.settings import load_runtime_settings
 
+from ..shared.messages import translate
 from .request_builder import _resolve_base_dir, _select_adapter
 
 OUTPUT_PANEL_NAME = "arena_forge_format"
@@ -27,44 +28,45 @@ def _render_diagnostic(
     runtime = load_runtime_settings(view)
     adapter, selectors = _select_adapter(view, runtime.selector_overrides)
     non_empty = [region for region in view.sel() if not region.empty()]
+    timeout = "disabled" if request is None or request.timeout_ms <= 0 else f"{request.timeout_ms} ms"
     lines = [
-        "ArenaForge Formatter Diagnose",
+        translate("command.format_diagnose"),
         "",
-        f"File: {view.file_name() or '<unsaved>'}",
-        f"Syntax: {view.settings().get('syntax') or '<unknown>'}",
-        f"Matched adapter: {adapter.id if adapter else '<none>'}",
-        f"Selector candidates: {', '.join(selectors) if selectors else '<none>'}",
-        f"Base directory: {_resolve_base_dir(view) or '<none>'}",
-        f"Selections: {len(view.sel())} total / {len(non_empty)} non-empty",
+        f"{translate('diagnostic.file')}: {view.file_name() or '<unsaved>'}",
+        f"{translate('diagnostic.syntax')}: {view.settings().get('syntax') or '<unknown>'}",
+        f"{translate('diagnostic.matched_adapter')}: {adapter.id if adapter else '<none>'}",
+        f"{translate('diagnostic.selector_candidates')}: {', '.join(selectors) if selectors else '<none>'}",
+        f"{translate('diagnostic.base_directory')}: {_resolve_base_dir(view) or '<none>'}",
+        f"{translate('diagnostic.selections')}: {len(view.sel())} total / {len(non_empty)} non-empty",
         "",
     ]
     if request:
         lines.extend(
             (
-                f"Executable: {request.executable}",
-                f"Executable source: {request.executable_source or '<unknown>'}",
-                f"Command: {' '.join(request.command)}",
-                f"Working directory: {request.cwd or '<none>'}",
-                f"stdin filename: {request.stdin_filename or '<none>'}",
-                f"Selection mode: {request.selection_mode}",
-                f"Selection ranges: {len(request.ranges)}",
-                f"Timeout: {'disabled' if request.timeout_ms <= 0 else f'{request.timeout_ms} ms'}",
-                f"Config file: {request.config_path or '<none detected>'}",
+                f"{translate('diagnostic.executable')}: {request.executable}",
+                f"{translate('diagnostic.executable_source')}: {request.executable_source or '<unknown>'}",
+                f"{translate('diagnostic.command')}: {' '.join(request.command)}",
+                f"{translate('diagnostic.working_directory')}: {request.cwd or '<none>'}",
+                f"{translate('diagnostic.stdin_filename')}: {request.stdin_filename or '<none>'}",
+                f"{translate('diagnostic.selection_mode')}: {request.selection_mode}",
+                f"{translate('diagnostic.selection_ranges')}: {len(request.ranges)}",
+                f"{translate('diagnostic.timeout')}: {timeout}",
+                f"{translate('diagnostic.config_file')}: {request.config_path or '<none detected>'}",
             )
         )
     elif executable_info and executable_info.executable:
         lines.extend(
             (
-                f"Executable: {executable_info.executable}",
-                f"Executable source: {executable_info.source or '<unknown>'}",
+                f"{translate('diagnostic.executable')}: {executable_info.executable}",
+                f"{translate('diagnostic.executable_source')}: {executable_info.source or '<unknown>'}",
             )
         )
     if executable_info:
-        lines.extend(("", "Search log:"))
+        lines.extend(("", translate("diagnostic.search_log")))
         for item in executable_info.searched:
             lines.append(f"  {item}")
     if error:
-        lines.extend(("", f"Error: {error}"))
+        lines.extend(("", f"{translate('diagnostic.error')}: {error}"))
     return "\n".join(lines)
 
 
@@ -73,12 +75,12 @@ def _render_install_guide(
     executable_info: Optional[ExecutableDiscovery],
 ) -> str:
     lines = [
-        f"ArenaForge Formatter Install Guide: {adapter.display_name}",
+        translate("formatting.install_guide_title", adapter=adapter.display_name),
         "",
-        adapter.build_install_help(platform.system()),
+        adapter.build_install_help(platform.system(), translate=translate),
     ]
     if executable_info:
-        lines.extend(("", "Search log:"))
+        lines.extend(("", translate("diagnostic.search_log")))
         for item in executable_info.searched:
             lines.append(f"  {item}")
     return "\n".join(lines)
@@ -99,24 +101,24 @@ def _result_message(result: FormatResult) -> str:
         return result.stderr.strip()
     if result.stdout.strip():
         return result.stdout.strip()
-    return f"{result.request.adapter_name} exited with code {result.returncode}."
+    return translate("result.exit_code", adapter=result.request.adapter_name, returncode=result.returncode)
 
 
 def _failure_panel_content(result: FormatResult, message: str) -> str:
     lines = [
-        f"{result.request.adapter_name} failed",
+        translate("result.failed", adapter=result.request.adapter_name),
         "",
-        f"Command: {' '.join(result.request.command)}",
-        f"Working directory: {result.request.cwd or '<none>'}",
-        f"Executable source: {result.request.executable_source or '<unknown>'}",
-        f"Elapsed: {result.elapsed_ms} ms",
+        f"{translate('diagnostic.command')}: {' '.join(result.request.command)}",
+        f"{translate('diagnostic.working_directory')}: {result.request.cwd or '<none>'}",
+        f"{translate('diagnostic.executable_source')}: {result.request.executable_source or '<unknown>'}",
+        f"{translate('diagnostic.elapsed')}: {result.elapsed_ms} ms",
         "",
         message,
     ]
     stdout = result.stdout.strip()
     stderr = result.stderr.strip()
     if stdout:
-        lines.extend(("", "stdout:", stdout))
+        lines.extend(("", f"{translate('diagnostic.stdout')}:", stdout))
     if stderr and stderr != message:
-        lines.extend(("", "stderr:", stderr))
+        lines.extend(("", f"{translate('diagnostic.stderr')}:", stderr))
     return "\n".join(lines)

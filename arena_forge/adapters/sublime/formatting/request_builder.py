@@ -19,6 +19,8 @@ from arena_forge.formatting.core.registry import ADAPTERS, selectors_for_adapter
 from arena_forge.formatting.core.settings import load_runtime_settings
 from arena_forge.formatting.core.text import detect_newline_style, make_text_range
 
+from ..shared.messages import translate
+
 SelectionOffsets = Tuple[Tuple[int, int], ...]
 BuildRequestResult = Tuple[Optional[FormatRequest], Optional[ExecutableDiscovery], Optional[str]]
 
@@ -108,13 +110,13 @@ def _format_ranges(
     if mode == "document":
         return (), None
     if mode == "selection" and not non_empty:
-        return (), "no non-empty selection to format."
+        return (), translate("error.no_recommended_template", syntax="selection")
     if mode == "auto" and not non_empty:
         return (), None
     if not adapter.supports_range:
-        return (), f"{adapter.display_name} does not support selection formatting."
+        return (), translate("error.no_recommended_template", syntax=adapter.display_name)
     if len(non_empty) > 1 and not adapter.supports_multiple_ranges:
-        return (), f"{adapter.display_name} only supports a single non-empty selection."
+        return (), translate("error.no_recommended_template", syntax=adapter.display_name)
     return tuple((region.begin(), region.end()) for region in non_empty), None
 
 
@@ -147,7 +149,7 @@ def _build_request(view: sublime.View, mode: str) -> BuildRequestResult:
     adapter, _selectors = _select_adapter(view, runtime.selector_overrides)
     if not adapter:
         syntax = view.settings().get("syntax") or "unknown syntax"
-        return None, None, f"no formatter matched {syntax}."
+        return None, None, translate("status.no_formatter_for_syntax", syntax=syntax)
 
     offset_ranges, error = _format_ranges(view, mode, adapter)
     if error:
@@ -158,7 +160,7 @@ def _build_request(view: sublime.View, mode: str) -> BuildRequestResult:
     stdin_filename = _guess_stdin_filename(view, adapter, snapshot.base_dir)
     command_prefix, executable_info = _command_prefix(adapter, runtime, snapshot.base_dir)
     if not command_prefix:
-        return None, executable_info, f"{adapter.display_name} executable not found."
+        return None, executable_info, translate("error.no_recommended_formatter", syntax=adapter.display_name)
 
     selection_mode = "selection" if ranges else "document"
     request = FormatRequest(

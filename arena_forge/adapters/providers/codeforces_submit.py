@@ -7,6 +7,8 @@ from string import ascii_letters, digits
 from typing import Optional
 from urllib.parse import quote
 
+from arena_forge.adapters.i18n.catalog import translate_catalog as translate
+
 try:
     import requests
 except ModuleNotFoundError:  # pragma: no cover - optional Sublime dependency
@@ -53,7 +55,7 @@ def extract_csrf_token(html: str) -> str:
     parser = _CsrfTokenParser()
     parser.feed(html)
     if parser.token is None:
-        raise ValueError("Codeforces csrf token is missing from response HTML")
+        raise ValueError(translate("error.codeforces_csrf_missing"))
     return parser.token
 
 
@@ -73,15 +75,15 @@ def _recent_submissions(session, username: str, *, count: int = DEFAULT_STATUS_L
     try:
         payload = response.json()
     except ValueError as exc:
-        raise CodeforcesSubmissionError("Codeforces status API returned invalid JSON") from exc
+        raise CodeforcesSubmissionError(translate("error.codeforces_invalid_json")) from exc
     if not isinstance(payload, dict):
-        raise CodeforcesSubmissionError("Codeforces status API returned an invalid payload")
+        raise CodeforcesSubmissionError(translate("error.codeforces_invalid_payload"))
     if payload.get("status") != "OK":
         comment = str(payload.get("comment") or "unknown status API failure")
-        raise CodeforcesSubmissionError(f"Codeforces status API error: {comment}")
+        raise CodeforcesSubmissionError(translate("error.codeforces_api_error", comment=comment))
     result = payload.get("result")
     if not isinstance(result, list):
-        raise CodeforcesSubmissionError("Codeforces status API payload is missing the result list")
+        raise CodeforcesSubmissionError(translate("error.codeforces_missing_result_list"))
     return [entry for entry in result if isinstance(entry, dict)]
 
 
@@ -148,7 +150,7 @@ def confirm_submission(
             break
         time.sleep(max(0.0, float(poll_interval_seconds)))
     raise CodeforcesSubmissionError(
-        f"Codeforces did not confirm the submission for contest {contest_id} problem {problem_id}"
+        translate("error.codeforces_missing_new_submission", contest_id=contest_id, problem_id=problem_id)
     )
 
 
@@ -258,7 +260,7 @@ def submit_and_confirm(
 
 def perform_submission(contest_id: str, problem_id: str, code: str, user: dict[str, str]) -> None:
     if requests is None:
-        raise ModuleNotFoundError("requests is required for Codeforces submission support")
+        raise ModuleNotFoundError(translate("error.requests_required_for_codeforces"))
     session = requests.Session()
     login(session, user)
     submit_and_confirm(

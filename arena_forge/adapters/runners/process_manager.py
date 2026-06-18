@@ -5,7 +5,7 @@ import signal
 import subprocess
 from os import path
 
-import sublime
+from arena_forge.adapters.i18n.catalog import translate_catalog as translate
 
 from .subprocess_runner import build_command_argv, build_process_spawn_options, build_process_text_options
 
@@ -87,9 +87,9 @@ class ProcessManager(object):
             cached_result = _get_cached_compile_result(cache_key)
             if cached_result is not None:
                 return cached_result
-            argv = build_command_argv(cmd, platform_name=sublime.platform())
-            spawn_options = build_process_spawn_options(sublime.platform())
-            text_options = build_process_text_options(sublime.platform())
+            argv = build_command_argv(cmd)
+            spawn_options = build_process_spawn_options()
+            text_options = build_process_text_options()
             process = subprocess.Popen(
                 argv,
                 shell=False,
@@ -109,11 +109,11 @@ class ProcessManager(object):
     def run_file(self, args=[]):
         cmd = self.get_run_cmd(" ".join(args))
         if cmd in {None, -1}:
-            raise ValueError("No runnable command configured for file: " + self.file)
+            raise ValueError(translate("error.no_runnable_command_configured", file=self.file))
 
-        argv = build_command_argv(cmd, platform_name=sublime.platform())
-        spawn_options = build_process_spawn_options(sublime.platform())
-        text_options = build_process_text_options(sublime.platform())
+        argv = build_command_argv(cmd)
+        spawn_options = build_process_spawn_options()
+        text_options = build_process_text_options()
 
         self.process = subprocess.Popen(
             argv,
@@ -152,7 +152,7 @@ class ProcessManager(object):
             self.insert(input_data)
 
     def terminate(self):
-        if sublime.platform() == "linux":
+        if os.name != "nt":
             os.killpg(os.getpgid(self.process.pid), signal.SIGTERM)
         else:
             self.process.kill()

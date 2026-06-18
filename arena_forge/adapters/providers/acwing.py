@@ -7,6 +7,7 @@ from html.parser import HTMLParser
 from typing import List, Optional
 from urllib.request import Request, urlopen
 
+from arena_forge.adapters.i18n.catalog import translate_catalog as translate
 from arena_forge.core.domain import (
     ContestDescriptor,
     ContestProblem,
@@ -145,4 +146,4 @@ class AcWingProvider:
         code: str,
         credentials: CredentialRecord,
     ) -> None:
-        raise NotImplementedError("AcWing submission is not implemented")
+        raise NotImplementedError(translate("error.acwing_submission_unimplemented"))

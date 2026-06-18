@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import replace
 from typing import Optional, Sequence
 
+from arena_forge.adapters.i18n.catalog import translate_catalog as translate
+
 from .domain import (
     CommandExecution,
     LanguageProfile,
@@ -37,7 +39,7 @@ class SessionService:
 
     def run_test(self, session: SessionSnapshot, test_case: TestCase) -> TestRunResult:
         if self.runner is None:
-            raise RuntimeError("No runner configured")
+            raise RuntimeError(translate("error.no_runner_configured"))
         result = self.runner.run(session.source_file, session.language, test_case.input_text)
         if result.verdict != Verdict.UNKNOWN:
             return result

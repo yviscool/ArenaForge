@@ -8,7 +8,7 @@ from arena_forge.adapters.sublime.bootstrap import SublimeApplication, build_sub
 from arena_forge.core.services import infer_language
 from arena_forge.product import SETTINGS_FILE
 
-from .messages import product_status_message
+from .messages import product_status_message, translate
 from .package_resources import get_plugin_package_name, get_plugin_root_dir, remap_package_syntax_resource
 
 root_dir = str(get_plugin_root_dir())
@@ -61,7 +61,7 @@ def init_application(application: SublimeApplication):
 
 def get_application() -> SublimeApplication:
     if _application is None:
-        raise RuntimeError("ArenaForge Sublime application has not been initialized yet")
+        raise RuntimeError(translate("error.application_not_initialized"))
     return _application
 
 

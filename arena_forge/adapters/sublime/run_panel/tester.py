@@ -4,6 +4,7 @@ from time import time
 
 import sublime
 
+from arena_forge.adapters.i18n.catalog import translate_catalog as translate
 from arena_forge.core.services import evaluate_output_result
 
 from ..shared.messages import status_message
@@ -122,7 +123,7 @@ class RunPanelTester(object):
 
         if self.test_iter >= len(self.tests):
             if self.test_factory is None:
-                raise RuntimeError("Test state factory unavailable")
+                raise RuntimeError(translate("error.test_state_factory_unavailable"))
             self.tests.append(self.test_factory(""))
         self._ensure_output_slot(self.test_iter)
         self.tests[self.test_iter].set_tie_pos(tie_pos)
@@ -168,7 +169,7 @@ class RunPanelTester(object):
     def set_tests(self, tests, test_factory=None):
         factory = test_factory or self.test_factory
         if factory is None:
-            raise RuntimeError("Test state factory unavailable")
+            raise RuntimeError(translate("error.test_state_factory_unavailable"))
         existing_outputs = list(self.prog_out)
         self.tests.clear()
         for test in tests:

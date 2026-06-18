@@ -43,7 +43,7 @@ def get_plugin_root_dir() -> Path:
     for candidate in current.parents:
         if all((candidate / sentinel).exists() for sentinel in _REPO_ROOT_SENTINELS):
             return candidate
-    raise RuntimeError("Unable to locate ArenaForge repository root from package_resources.py")
+    raise RuntimeError("Unable to locate ArenaForge repository root")
 
 
 def build_package_resource_path(*parts: str) -> str:

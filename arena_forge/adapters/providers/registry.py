@@ -4,6 +4,7 @@ import re
 from dataclasses import dataclass
 from urllib.parse import urlparse
 
+from arena_forge.adapters.i18n.catalog import translate_catalog as translate
 from arena_forge.core.domain import ProviderCapabilities
 from arena_forge.core.ports import ContestProvider
 
@@ -51,7 +52,7 @@ class ProviderRegistry:
             if any(host == candidate or host.endswith("." + candidate) for candidate in binding.hosts):
                 match = re.search(binding.contest_id_pattern, subject)
                 if match is None:
-                    raise ValueError(f"Could not extract contest id from URL: {url}")
+                    raise ValueError(translate("error.could_not_extract_contest_id", url=url))
                 groups = match.groups()
                 if groups:
                     contest_id = next((group for group in groups if group), match.group(0))
@@ -63,4 +64,4 @@ class ProviderRegistry:
                     contest_id=contest_id,
                     capabilities=binding.provider.capabilities,
                 )
-        raise ValueError(f"No provider registered for host: {host}")
+        raise ValueError(translate("error.no_provider_for_host", host=host))

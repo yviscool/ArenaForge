@@ -6,6 +6,8 @@ import time
 from dataclasses import dataclass
 from typing import Optional, Tuple
 
+from arena_forge.adapters.i18n.catalog import translate_catalog as translate
+
 TIMEOUT_RETURN_CODE = -2
 SYSTEM_ERROR_RETURN_CODE = -1
 
@@ -54,7 +56,7 @@ def run_subprocess(
         )
     except subprocess.TimeoutExpired as exc:
         elapsed_ms = int((time.monotonic() - started_at) * 1000)
-        message = f"ArenaForge: formatter timed out after {timeout_ms} ms."
+        message = translate("error.formatter_timed_out", timeout_ms=timeout_ms)
         stderr = _output_text(exc.stderr).strip()
         stderr = f"{message}\n\n{stderr}" if stderr else message
         return ProcessResult(
@@ -66,7 +68,11 @@ def run_subprocess(
         )
     except OSError as exc:
         elapsed_ms = int((time.monotonic() - started_at) * 1000)
-        message = f"{exc.__class__.__name__}: {exc}"
+        message = translate(
+            "error.formatter_system_error",
+            error_type=exc.__class__.__name__,
+            detail=str(exc),
+        )
         return ProcessResult(
             returncode=SYSTEM_ERROR_RETURN_CODE,
             stdout="",

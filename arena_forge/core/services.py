@@ -3,6 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Iterable, Optional
 
+from arena_forge.adapters.i18n.catalog import translate_catalog as translate
+
 from .domain import (
     LanguageProfile,
     OutputEvaluation,
@@ -108,7 +110,7 @@ class NormalizedTextOutputChecker:
 def get_output_checker(checker_name: str) -> OutputChecker:
     if checker_name == "normalized_text":
         return NormalizedTextOutputChecker()
-    raise ValueError(f"Unsupported checker: {checker_name}")
+    raise ValueError(translate("error.unsupported_checker", checker_name=checker_name))
 
 
 def evaluate_output_result(test_case: TestCase, output_text: str) -> OutputEvaluation:
@@ -124,7 +126,7 @@ def infer_language(source_file: str, profiles: Iterable[LanguageProfile]) -> str
     for profile in profiles:
         if ext in profile.extensions:
             return profile.identifier
-    raise ValueError(f"Unsupported source extension: {ext}")
+    raise ValueError(translate("error.unsupported_source_extension", ext=ext))
 
 
 def select_language_profile(source_file: str, profiles: Iterable[LanguageProfile]) -> LanguageProfile:
@@ -132,4 +134,4 @@ def select_language_profile(source_file: str, profiles: Iterable[LanguageProfile
     for profile in profiles:
         if ext in profile.extensions:
             return profile
-    raise ValueError(f"Unsupported source extension: {ext}")
+    raise ValueError(translate("error.unsupported_source_extension", ext=ext))

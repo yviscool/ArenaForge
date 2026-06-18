@@ -8,6 +8,7 @@ from typing import Callable, Dict, List, Optional
 from urllib.parse import urljoin
 from urllib.request import Request, urlopen
 
+from arena_forge.adapters.i18n.catalog import translate_catalog as translate
 from arena_forge.core.domain import (
     ContestDescriptor,
     ContestProblem,
@@ -421,4 +422,4 @@ class AtCoderProvider:
         code: str,
         credentials: CredentialRecord,
     ) -> None:
-        raise NotImplementedError("AtCoder submission is not implemented")
+        raise NotImplementedError(translate("error.atcoder_submission_unimplemented"))

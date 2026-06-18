@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from typing import Callable, Optional, Union
 
+from arena_forge.adapters.i18n.catalog import translate_catalog as translate
 from arena_forge.core.domain import ContestDescriptor, LanguageProfile, SessionSnapshot
 
 from ..storage.json_repository import JsonSessionRepository
@@ -32,7 +33,7 @@ class ContestWorkspaceScaffolder:
         for profile in self.profiles:
             if normalized in {profile.identifier.lower(), profile.name.strip().lower()}:
                 return profile
-        raise ValueError(f"Unsupported contest language: {language_id}")
+        raise ValueError(translate("error.unsupported_contest_language", language_id=language_id))
 
     def _template_text_for_profile(self, profile: LanguageProfile) -> str:
         if not profile.template_path:

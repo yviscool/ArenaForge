@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Optional
 
+from arena_forge.adapters.i18n.catalog import translate_catalog as translate
 from arena_forge.core.domain import CredentialRecord
 
 try:
@@ -69,11 +70,11 @@ class KeyringCredentialStore:
                 return None
             return CredentialRecord(username=username, secret=secret)
         except _resolve_keyring_failures() as exc:
-            raise RuntimeError("keyring backend is unavailable") from exc
+            raise RuntimeError(translate("error.credential_backend_unavailable")) from exc
 
     def set_credentials(self, provider_name: str, username: str, secret: str) -> CredentialRecord:
         if keyring is None:
-            raise RuntimeError("keyring backend is unavailable")
+            raise RuntimeError(translate("error.credential_backend_unavailable"))
         try:
             service_name = self._service_name(provider_name)
             previous_username = keyring.get_password(service_name, "__username__")
@@ -83,7 +84,7 @@ class KeyringCredentialStore:
             keyring.set_password(service_name, "__username__", username)
             return CredentialRecord(username=username, secret=secret)
         except _resolve_keyring_failures() as exc:
-            raise RuntimeError("keyring backend is unavailable") from exc
+            raise RuntimeError(translate("error.credential_backend_unavailable")) from exc
 
     def _delete_secret(self, service_name: str, username: str) -> None:
         delete_password = getattr(keyring, "delete_password", None)
