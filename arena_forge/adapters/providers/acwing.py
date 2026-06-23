@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from html import unescape
 from html.parser import HTMLParser
 from typing import List, Optional
-from urllib.request import Request, urlopen
 
 from arena_forge.adapters.i18n.catalog import translate_catalog as translate
 from arena_forge.core.domain import (
@@ -17,7 +16,8 @@ from arena_forge.core.domain import (
     TestCase,
 )
 
-USER_AGENT = "ArenaForge/3.0 (+https://example.invalid)"
+from .base import fetch_text
+
 ACWING_BASE_URL = "https://www.acwing.com"
 ACWING_INPUT_HEADING = "\u8f93\u5165\u6837\u4f8b"
 ACWING_OUTPUT_HEADING = "\u8f93\u51fa\u6837\u4f8b"
@@ -111,9 +111,7 @@ class AcWingProvider:
         return f"{ACWING_BASE_URL}/problem/content/description/{problem_id}/"
 
     def _fetch_text(self, url: str) -> str:
-        request = Request(url, headers={"User-Agent": USER_AGENT})
-        with urlopen(request, timeout=10) as response:
-            return response.read().decode("utf-8", "replace")
+        return fetch_text(url)
 
     def load_contest(self, contest_id: str) -> ContestDescriptor:
         html = self._fetch_text(self._problem_url(contest_id))

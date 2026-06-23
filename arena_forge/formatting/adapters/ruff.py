@@ -59,23 +59,10 @@ class RuffFormatAdapter(FormatterAdapter):
 
     def build_install_help(self, platform_name: str, translate=None) -> str:
         del platform_name
-        title = (
-            translate("formatting.install_guide_recommended_install")
-            if translate
-            else "Recommended install command:"
-        )
-        alternative = (
-            translate("formatting.install_guide_recommended_project_install")
-            if translate
-            else "Project-local alternative:"
-        )
-        docs = translate("formatting.install_guide_docs", url=self.docs_url) if translate else f"Docs: {self.docs_url}"
-        return "\n".join(
-            (
-                title,
-                "  uv tool install ruff",
-                alternative,
-                "  uv add --dev ruff",
-                docs,
-            )
+        return self._build_standard_install_help(
+            "uv tool install ruff",
+            translate=translate,
+            alternative_key="formatting.install_guide_recommended_project_install",
+            alternative_fallback="Project-local alternative:",
+            alternative_command="uv add --dev ruff",
         )

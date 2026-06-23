@@ -2,23 +2,8 @@ import json
 import unittest
 from pathlib import Path
 
-from arena_forge.adapters.sublime.command_action_catalog import (
-    SUPPORTED_TEST_EDITOR_ACTIONS,
-    SUPPORTED_TEST_MANAGER_ACTIONS,
-)
-
 
 class CommandSurfaceTests(unittest.TestCase):
-    def test_test_manager_action_surface_stays_explicit(self) -> None:
-        self.assertIn("make_opd", SUPPORTED_TEST_MANAGER_ACTIONS)
-        self.assertIn("toggle_hide_phantoms", SUPPORTED_TEST_MANAGER_ACTIONS)
-        self.assertIn("redirect_var_value", SUPPORTED_TEST_MANAGER_ACTIONS)
-
-    def test_test_editor_action_surface_stays_explicit(self) -> None:
-        self.assertIn("init", SUPPORTED_TEST_EDITOR_ACTIONS)
-        self.assertIn("insert_opd_out", SUPPORTED_TEST_EDITOR_ACTIONS)
-        self.assertIn("toggle_using_debugger", SUPPORTED_TEST_EDITOR_ACTIONS)
-
     def test_default_commands_keep_history_and_credentials_entries(self) -> None:
         payload = json.loads(Path("Default.sublime-commands").read_text(encoding="utf-8"))
         captions = {item["caption"] for item in payload}

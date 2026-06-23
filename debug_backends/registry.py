@@ -16,61 +16,33 @@ class Debugger(object):
 		return True
 
 	def __init__(self, file):
-		'''
-		make debug with `file`
-		'''
+		pass
 
 	def is_runnable():
-		'''
-		check for can run on this computer
-		'''
 		return True
 
 	def compile(self):
-		'''
-		compile if need file
-		return None if compile ok
-		return string if compile failed
-		'''
 		return None
 
 	def run(self, args):
-		'''
-		run program with args
-		args is string
-		'''
+		pass
 
 	def set_calls(on_out, on_stop):
-		'''
-		please set calls
-		and calls on program out or stop
-		sample 
-			on_out(s, is_err=False)
-			on_stop(rtcode)
-			on_crash(crash_line, rtcode)
-		'''
+		pass
 
 	def get_var_value(self, var_name, frame_id=None):
-		'''
-		returns var value
-		if frame_id is None returns var `value at crashed frame
-		'''
+		pass
 
 	def write(self, s):
-		'''
-		write string to program
-		'''
+		pass
 
 	def terminate(self):
-		'''
-		force terminating program
-		'''
+		pass
 
 
 def get_debug_modules():
-	print(Debugger.__subclasses__())
-	print(sorted(Debugger.__subclasses__(), key=(lambda c: c.RUN_PRIOR), reverse=True))
 	return sorted(Debugger.__subclasses__(), key=(lambda c: c.RUN_PRIOR), reverse=True)
+
 
 def get_best_debug_module(ext):
 	dbgs = []
@@ -84,5 +56,5 @@ def get_best_debug_module(ext):
 		return dbgs[0]
 	return None
 
+
 importlib.import_module(f"{__package__}.cpp_osx_debugger")
-# from . import DebugodPy3Ejector

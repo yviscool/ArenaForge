@@ -6,14 +6,14 @@ from contextlib import contextmanager
 
 
 class _DummyTest:
-    def __init__(self, test_string: str):
-        self.test_string = test_string
+    def __init__(self, input_text: str):
+        self.input_text = input_text
         self.tie_pos = None
         self.correct_answers = set()
         self.uncorrect_answers = set()
 
     def append_string(self, value: str) -> None:
-        self.test_string += value
+        self.input_text += value
 
     def set_tie_pos(self, pos: int) -> None:
         self.tie_pos = pos

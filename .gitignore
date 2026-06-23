@@ -9,7 +9,6 @@ __pycache__/
 pytest-cache-files-*/
 .DS_Store
 Thumbs.db
-cmp_sense/amin.cpp
-cmp_sense/amin-*.cpp
+cmp_sense/
 debug_backends/LLDB.framework
 debug_backends/DebugodPy3Ejector.py

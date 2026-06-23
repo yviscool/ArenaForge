@@ -40,10 +40,12 @@ def _patched_sublime():
         build_test_config_phantom=lambda *args, **kwargs: None,
     )
     sys.modules.pop("arena_forge.adapters.sublime.run_panel.state", None)
+    sys.modules.pop("arena_forge.adapters.sublime.run_panel.persistence", None)
     try:
         yield
     finally:
         sys.modules.pop("arena_forge.adapters.sublime.run_panel.state", None)
+        sys.modules.pop("arena_forge.adapters.sublime.run_panel.persistence", None)
         if original_rendering is None:
             sys.modules.pop("arena_forge.adapters.sublime.run_panel.rendering", None)
         else:
@@ -79,10 +81,11 @@ class RunPanelStateTests(unittest.TestCase):
     def test_persist_panel_tests_skips_rewrite_and_save_when_payload_is_unchanged(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
             with _patched_sublime():
-                module = importlib.import_module("arena_forge.adapters.sublime.run_panel.state")
-                test_state = module.PanelTestState({"test": "1 2\n", "correct_answers": ["ok", "alt"]})
+                state_module = importlib.import_module("arena_forge.adapters.sublime.run_panel.state")
+                persist_module = importlib.import_module("arena_forge.adapters.sublime.run_panel.persistence")
+                test_state = state_module.PanelTestState({"test": "1 2\n", "correct_answers": ["ok", "alt"]})
                 tests_path = os.path.join(tempdir, "tests.json")
-                expected_payload = module.sublime.encode_value([test_state.memorize()], True)
+                expected_payload = persist_module.sublime.encode_value([test_state.memorize()], True)
                 with open(tests_path, "w", encoding="utf-8") as handle:
                     handle.write(expected_payload)
 
@@ -103,7 +106,7 @@ class RunPanelStateTests(unittest.TestCase):
                     return real_open(path, mode, *args, **kwargs)
 
                 with patch("builtins.open", guarded_open):
-                    module.persist_panel_tests(
+                    persist_module.persist_panel_tests(
                         "main.cpp",
                         [test_state],
                         repository,
@@ -119,15 +122,16 @@ class RunPanelStateTests(unittest.TestCase):
     def test_persist_panel_tests_writes_and_saves_when_payload_changes(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
             with _patched_sublime():
-                module = importlib.import_module("arena_forge.adapters.sublime.run_panel.state")
-                test_state = module.PanelTestState({"test": "1 2\n", "correct_answers": ["ok", "alt"]})
+                state_module = importlib.import_module("arena_forge.adapters.sublime.run_panel.state")
+                persist_module = importlib.import_module("arena_forge.adapters.sublime.run_panel.persistence")
+                test_state = state_module.PanelTestState({"test": "1 2\n", "correct_answers": ["ok", "alt"]})
                 tests_path = os.path.join(tempdir, "tests.json")
                 with open(tests_path, "w", encoding="utf-8") as handle:
                     handle.write("[]")
 
                 repository = _FakeRepository()
 
-                module.persist_panel_tests(
+                persist_module.persist_panel_tests(
                     "main.cpp",
                     [test_state],
                     repository,
@@ -139,13 +143,14 @@ class RunPanelStateTests(unittest.TestCase):
                 self.assertEqual(repository.save_calls[0].language, "cpp")
                 self.assertEqual(repository.save_calls[0].tests, (test_state.to_core_test_case(1),))
                 with open(tests_path, encoding="utf-8") as handle:
-                    self.assertEqual(handle.read(), module.sublime.encode_value([test_state.memorize()], True))
+                    self.assertEqual(handle.read(), persist_module.sublime.encode_value([test_state.memorize()], True))
 
     def test_persist_panel_tests_preserves_existing_run_history(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
             with _patched_sublime():
-                module = importlib.import_module("arena_forge.adapters.sublime.run_panel.state")
-                test_state = module.PanelTestState({"test": "1 2\n"})
+                state_module = importlib.import_module("arena_forge.adapters.sublime.run_panel.state")
+                persist_module = importlib.import_module("arena_forge.adapters.sublime.run_panel.persistence")
+                test_state = state_module.PanelTestState({"test": "1 2\n"})
                 tests_path = os.path.join(tempdir, "tests.json")
                 with open(tests_path, "w", encoding="utf-8") as handle:
                     handle.write("[]")
@@ -166,7 +171,7 @@ class RunPanelStateTests(unittest.TestCase):
                     )
                 )
 
-                module.persist_panel_tests(
+                persist_module.persist_panel_tests(
                     "main.cpp",
                     [test_state],
                     repository,
@@ -179,7 +184,7 @@ class RunPanelStateTests(unittest.TestCase):
     def test_load_panel_tests_logs_invalid_payload_and_falls_back_to_snapshot(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
             with _patched_sublime():
-                module = importlib.import_module("arena_forge.adapters.sublime.run_panel.state")
+                persist_module = importlib.import_module("arena_forge.adapters.sublime.run_panel.persistence")
                 tests_path = os.path.join(tempdir, "tests.json")
                 with open(tests_path, "w", encoding="utf-8") as handle:
                     handle.write("{bad json")
@@ -192,9 +197,9 @@ class RunPanelStateTests(unittest.TestCase):
                     )
                 )
                 logs = []
-                module.product_log_message = lambda key, **kwargs: logs.append((key, kwargs))
+                persist_module.product_log_message = lambda key, **kwargs: logs.append((key, kwargs))
 
-                result = module.load_panel_tests(
+                result = persist_module.load_panel_tests(
                     "main.cpp",
                     lambda item: item,
                     repository,

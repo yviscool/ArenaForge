@@ -44,21 +44,4 @@ class ClangFormatAdapter(FormatterAdapter):
             command = "brew install clang-format"
         else:
             command = "sudo apt install clang-format"
-        title = (
-            translate("formatting.install_guide_recommended_install")
-            if translate
-            else "Recommended install command:"
-        )
-        docs = (
-            translate("formatting.install_guide_docs", url=self.docs_url)
-            if translate
-            else f"Docs: {self.docs_url}"
-        )
-
-        return "\n".join(
-            (
-                title,
-                f"  {command}",
-                docs,
-            )
-        )
+        return self._build_standard_install_help(command, translate=translate)

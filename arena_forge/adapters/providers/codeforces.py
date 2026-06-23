@@ -6,7 +6,6 @@ from html import unescape
 from html.parser import HTMLParser
 from typing import Callable, Dict, Iterable, List, Optional, Tuple
 from urllib.parse import urljoin
-from urllib.request import Request, urlopen
 
 from arena_forge.adapters.i18n.catalog import translate_catalog as translate
 from arena_forge.core.domain import (
@@ -18,10 +17,10 @@ from arena_forge.core.domain import (
     TestCase,
 )
 
+from .base import extract_html_title, fetch_text
 from .codeforces_submit import login as login_codeforces
 from .codeforces_submit import submit_and_confirm as submit_codeforces
 
-USER_AGENT = "ArenaForge/3.0 (+https://example.invalid)"
 CODEFORCES_BASE_URL = "https://codeforces.com"
 
 
@@ -182,15 +181,9 @@ def extract_problem_summaries(html: str, contest_id: str) -> tuple[ProblemSummar
 
 
 def extract_contest_title(html: str, contest_id: str) -> str:
-    opening = "<title>"
-    closing = "</title>"
-    start = html.find(opening)
-    end = html.find(closing, start + len(opening))
-    if start != -1 and end != -1:
-        title = unescape(html[start + len(opening) : end]).strip()
-        title = title.replace(" - Codeforces", "").replace(" - Educational Codeforces Round", "")
-        if title:
-            return title
+    title = extract_html_title(html, strip_suffix=" - Codeforces")
+    if title:
+        return title
     return f"Codeforces Contest {contest_id}"
 
 
@@ -204,9 +197,7 @@ class CodeforcesProvider:
     )
 
     def _fetch_text(self, url: str) -> str:
-        request = Request(url, headers={"User-Agent": USER_AGENT})
-        with urlopen(request, timeout=10) as response:
-            return response.read().decode("utf-8", "replace")
+        return fetch_text(url)
 
     def _contest_url(self, contest_id: str) -> str:
         return f"{CODEFORCES_BASE_URL}/contest/{contest_id}"

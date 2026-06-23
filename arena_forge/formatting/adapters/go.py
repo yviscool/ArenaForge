@@ -31,27 +31,9 @@ class GoFormatAdapter(FormatterAdapter):
             command = "brew install go"
         else:
             command = "sudo apt install golang-go"
-        title = (
-            translate("formatting.install_guide_recommended_install")
-            if translate
-            else "Recommended install command:"
-        )
-        docs = (
-            translate("formatting.install_guide_docs", url=self.docs_url)
-            if translate
-            else f"Docs: {self.docs_url}"
-        )
-        note = (
-            translate("formatting.install_guide_official_docs_equivalent")
-            if translate
-            else "gofmt ships with the Go toolchain."
-        )
-
-        return "\n".join(
-            (
-                title,
-                f"  {command}",
-                note,
-                docs,
-            )
+        return self._build_standard_install_help(
+            command,
+            translate=translate,
+            note_key="formatting.install_guide_official_docs_equivalent",
+            note_fallback="gofmt ships with the Go toolchain.",
         )

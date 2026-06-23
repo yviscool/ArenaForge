@@ -10,7 +10,7 @@ from arena_forge.core.services import evaluate_output_result
 from ..shared.messages import status_message
 
 
-class RunPanelTester(object):
+class RunPanelTester:
     def __init__(
         self,
         process_manager,
@@ -25,7 +25,6 @@ class RunPanelTester(object):
         show_status=None,
         on_compile_error=None,
     ):
-        super(RunPanelTester, self).__init__()
         self.process_manager = process_manager
         self.sync_out = sync_out
         self.tests = list(tests or [])
@@ -62,7 +61,7 @@ class RunPanelTester(object):
 
         self.proc_run = True
         self.process_manager.run()
-        test_input = self.tests[id].test_string
+        test_input = self.tests[id].input_text
         self.process_manager.write(test_input)
         self.on_insert(test_input)
 

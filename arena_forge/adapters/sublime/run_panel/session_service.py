@@ -5,6 +5,8 @@ from typing import Callable, Optional
 
 from arena_forge.adapters.i18n.catalog import translate_catalog as translate
 
+from .persistence import load_panel_tests, persist_panel_tests
+
 try:
     from arena_forge.adapters.runners import ProcessManager
 except ImportError:  # pragma: no cover - depends on Sublime host runtime
@@ -32,8 +34,6 @@ def _write_empty_tests_file(destination: str) -> None:
 
 
 def load_tests_for_run(source_file, test_factory, repository, tests_file_path_factory):
-    from .state import load_panel_tests
-
     return load_panel_tests(source_file, test_factory, repository, tests_file_path_factory)
 
 
@@ -57,8 +57,6 @@ def prepare_tests_for_run(
 
 
 def save_tests_for_run(source_file, tests, repository, infer_language_name, tests_file_path_factory):
-    from .state import persist_panel_tests
-
     persist_panel_tests(
         source_file,
         tests,

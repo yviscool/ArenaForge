@@ -1,20 +1,16 @@
 from __future__ import annotations
 
 import re
-import subprocess
 from dataclasses import dataclass
 from pathlib import Path
-from time import perf_counter
 from typing import Optional, Union
 
 from arena_forge.core.domain import CompilerIssue, DiagnosticSeverity
 
 from .subprocess_runner import (
-    _resolve_subprocess_spawn_options,
     build_command_argv,
     build_command_context,
-    build_process_spawn_options,
-    build_process_text_options,
+    execute_subprocess,
 )
 
 _DIAGNOSTIC_PATTERN = re.compile(
@@ -116,38 +112,20 @@ class CompilerDiagnosticsService:
         command_context["source_file_dir"] = source_file_dir
         command = compile_cmd.format(**command_context)
         argv = tuple(build_command_argv(command, platform_name=self.platform_name))
-        spawn_options = _resolve_subprocess_spawn_options(build_process_spawn_options(self.platform_name))
-        text_options = build_process_text_options(self.platform_name)
-        timeout_seconds = None if timeout_ms <= 0 else timeout_ms / 1000.0
-        started_at = perf_counter()
+        result = execute_subprocess(
+            argv,
+            cwd=source_file_dir,
+            timeout_ms=timeout_ms,
+            platform_name=self.platform_name,
+        )
+        output = result.stdout + result.stderr
         try:
-            completed = subprocess.run(
-                argv,
-                cwd=source_file_dir,
-                capture_output=True,
-                timeout=timeout_seconds,
-                check=False,
-                startupinfo=spawn_options["startupinfo"],
-                creationflags=spawn_options["creationflags"],
-                **text_options,
-            )
-            runtime_ms = int((perf_counter() - started_at) * 1000)
-            output = (completed.stdout or "") + (completed.stderr or "")
             return DiagnosticsReport(
-                command=argv,
+                command=result.argv,
                 output=output,
                 issues=parse_compiler_issues(output, scratch_file),
-                runtime_ms=runtime_ms,
-            )
-        except subprocess.TimeoutExpired as error:
-            runtime_ms = int((perf_counter() - started_at) * 1000)
-            output = (error.stdout or "") + (error.stderr or "")
-            return DiagnosticsReport(
-                command=argv,
-                output=output,
-                issues=(),
-                runtime_ms=runtime_ms,
-                timed_out=True,
+                runtime_ms=result.runtime_ms,
+                timed_out=result.timed_out,
             )
         finally:
             try:

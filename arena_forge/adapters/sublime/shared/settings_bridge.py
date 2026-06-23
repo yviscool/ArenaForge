@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Optional
 
 import sublime
 
@@ -21,9 +22,29 @@ default_settings_file = "ArenaForge ({os}).sublime-settings".format(
 tests_file_suffix = ".tests.json"
 tests_relative_dir = ".arena-forge/tests"
 
-settings = {}
-run_supported_exts = set()
-_application = None
+
+class SettingsContext:
+    def __init__(self) -> None:
+        self.settings: dict = {}
+        self._application: Optional[SublimeApplication] = None
+
+    def init_settings(self, _settings: dict) -> None:
+        self.settings = _settings
+
+    def get_settings(self) -> dict:
+        return self.settings
+
+    def init_application(self, application: SublimeApplication) -> None:
+        self._application = application
+        self.init_settings(application.settings)
+
+    def get_application(self) -> SublimeApplication:
+        if self._application is None:
+            try_load_settings()
+        return self._application
+
+
+_context = SettingsContext()
 
 
 def _settings_to_dict(settings_obj):
@@ -45,24 +66,19 @@ def _settings_to_dict(settings_obj):
 
 
 def init_settings(_settings):
-    global settings
-    settings = _settings
+    _context.init_settings(_settings)
 
 
 def get_settings():
-    return settings
+    return _context.get_settings()
 
 
 def init_application(application: SublimeApplication):
-    global _application
-    _application = application
-    init_settings(application.settings)
+    _context.init_application(application)
 
 
 def get_application() -> SublimeApplication:
-    if _application is None:
-        raise RuntimeError(translate("error.application_not_initialized"))
-    return _application
+    return _context.get_application()
 
 
 def is_run_supported_ext(ext):
@@ -142,7 +158,7 @@ def get_tests_file_path(file, for_write=False):
     layout = get_workspace_layout()
     if for_write:
         return str(layout.ensure_parent(layout.session_path_for(file)))
-    return str(layout.resolve_session_path(file))
+    return str(layout.session_path_for(file))
 
 
 def get_algorithm_properties_path(file, for_write=False):

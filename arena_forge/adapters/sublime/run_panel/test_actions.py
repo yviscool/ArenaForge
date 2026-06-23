@@ -4,6 +4,7 @@ from sublime import Region
 
 from .operations import delete_selected_tests, swap_selected_tests, toggle_test_fold
 from .process_actions import terminate_tester_with_logging
+from .session_actions import memorize_tests
 
 
 def toggle_fold(command, test_id) -> None:
@@ -21,13 +22,15 @@ def open_test_edit(command, test_id) -> None:
         {
             "action": "init",
             "test_id": test_id,
-            "test": tester.tests[test_id].test_string,
+            "test": tester.tests[test_id].input_text,
             "source_view_id": view.id(),
         },
     )
 
 
 def handle_test_event(command, test_id, event: str) -> None:
+    from .debug_actions import prepare_code_view
+
     view = command.view
     tester = command.state.tester
     if event == "test-click":
@@ -46,7 +49,7 @@ def handle_test_event(command, test_id, event: str) -> None:
         command.state.delta_input = tie_pos + 1
         view.sel().clear()
         view.sel().add(Region(tie_pos + 1))
-        command.prepare_code_view()
+        prepare_code_view(command)
         tester.run_test(test_id)
         command.update_configs()
 
@@ -59,7 +62,7 @@ def handle_accdec_event(command, test_id, event: str) -> None:
         tester.decline_out(test_id)
     tester.tests[test_id].set_last_evaluation(tester.evaluate_test(test_id))
     command.update_configs()
-    command.memorize_tests()
+    memorize_tests(command)
 
 
 def set_test_input(command, *, test=None, test_id=None) -> None:
@@ -68,10 +71,10 @@ def set_test_input(command, *, test=None, test_id=None) -> None:
     if not tester.tests[test_id].fold:
         toggle_fold(command, test_id)
         unfolded = True
-    tester.tests[test_id].test_string = test
+    tester.tests[test_id].input_text = test
     if unfolded:
         toggle_fold(command, test_id)
-    command.memorize_tests()
+    memorize_tests(command)
 
 
 def set_test_status(command, test_id, accept=True, call_tester=True) -> None:
@@ -103,7 +106,7 @@ def set_tests_status(command, accept=True) -> None:
         for selection in view.sel():
             if selection.intersects(region):
                 set_test_status(command, index, accept=accept)
-    command.memorize_tests()
+    memorize_tests(command)
 
 
 def fold_accept_tests(command) -> None:
@@ -152,7 +155,7 @@ def delete_test(command, edit, test_id) -> None:
     del tester.tests[test_id]
     del tester.prog_out[test_id]
     tester.test_iter -= 1
-    command.memorize_tests()
+    memorize_tests(command)
     command.update_configs()
 
 
@@ -183,5 +186,5 @@ def clear_all_tests(command) -> None:
     tester.running_new = None
     command.clear_all()
     command.state.reset_panel_runtime()
-    command.memorize_tests()
+    memorize_tests(command)
     command.view.run_command("test_manager", {"action": "new_test"})

@@ -25,30 +25,22 @@ SelectionOffsets = Tuple[Tuple[int, int], ...]
 BuildRequestResult = Tuple[Optional[FormatRequest], Optional[ExecutableDiscovery], Optional[str]]
 
 
-def _resolve_base_dir(view: sublime.View) -> Optional[str]:
-    file_name = view.file_name()
-    if file_name:
-        return str(Path(file_name).resolve().parent)
-
-    window = view.window()
-    if window and window.folders():
-        return str(Path(window.folders()[0]).resolve())
-
-    try:
-        return str(Path(os.getcwd()).resolve())
-    except OSError:
-        return None
-
-
-def _view_context_dir(view: Optional[sublime.View]) -> Optional[str]:
+def _resolve_base_dir(view: Optional[sublime.View], *, fallback_to_cwd: bool = False) -> Optional[str]:
     if not view:
         return None
     file_name = view.file_name()
     if file_name:
         return str(Path(file_name).resolve().parent)
+
     window = view.window()
     if window and window.folders():
         return str(Path(window.folders()[0]).resolve())
+
+    if fallback_to_cwd:
+        try:
+            return str(Path(os.getcwd()).resolve())
+        except OSError:
+            pass
     return None
 
 
@@ -61,7 +53,7 @@ def _snapshot_view(view: sublime.View) -> ViewSnapshot:
         text=text,
         file_name=view.file_name(),
         syntax=view.settings().get("syntax"),
-        base_dir=_resolve_base_dir(view),
+        base_dir=_resolve_base_dir(view, fallback_to_cwd=True),
         newline=detect_newline_style(text),
         selection_regions=selections,
     )

@@ -15,22 +15,6 @@ class RunPanelLaunchSession:
 
 
 @dataclass
-class RunPanelInputBufferState:
-    input_start: int = 0
-    delta_input: int = 0
-
-    def begin_at(self, point: int) -> None:
-        self.input_start = point
-        self.delta_input = point
-
-    def advance_to(self, point: int) -> None:
-        self.delta_input = point
-
-    def reset(self) -> None:
-        self.begin_at(0)
-
-
-@dataclass
 class RunPanelInputHistoryState:
     entries: List[str] = field(default_factory=list)
     index: Optional[int] = None
@@ -59,7 +43,8 @@ class RunPanelControllerState:
     use_debugger: bool = False
     tester: Optional[object] = None
     launch_session: Optional[RunPanelLaunchSession] = None
-    input_buffer: RunPanelInputBufferState = field(default_factory=RunPanelInputBufferState)
+    input_start: int = 0
+    delta_input: int = 0
     source_file: Optional[str] = None
     code_view_id: Optional[int] = None
     text_buffer: str = ""
@@ -101,59 +86,12 @@ class RunPanelControllerState:
         return self.set_launch_session(self.launch_session)
 
     def begin_panel_input(self, point: int) -> None:
-        self.input_buffer.begin_at(point)
+        self.input_start = point
+        self.delta_input = point
 
     def advance_panel_input(self, point: int) -> None:
-        self.input_buffer.advance_to(point)
+        self.delta_input = point
 
     def reset_panel_runtime(self) -> None:
-        self.input_buffer.reset()
+        self.begin_panel_input(0)
         self.history.clear()
-
-    @property
-    def delta_input(self) -> int:
-        return self.input_buffer.delta_input
-
-    @delta_input.setter
-    def delta_input(self, value: int) -> None:
-        self.input_buffer.advance_to(value)
-
-    @property
-    def input_start(self) -> int:
-        return self.input_buffer.input_start
-
-    @input_start.setter
-    def input_start(self, value: int) -> None:
-        self.input_buffer.input_start = value
-
-    @property
-    def dbg_file(self) -> Optional[str]:
-        return self.source_file
-
-    @dbg_file.setter
-    def dbg_file(self, value: Optional[str]) -> None:
-        self.source_file = value
-
-    @property
-    def input_history(self) -> List[str]:
-        return self.history.entries
-
-    @input_history.setter
-    def input_history(self, value: List[str]) -> None:
-        self.history.entries = list(value)
-
-    @property
-    def history_index(self) -> Optional[int]:
-        return self.history.index
-
-    @history_index.setter
-    def history_index(self, value: Optional[int]) -> None:
-        self.history.index = value
-
-    @property
-    def history_draft(self) -> str:
-        return self.history.draft
-
-    @history_draft.setter
-    def history_draft(self, value: str) -> None:
-        self.history.draft = value

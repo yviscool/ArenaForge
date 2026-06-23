@@ -23,46 +23,6 @@ class RunPanelActionRequest:
     id: Optional[int] = None
     dir: int = 1
 
-    @classmethod
-    def from_command_args(
-        cls,
-        *,
-        action=None,
-        run_file=None,
-        build_sys=None,
-        text=None,
-        clr_tests=False,
-        sync_out=False,
-        code_view_id=None,
-        var_name=None,
-        use_debugger=False,
-        pos=None,
-        load_session=False,
-        region=None,
-        frame_id=None,
-        data=None,
-        id=None,
-        dir=1,
-    ) -> "RunPanelActionRequest":
-        return cls(
-            action=action,
-            run_file=run_file,
-            build_sys=build_sys,
-            text=text,
-            clr_tests=clr_tests,
-            sync_out=sync_out,
-            code_view_id=code_view_id,
-            var_name=var_name,
-            use_debugger=use_debugger,
-            pos=pos,
-            load_session=load_session,
-            region=region,
-            frame_id=frame_id,
-            data=data,
-            id=id,
-            dir=dir,
-        )
-
     def to_make_opd_kwargs(self) -> Dict[str, Any]:
         return {
             "run_file": self.run_file,

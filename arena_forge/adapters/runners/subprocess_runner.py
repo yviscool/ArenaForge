@@ -86,25 +86,17 @@ def compile_once(
         return None
     command = render_command(profile.compile_cmd, source_file)
     argv = build_command_argv(command, platform_name=platform_name)
-    spawn_options = _resolve_subprocess_spawn_options(build_process_spawn_options(platform_name))
-    text_options = build_process_text_options(platform_name)
-    started_at = perf_counter()
-    completed = subprocess.run(
-        argv,
+    result = execute_subprocess(
+        tuple(argv),
         cwd=str(Path(source_file).resolve().parent),
-        capture_output=True,
-        check=False,
-        startupinfo=spawn_options["startupinfo"],
-        creationflags=spawn_options["creationflags"],
-        **text_options,
+        platform_name=platform_name,
     )
-    runtime_ms = int((perf_counter() - started_at) * 1000)
-    stdout = (completed.stdout or "") + (completed.stderr or "")
+    stdout = result.stdout + result.stderr
     return CommandExecution(
-        argv=tuple(argv),
-        return_code=completed.returncode,
+        argv=result.argv,
+        return_code=result.returncode,
         stdout=stdout,
-        runtime_ms=runtime_ms,
+        runtime_ms=result.runtime_ms,
     )
 
 
@@ -120,42 +112,32 @@ def run_once(
 
     command = render_command(profile.run_cmd, source_file)
     argv = build_command_argv(command, platform_name=platform_name)
-    spawn_options = _resolve_subprocess_spawn_options(build_process_spawn_options(platform_name))
-    text_options = build_process_text_options(platform_name)
-    started_at = perf_counter()
-    try:
-        completed = subprocess.run(
-            argv,
-            cwd=str(Path(source_file).resolve().parent),
-            input=input_text,
-            capture_output=True,
-            timeout=timeout_seconds,
-            check=False,
-            startupinfo=spawn_options["startupinfo"],
-            creationflags=spawn_options["creationflags"],
-            **text_options,
-        )
-        runtime_ms = int((perf_counter() - started_at) * 1000)
-        stdout = (completed.stdout or "") + (completed.stderr or "")
-        verdict = Verdict.UNKNOWN if completed.returncode == 0 else Verdict.RUNTIME_ERROR
-        return TestRunResult(
-            output_text=stdout,
-            return_code=completed.returncode,
-            runtime_ms=runtime_ms,
-            verdict=verdict,
-            command=tuple(argv),
-        )
-    except subprocess.TimeoutExpired as error:
-        runtime_ms = int((perf_counter() - started_at) * 1000)
-        stdout = (error.stdout or "") + (error.stderr or "")
+    timeout_ms = int(timeout_seconds * 1000) if timeout_seconds else 0
+    result = execute_subprocess(
+        tuple(argv),
+        cwd=str(Path(source_file).resolve().parent),
+        input_text=input_text,
+        timeout_ms=timeout_ms,
+        platform_name=platform_name,
+    )
+    stdout = result.stdout + result.stderr
+    if result.timed_out:
         return TestRunResult(
             output_text=stdout,
             return_code=-1,
-            runtime_ms=runtime_ms,
+            runtime_ms=result.runtime_ms,
             verdict=Verdict.TIMEOUT,
-            command=tuple(argv),
+            command=result.argv,
             message=translate("error.process_timed_out", timeout_seconds=timeout_seconds or 0),
         )
+    verdict = Verdict.UNKNOWN if result.returncode == 0 else Verdict.RUNTIME_ERROR
+    return TestRunResult(
+        output_text=stdout,
+        return_code=result.returncode,
+        runtime_ms=result.runtime_ms,
+        verdict=verdict,
+        command=result.argv,
+    )
 
 
 def build_interactive_process(
@@ -192,3 +174,55 @@ def terminate_process(process: subprocess.Popen[str], platform_name: Optional[st
         process.kill()
         return
     os.killpg(os.getpgid(process.pid), signal.SIGTERM)
+
+
+@dataclass(frozen=True)
+class SubprocessExecution:
+    argv: tuple[str, ...]
+    stdout: str
+    stderr: str
+    returncode: int
+    runtime_ms: int
+    timed_out: bool = False
+
+
+def execute_subprocess(
+    argv: tuple[str, ...],
+    *,
+    cwd: str,
+    input_text: Optional[str] = None,
+    timeout_ms: int = 0,
+    platform_name: Optional[str] = None,
+) -> SubprocessExecution:
+    spawn_options = _resolve_subprocess_spawn_options(build_process_spawn_options(platform_name))
+    text_options = build_process_text_options(platform_name)
+    timeout_seconds = None if timeout_ms <= 0 else timeout_ms / 1000.0
+    started_at = perf_counter()
+    try:
+        completed = subprocess.run(
+            argv,
+            cwd=cwd,
+            input=input_text,
+            capture_output=True,
+            timeout=timeout_seconds,
+            check=False,
+            startupinfo=spawn_options["startupinfo"],
+            creationflags=spawn_options["creationflags"],
+            **text_options,
+        )
+        return SubprocessExecution(
+            argv=argv,
+            stdout=completed.stdout or "",
+            stderr=completed.stderr or "",
+            returncode=completed.returncode,
+            runtime_ms=int((perf_counter() - started_at) * 1000),
+        )
+    except subprocess.TimeoutExpired as error:
+        return SubprocessExecution(
+            argv=argv,
+            stdout=error.stdout or "",
+            stderr=error.stderr or "",
+            returncode=-1,
+            runtime_ms=int((perf_counter() - started_at) * 1000),
+            timed_out=True,
+        )

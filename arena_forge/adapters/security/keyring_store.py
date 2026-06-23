@@ -11,7 +11,7 @@ except ModuleNotFoundError:  # pragma: no cover - optional runtime dependency
     keyring = None
 
 
-def _resolve_keyring_failures() -> tuple[type[BaseException], ...]:
+def _compute_keyring_failures() -> tuple[type[BaseException], ...]:
     if keyring is None:
         return (OSError, RuntimeError)
     errors_module = getattr(keyring, "errors", None)
@@ -27,17 +27,21 @@ def _resolve_keyring_failures() -> tuple[type[BaseException], ...]:
     return keyring_errors + (OSError, RuntimeError)
 
 
-def _resolve_delete_secret_failures() -> tuple[type[BaseException], ...]:
+def _compute_delete_secret_failures() -> tuple[type[BaseException], ...]:
     if keyring is None:
         return (OSError, RuntimeError)
     return tuple(
         error_type
         for error_type in (
             getattr(getattr(keyring, "errors", None), "PasswordDeleteError", None),
-            *_resolve_keyring_failures(),
+            *_KEYRING_FAILURES,
         )
         if isinstance(error_type, type) and issubclass(error_type, BaseException)
     )
+
+
+_KEYRING_FAILURES = _compute_keyring_failures()
+_DELETE_SECRET_FAILURES = _compute_delete_secret_failures()
 
 
 class KeyringCredentialStore:
@@ -50,7 +54,7 @@ class KeyringCredentialStore:
             return False
         try:
             keyring.get_password(f"{self.service_namespace}:__probe__", "__availability__")
-        except _resolve_keyring_failures():
+        except _KEYRING_FAILURES:
             return False
         return True
 
@@ -69,7 +73,7 @@ class KeyringCredentialStore:
             if secret is None:
                 return None
             return CredentialRecord(username=username, secret=secret)
-        except _resolve_keyring_failures() as exc:
+        except _KEYRING_FAILURES as exc:
             raise RuntimeError(translate("error.credential_backend_unavailable")) from exc
 
     def set_credentials(self, provider_name: str, username: str, secret: str) -> CredentialRecord:
@@ -83,7 +87,7 @@ class KeyringCredentialStore:
                 self._delete_secret(service_name, previous_username)
             keyring.set_password(service_name, "__username__", username)
             return CredentialRecord(username=username, secret=secret)
-        except _resolve_keyring_failures() as exc:
+        except _KEYRING_FAILURES as exc:
             raise RuntimeError(translate("error.credential_backend_unavailable")) from exc
 
     def _delete_secret(self, service_name: str, username: str) -> None:
@@ -92,7 +96,7 @@ class KeyringCredentialStore:
             return
         try:
             delete_password(service_name, username)
-        except _resolve_delete_secret_failures():
+        except _DELETE_SECRET_FAILURES:
             return
 
 

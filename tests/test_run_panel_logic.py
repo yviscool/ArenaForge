@@ -19,7 +19,7 @@ from arena_forge.core.domain import OutputEvaluation, OutputReferenceKind, Verdi
 
 @dataclass
 class _FakeTest:
-    test_string: str
+    input_text: str
     fold: bool = True
     rtcode: int = 0
     answer_check: Optional[bool] = None

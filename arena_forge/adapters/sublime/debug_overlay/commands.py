@@ -105,7 +105,7 @@ class DebugOverlayCommand(sublime_plugin.TextCommand):
         for view in window.views():
             if view.id() == tied_id:
                 continue
-            if view.name()[::-1][: len("-run")][::-1] == "-run":
+            if view.name().endswith("-run"):
                 view.close()
 
     def get_var_value(self, pos=None):

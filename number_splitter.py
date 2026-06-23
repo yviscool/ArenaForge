@@ -1,7 +1,7 @@
 import sublime
 import sublime_plugin
 
-from .settings_plugin import is_lang_view
+from .arena_forge.adapters.sublime.shared.settings_bridge import is_lang_view
 
 
 class NumberSplitter:
@@ -34,7 +34,6 @@ class NumberSplitter:
 			seps = [y + x.a for y in seps]
 			for sep in seps:
 				regions.append(sublime.Region(sep, sep + 1))
-		# print(regions)
 		view.add_regions('number_splitter_regions', regions, 'constant.numeric.c', '', \
 				sublime.DRAW_STIPPLED_UNDERLINE | sublime.DRAW_NO_FILL | sublime.DRAW_NO_OUTLINE)
 
@@ -42,14 +41,8 @@ class NumberSplitter:
 def is_supported_lang(view):
 	return is_lang_view(view, 'C++') or is_lang_view(view, 'Python')
 
-class ModifyListener(sublime_plugin.EventListener):
-	def __init__(self):
-		super(ModifyListener, self).__init__()
 
-	# def on_post_save_async(self, view):
-	# 	if get_syntax(view) == 'cpp':
-	# 		view.run_command('intelli_sense', {'action': 'run_sense'})
-	
+class ModifyListener(sublime_plugin.EventListener):
 	def on_load(self, view):
 		if is_supported_lang(view):
 			NumberSplitter.highlight(view)
@@ -57,10 +50,6 @@ class ModifyListener(sublime_plugin.EventListener):
 	def on_modified(self, view):
 		if is_supported_lang(view):
 			NumberSplitter.highlight(view)
-
-	# def on_deactivated(self, view):
-		# if is_supported_lang(view):
-			# view.run_command('intelli_sense', {'action': 'stop_sense'})
 
 	def on_activated(self, view):
 		if is_supported_lang(view):

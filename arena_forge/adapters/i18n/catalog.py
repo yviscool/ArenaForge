@@ -36,9 +36,8 @@ class JsonCatalogTranslator:
         return template.format(**kwargs)
 
 
+_default_translator = JsonCatalogTranslator(str(_DEFAULT_LOCALE_DIRECTORY), default_locale="en")
+
+
 def translate_catalog(key: str, locale: Optional[str] = None, **kwargs: str) -> str:
-    return JsonCatalogTranslator(str(_DEFAULT_LOCALE_DIRECTORY), default_locale="en").translate(
-        key,
-        locale=locale,
-        **kwargs,
-    )
+    return _default_translator.translate(key, locale=locale, **kwargs)

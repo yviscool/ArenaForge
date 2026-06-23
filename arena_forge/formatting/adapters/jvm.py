@@ -21,17 +21,19 @@ class JvmJarFormatterAdapter(FormatterAdapter):
     def build_install_help(self, platform_name: str, translate=None) -> str:
         del platform_name
         jar_path = self.project_jar_relpaths[0]
-        auto_detect = (
-            translate("formatting.install_guide_project_auto_detect_path")
-            if translate
-            else "Project-local auto-detect path:"
+        auto_detect = self._help_line(
+            translate,
+            "formatting.install_guide_project_auto_detect_path",
+            "Project-local auto-detect path:",
         )
-        override = (
-            translate("formatting.install_guide_recommended_command_override")
-            if translate
-            else "Recommended command override:"
+        override = self._help_line(
+            translate,
+            "formatting.install_guide_recommended_command_override",
+            "Recommended command override:",
         )
-        docs = translate("formatting.install_guide_docs", url=self.docs_url) if translate else f"Docs: {self.docs_url}"
+        docs = self._help_line(
+            translate, "formatting.install_guide_docs", "Docs: {url}", url=self.docs_url
+        )
         return "\n".join(
             (
                 auto_detect,

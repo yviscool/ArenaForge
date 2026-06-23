@@ -60,22 +60,22 @@ class OxcFormatAdapter(FormatterAdapter):
 
     def build_install_help(self, platform_name: str, translate=None) -> str:
         del platform_name
-        title = (
-            translate("formatting.install_guide_recommended_project_install")
-            if translate
-            else "Recommended project-local install command:"
+        title = self._help_line(
+            translate,
+            "formatting.install_guide_recommended_project_install",
+            "Recommended project-local install command:",
         )
-        note = (
-            translate("formatting.install_guide_official_docs_pnpm")
-            if translate
-            else "Official docs show pnpm examples;"
+        note = self._help_line(
+            translate, "formatting.install_guide_official_docs_pnpm", "Official docs show pnpm examples;"
         )
-        equivalent = (
-            translate("formatting.install_guide_official_docs_equivalent")
-            if translate
-            else "the npm command above is the equivalent inference."
+        equivalent = self._help_line(
+            translate,
+            "formatting.install_guide_official_docs_equivalent",
+            "the npm command above is the equivalent inference.",
         )
-        docs = translate("formatting.install_guide_docs", url=self.docs_url) if translate else f"Docs: {self.docs_url}"
+        docs = self._help_line(
+            translate, "formatting.install_guide_docs", "Docs: {url}", url=self.docs_url
+        )
         return "\n".join(
             (
                 title,

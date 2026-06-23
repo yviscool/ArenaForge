@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-import os
-import subprocess
-import time
 from dataclasses import dataclass
 from typing import Optional, Tuple
 
 from arena_forge.adapters.i18n.catalog import translate_catalog as translate
+from arena_forge.adapters.runners.subprocess_runner import execute_subprocess
 
 TIMEOUT_RETURN_CODE = -2
 SYSTEM_ERROR_RETURN_CODE = -1
@@ -22,52 +20,17 @@ class ProcessResult:
     system_error: Optional[str] = None
 
 
-def _output_text(value: Optional[str]) -> str:
-    if isinstance(value, str):
-        return value
-    return ""
-
-
 def run_subprocess(
     command: Tuple[str, ...], text: str, cwd: Optional[str], timeout_ms: int
 ) -> ProcessResult:
-    startupinfo = None
-    if os.name == "nt":
-        startupinfo = subprocess.STARTUPINFO()
-        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-
-    timeout_seconds = None
-    if timeout_ms > 0:
-        timeout_seconds = timeout_ms / 1000.0
-
-    started_at = time.monotonic()
     try:
-        completed = subprocess.run(
+        result = execute_subprocess(
             command,
-            input=text,
-            capture_output=True,
-            cwd=cwd,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            startupinfo=startupinfo,
-            check=False,
-            timeout=timeout_seconds,
-        )
-    except subprocess.TimeoutExpired as exc:
-        elapsed_ms = int((time.monotonic() - started_at) * 1000)
-        message = translate("error.formatter_timed_out", timeout_ms=timeout_ms)
-        stderr = _output_text(exc.stderr).strip()
-        stderr = f"{message}\n\n{stderr}" if stderr else message
-        return ProcessResult(
-            returncode=TIMEOUT_RETURN_CODE,
-            stdout=_output_text(exc.stdout),
-            stderr=stderr,
-            elapsed_ms=elapsed_ms,
-            timed_out=True,
+            cwd=cwd or ".",
+            input_text=text,
+            timeout_ms=timeout_ms,
         )
     except OSError as exc:
-        elapsed_ms = int((time.monotonic() - started_at) * 1000)
         message = translate(
             "error.formatter_system_error",
             error_type=exc.__class__.__name__,
@@ -77,14 +40,25 @@ def run_subprocess(
             returncode=SYSTEM_ERROR_RETURN_CODE,
             stdout="",
             stderr=message,
-            elapsed_ms=elapsed_ms,
+            elapsed_ms=0,
             system_error=message,
         )
 
-    elapsed_ms = int((time.monotonic() - started_at) * 1000)
+    if result.timed_out:
+        message = translate("error.formatter_timed_out", timeout_ms=timeout_ms)
+        stderr = result.stderr.strip()
+        stderr = f"{message}\n\n{stderr}" if stderr else message
+        return ProcessResult(
+            returncode=TIMEOUT_RETURN_CODE,
+            stdout=result.stdout,
+            stderr=stderr,
+            elapsed_ms=result.runtime_ms,
+            timed_out=True,
+        )
+
     return ProcessResult(
-        returncode=completed.returncode,
-        stdout=completed.stdout,
-        stderr=completed.stderr,
-        elapsed_ms=elapsed_ms,
+        returncode=result.returncode,
+        stdout=result.stdout,
+        stderr=result.stderr,
+        elapsed_ms=result.runtime_ms,
     )

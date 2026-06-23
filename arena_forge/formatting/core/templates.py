@@ -6,10 +6,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Optional, Sequence, Set, Tuple
 
-from arena_forge.formatting.core.discovery import iter_ancestor_dirs
+from arena_forge.formatting.core.discovery import SECTION_RE, iter_ancestor_dirs
+from arena_forge.formatting.core.text import detect_newline_style
 
 WORKSPACE_TEMPLATE_ORDER = ("clang-format", "gofmt", "google-java-format", "ktfmt", "ruff", "rustfmt", "oxfmt")
-SUPPORTED_ADAPTER_ORDER = ("clang-format", "gofmt", "google-java-format", "ktfmt", "ruff", "rustfmt", "oxfmt")
+SUPPORTED_ADAPTER_ORDER = WORKSPACE_TEMPLATE_ORDER
 IGNORED_SCAN_DIRS = frozenset(
     (
         ".git",
@@ -28,7 +29,6 @@ IGNORED_SCAN_DIRS = frozenset(
     )
 )
 VCS_ROOT_MARKERS = (".git", ".hg", ".svn")
-SECTION_RE = re.compile(r"^\s*\[(?P<section>[^\]]+)\]\s*$")
 KEY_VALUE_RE = re.compile(r"^\s*(?P<key>[A-Za-z0-9_-]+)\s*=")
 
 
@@ -779,7 +779,7 @@ def _apply_planned_write(item: PlannedTemplateWrite) -> str:
 
 
 def merge_pyproject_ruff(existing_text: str, generated_text: str) -> str:
-    newline = _detect_newline(existing_text)
+    newline = detect_newline_style(existing_text)
     lines = existing_text.splitlines(True)
     generated_sections = _parse_toml_sections(generated_text, newline)
 
@@ -905,12 +905,6 @@ def _toml_key_for_line(line: str) -> Optional[str]:
     if not match:
         return None
     return match.group("key")
-
-
-def _detect_newline(text: str) -> str:
-    if "\r\n" in text:
-        return "\r\n"
-    return "\n"
 
 
 def _ensure_newline(line: str, newline: str) -> str:

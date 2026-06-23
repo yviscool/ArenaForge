@@ -8,7 +8,18 @@ from arena_forge.core.domain import (
     TestRunResult,
     Verdict,
 )
-from arena_forge.core.usecases import RunSessionService
+from arena_forge.core.usecases import SessionService
+
+
+class _StubRepository:
+    def __init__(self):
+        self._store = {}
+
+    def load(self, source_file):
+        return self._store.get(source_file)
+
+    def save(self, session):
+        self._store[session.source_file] = session
 
 
 class _StubRunner:
@@ -32,7 +43,7 @@ class UsecaseTests(unittest.TestCase):
         runner = _StubRunner(
             compile_result=CommandExecution(argv=("g++",), return_code=1, stdout="boom", runtime_ms=10)
         )
-        service = RunSessionService(runner)
+        service = SessionService(repository=_StubRepository(), runner=runner)
         session = SessionSnapshot(source_file="A.cpp", language="C++", tests=(TestCase(name="T1", input_text="1"),))
         report = service.run_all_tests(session)
         self.assertFalse(report.compile_succeeded)
@@ -45,7 +56,7 @@ class UsecaseTests(unittest.TestCase):
                 TestRunResult(output_text="42\n", return_code=0, runtime_ms=5, verdict=Verdict.UNKNOWN),
             ],
         )
-        service = RunSessionService(runner)
+        service = SessionService(repository=_StubRepository(), runner=runner)
         session = SessionSnapshot(
             source_file="A.cpp",
             language="C++",

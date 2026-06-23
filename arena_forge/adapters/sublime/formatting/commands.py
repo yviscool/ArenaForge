@@ -28,7 +28,6 @@ from .request_builder import (
     _command_prefix,
     _resolve_base_dir,
     _select_adapter,
-    _view_context_dir,
 )
 
 PENDING_RESULTS = {}  # type: dict[str, tuple[int, FormatResult]]
@@ -243,7 +242,7 @@ class ArenaForgeFormatCreateConfigCommand(sublime_plugin.WindowCommand):
             adapter=adapter,
             workspace_mode=False,
             title=translate("status.formatting_plan_ready", adapter=adapter.display_name),
-            context_dir=_view_context_dir(view),
+            context_dir=_resolve_base_dir(view),
         )
 
 
@@ -254,7 +253,7 @@ class ArenaForgeFormatCreateWorkspaceConfigsCommand(sublime_plugin.WindowCommand
             adapter=None,
             workspace_mode=True,
             title=translate("status.workspace_formatting_plan_ready"),
-            context_dir=_view_context_dir(self.window.active_view()),
+            context_dir=_resolve_base_dir(self.window.active_view()),
         )
 
 

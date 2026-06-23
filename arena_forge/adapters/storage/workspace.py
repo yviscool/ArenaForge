@@ -48,10 +48,6 @@ class WorkspaceLayout:
         base = Path(source_file).resolve()
         return self._session_directory(source_file) / f"{base.name}.session.json"
 
-    def resolve_session_path(self, source_file: str) -> Path:
-        preferred = self.session_path_for(source_file)
-        return preferred
-
     def ensure_parent(self, destination: Path) -> Path:
         destination.parent.mkdir(parents=True, exist_ok=True)
         return destination

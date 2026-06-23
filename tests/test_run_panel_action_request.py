@@ -4,8 +4,8 @@ from arena_forge.adapters.sublime.run_panel.action_request import RunPanelAction
 
 
 class RunPanelActionRequestTests(unittest.TestCase):
-    def test_from_command_args_preserves_dispatch_payload(self) -> None:
-        request = RunPanelActionRequest.from_command_args(
+    def test_constructor_preserves_dispatch_payload(self) -> None:
+        request = RunPanelActionRequest(
             action="make_opd",
             run_file="main.cpp",
             build_sys="source.c++",

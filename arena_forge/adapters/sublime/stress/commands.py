@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from os import path
 from random import randint
 from subprocess import TimeoutExpired
@@ -12,6 +13,13 @@ from arena_forge.adapters.runners import ProcessManager
 from ..shared.messages import error_message, status_message
 from ..shared.package_resources import STRESS_SYNTAX_RESOURCE
 from ..shared.settings_bridge import get_settings
+
+
+@dataclass(frozen=True)
+class StressRunResult:
+    success: bool
+    output: str
+    error_message: str
 
 
 class StressManagerCommand(sublime_plugin.TextCommand):
@@ -27,26 +35,24 @@ class StressManagerCommand(sublime_plugin.TextCommand):
             else:
                 status_message("status.stress_stopped")
 
-    def perfom_run(self, process, input_text, tl):
+    def perform_run(self, process, input_text, tl) -> StressRunResult:
         process.run()
         try:
             outs, errs = process.communicate(input_text, timeout=tl)
             if process.is_stopped() != 0:
-                return {
-                    "success": False,
-                    "input": input_text,
-                    "message": process.file + ": crashed with exit code: %d" % process.is_stopped(),
-                    "output": outs,
-                }
-            return outs
+                return StressRunResult(
+                    success=False,
+                    output="",
+                    error_message=process.file + ": crashed with exit code: %d" % process.is_stopped(),
+                )
+            return StressRunResult(success=True, output=outs, error_message="")
         except TimeoutExpired:
             process.terminate()
-            return {
-                "success": False,
-                "input": input_text,
-                "message": process.file + ": time limit exceeded (%d seconds)" % tl,
-                "output": "",
-            }
+            return StressRunResult(
+                success=False,
+                output="",
+                error_message=process.file + ": time limit exceeded (%d seconds)" % tl,
+            )
 
     def _print_log(self, test_data, good_output, bad_output):
         text = "test #{test_id}:\n{test_data}\ngood:\n{good_output}\nbad:\n{bad_output}".format(
@@ -61,28 +67,20 @@ class StressManagerCommand(sublime_plugin.TextCommand):
         seed = str(randint(0, int(1e9)))
         tl = get_settings().get("stress_time_limit_seconds")
 
-        data = self.perfom_run(self.process["gen"], seed, tl)
-        if not isinstance(data, str):
-            self._print_log(data["message"], "", "")
-            return data
+        gen_result = self.perform_run(self.process["gen"], seed, tl)
+        if not gen_result.success:
+            self._print_log(gen_result.error_message, "", "")
+            return {"success": False, "input": seed, "message": gen_result.error_message, "output": ""}
 
-        test_data = data
+        test_data = gen_result.output
         self._print_log(test_data, "", "")
-        err = False
-        data = self.perfom_run(self.process["good"], test_data, tl)
-        if not isinstance(data, str):
-            good_output = data["message"]
-            err = True
-        else:
-            good_output = data
-        self._print_log(test_data, good_output, "")
 
-        data = self.perfom_run(self.process["bad"], test_data, tl)
-        if not isinstance(data, str):
-            bad_output = data["message"]
-            err = True
-        else:
-            bad_output = data
+        good_result = self.perform_run(self.process["good"], test_data, tl)
+        bad_result = self.perform_run(self.process["bad"], test_data, tl)
+
+        good_output = good_result.output or good_result.error_message
+        bad_output = bad_result.output or bad_result.error_message
+        err = not good_result.success or not bad_result.success
 
         self._print_log(test_data, good_output, bad_output)
 

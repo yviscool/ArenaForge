@@ -6,7 +6,6 @@ from html import unescape
 from html.parser import HTMLParser
 from typing import Callable, Dict, List, Optional
 from urllib.parse import urljoin
-from urllib.request import Request, urlopen
 
 from arena_forge.adapters.i18n.catalog import translate_catalog as translate
 from arena_forge.core.domain import (
@@ -18,7 +17,8 @@ from arena_forge.core.domain import (
     TestCase,
 )
 
-USER_AGENT = "ArenaForge/3.0 (+https://example.invalid)"
+from .base import extract_html_title, fetch_text
+
 ATCODER_BASE_URL = "https://atcoder.jp"
 _PRINT_PAGE_FETCH_FAILURES = (OSError, ValueError)
 
@@ -298,17 +298,9 @@ def extract_printed_tasks(html: str) -> tuple[ContestProblem, ...]:
 
 
 def extract_atcoder_contest_title(html: str, contest_id: str) -> str:
-    opening = "<title>"
-    closing = "</title>"
-    start = html.find(opening)
-    end = html.find(closing, start + len(opening))
-    if start != -1 and end != -1:
-        title = unescape(html[start + len(opening) : end]).strip()
-        if title.startswith("Tasks - "):
-            title = title[len("Tasks - ") :]
-        title = title.replace(" - AtCoder", "").strip()
-        if title:
-            return title
+    title = extract_html_title(html, strip_suffix=" - AtCoder", strip_prefix="Tasks - ")
+    if title:
+        return title
     return f"AtCoder Contest {contest_id}"
 
 
@@ -322,9 +314,7 @@ class AtCoderProvider:
     )
 
     def _fetch_text(self, url: str) -> str:
-        request = Request(url, headers={"User-Agent": USER_AGENT})
-        with urlopen(request, timeout=10) as response:
-            return response.read().decode("utf-8", "replace")
+        return fetch_text(url)
 
     def _contest_tasks_url(self, contest_id: str) -> str:
         return f"{ATCODER_BASE_URL}/contests/{contest_id}/tasks?lang=en"

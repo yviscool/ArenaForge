@@ -1,70 +1,19 @@
-import sublime
 import sublime_plugin
 from sublime import PhantomSet, Region
 
 from ..run_panel.logic import display_test_number
 from ..run_panel.rendering import build_test_edit_header_phantom
-from ..run_panel.state import persist_panel_tests
-from ..shared.messages import translate_status_code
-from ..shared.package_resources import ARROW_LEFT_ICON_RESOURCE, ARROW_RIGHT_ICON_RESOURCE, TEST_SYNTAX_RESOURCE
-from ..shared.settings_bridge import get_session_repository, get_tests_file_path, infer_language_name
+from ..shared.package_resources import TEST_SYNTAX_RESOURCE
 from .controller_state import TestEditorControllerState
 from .dispatch import dispatch_test_editor_action
 
 
 class TestEditCommand(sublime_plugin.TextCommand):
-	BEGIN_TEST_STRING = 'Test %d {'
-	OUT_TEST_STRING = ''
-	END_TEST_STRING = '} rtcode %s'
-	REGION_BEGIN_KEY = 'test_begin_%d'
-	REGION_OUT_KEY = 'test_out_%d'
-	REGION_END_KEY = 'test_end_%d'
-	REGION_POS_PROP = ['', '', sublime.HIDDEN]
-	REGION_ACCEPT_PROP = ['string', 'dot', sublime.HIDDEN]
-	REGION_DECLINE_PROP = ['variable.c++', 'dot', sublime.HIDDEN]
-	REGION_UNKNOWN_PROP = ['text.plain', 'dot', sublime.HIDDEN]
-	REGION_OUT_PROP = ['entity.name.function.opd', 'bookmark', sublime.HIDDEN]
-	REGION_BEGIN_PROP = ['string', ARROW_RIGHT_ICON_RESOURCE, \
-				sublime.DRAW_NO_FILL | sublime.DRAW_STIPPLED_UNDERLINE | \
-					sublime.DRAW_NO_OUTLINE | sublime.DRAW_EMPTY_AS_OVERWRITE]
-	REGION_END_PROP = ['variable.c++', ARROW_LEFT_ICON_RESOURCE, sublime.HIDDEN]
-	REGION_LINE_PROP = ['string', 'dot', \
-				sublime.DRAW_NO_FILL | sublime.DRAW_STIPPLED_UNDERLINE | \
-					sublime.DRAW_NO_OUTLINE | sublime.DRAW_EMPTY_AS_OVERWRITE]
-
-	# Test
-	# REGION_POS_PROP = REGION_UNKNOWN_PROP
-
 	def __init__(self, view):
 		self.view = view
 		self.state = TestEditorControllerState(
-			delta_input=0,
-			tester=None,
-			session=None,
 			phantoms=PhantomSet(view, 'test-phantoms'),
 		)
-
-	def insert_text(self, edit, text=None):
-		v = self.view
-		if text is None:
-			if not self.state.tester.proc_run:
-				return None
-			to_shove = v.substr(Region(self.state.delta_input, v.sel()[0].b))
-			# print('shovel -> ', to_shove)
-			v.insert(edit, v.sel()[0].b, '\n')
-
-		else:
-			to_shove = text
-			v.insert(edit, v.sel()[0].b, to_shove + '\n')
-		self.state.delta_input = v.sel()[0].b 
-		self.state.tester.insert(to_shove + '\n')
-
-	def insert_cb(self, edit):
-		s = sublime.get_clipboard()
-		lst = s.split('\n')
-		for i in range(len(lst) - 1):
-			self.state.tester.insert(lst[i] + '\n', call_on_insert=True)
-		self.state.tester.insert(lst[-1], call_on_insert=True)
 
 	def cb_action(self, event):
 		v = self.view
@@ -92,26 +41,9 @@ class TestEditCommand(sublime_plugin.TextCommand):
 	def update_config(self):
 		self.state.phantoms.update([build_test_edit_header_phantom(self.view, self.state.test_id, self.cb_action)])
 
-	def memorize_tests(self):
-		persist_panel_tests(
-			self.dbg_file,
-			self.state.tester.get_tests(),
-			get_session_repository(),
-			infer_language_name,
-			get_tests_file_path,
-		)
-
-	def change_process_status(self, status):
-		# name = self.view.name()
-		# self.view.set_name(name[:name.index(' ')] + ' -' + status.lower())
-		self.view.set_status('process_status_code', status)
-		self.view.set_status('process_status', translate_status_code(status))
-
-	def init(self, edit, run_file=None, build_sys=None, clr_tests=False, \
-		test='', source_view_id=None, test_id=None, load_session=False):
+	def init(self, edit, test='', source_view_id=None, test_id=None):
 		v = self.view
 
-		self.state.delta_input = 0
 		self.state.test_id = test_id
 		self.state.source_view_id = source_view_id
 
@@ -124,38 +56,18 @@ class TestEditCommand(sublime_plugin.TextCommand):
 		v.insert(edit, 0, '\n' + test)
 		self.update_config()
 
-	def sync_read_only(self):
-		view = self.view
-		if view.settings().get('edit_mode'):
-			view.set_read_only(False)
-			return
-
-	def run(self, edit, action=None, run_file=None, build_sys=None, text=None, clr_tests=False, \
-			test='', source_view_id=None, var_name=None, test_id=None, pos=None, \
-			load_session=False, region=None, frame_id=None):
+	def run(self, edit, action=None, text=None, test='', source_view_id=None, test_id=None, region=None):
 		self.view.set_read_only(False)
-		should_sync = dispatch_test_editor_action(
+		dispatch_test_editor_action(
 			self,
 			edit,
 			action=action,
-			run_file=run_file,
-			build_sys=build_sys,
 			text=text,
-			clr_tests=clr_tests,
 			test=test,
 			source_view_id=source_view_id,
-			var_name=var_name,
 			test_id=test_id,
-			pos=pos,
-			load_session=load_session,
 			region=region,
-			frame_id=frame_id,
 		)
-		if should_sync:
-			self.sync_read_only()
-
-	def isEnabled(view, args):
-		pass
 
 class EditModifyListener(sublime_plugin.EventListener):
 	def on_selection_modified(self, view):

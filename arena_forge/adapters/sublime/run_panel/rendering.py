@@ -14,6 +14,10 @@ from ..support.result_display import (
 from .logic import display_test_number
 
 
+def _wrap_with_styles(view, content: str) -> str:
+    return "<style>" + build_styles(view) + "</style>" + content
+
+
 def _build_result_block(state) -> str:
     summary = format_output_evaluation_summary(getattr(state, "last_evaluation", None))
     if not summary:
@@ -36,7 +40,6 @@ def _build_result_block(state) -> str:
 
 
 def build_test_config_phantom(state, test_id, point, callback, output_text, view, running=False):
-    styles = build_styles(view)
     display_number = display_test_number(test_id)
     if running:
         content = render_template("test_running.html", test_id=display_number)
@@ -56,12 +59,11 @@ def build_test_config_phantom(state, test_id, point, callback, output_text, view
             test_type=test_type,
             result_block=_build_result_block(state),
         )
-    content = "<style>" + styles + "</style>" + content
+    content = _wrap_with_styles(view, content)
     return Phantom(Region(point), content, LAYOUT_BLOCK, lambda event, cb=callback, i=test_id: cb(i, event))
 
 
 def build_accdec_phantom(state, test_id, point, callback, action_type, view):
-    styles = build_styles(view)
     content = render_template(
         "test_accdec.html",
         action_label=translate(f"ui.{action_type}"),
@@ -69,32 +71,29 @@ def build_accdec_phantom(state, test_id, point, callback, action_type, view):
         type=action_type,
         runtime="&nbsp;" * (2 - len(str(state.runtime))) + str(state.runtime),
     )
-    content = "<style>" + styles + "</style>" + content
+    content = _wrap_with_styles(view, content)
     return Phantom(Region(point), content, LAYOUT_BLOCK, lambda event, cb=callback, i=test_id: cb(i, event))
 
 
 def build_next_test_title_phantom(view, callback):
-    styles = build_styles(view)
     content = render_template("test_next.html")
-    content = "<style>" + styles + "</style>" + content
+    content = _wrap_with_styles(view, content)
     return Phantom(Region(max(view.size() - 1, 0)), content, LAYOUT_BLOCK, lambda event, cb=callback: cb(event))
 
 
 def build_compile_bar_phantom(view, cmd, type=""):
-    styles = build_styles(view)
     content = render_template(
         "compile.html",
         cmd=cmd,
         type="config-stop" if type == "error" else type,
     )
-    content = "<style>" + styles + "</style>" + content
+    content = _wrap_with_styles(view, content)
     return Phantom(Region(0), content, LAYOUT_BLOCK)
 
 
 def build_test_edit_header_phantom(view, test_id, callback):
-    styles = build_styles(view)
-    content = "<style>" + styles + "</style>" + render_template(
+    content = _wrap_with_styles(view, render_template(
         "test_edit.html",
         test_id=display_test_number(test_id),
-    )
+    ))
     return Phantom(Region(0), content, LAYOUT_BLOCK, callback)

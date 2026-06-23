@@ -130,8 +130,8 @@ class _FakeState:
 
 
 class _FakePanelTest:
-    def __init__(self, test_string):
-        self.test_string = test_string
+    def __init__(self, input_text):
+        self.input_text = input_text
         self.fold = True
         self.last_evaluation = None
         self.display_layout = None
@@ -162,19 +162,24 @@ def _patched_session_action_dependencies():
         "arena_forge.adapters.sublime.run_panel.process_actions",
         "arena_forge.adapters.sublime.run_panel.regions",
         "arena_forge.adapters.sublime.run_panel.session_service",
-        "arena_forge.adapters.sublime.run_panel.state",
+        "arena_forge.adapters.sublime.run_panel.persistence",
         "arena_forge.adapters.sublime.shared.settings_bridge",
         "arena_forge.adapters.sublime.run_panel.session_actions",
     )
     originals = {name: sys.modules.get(name) for name in module_names}
     sys.modules["sublime"] = types.SimpleNamespace(
         Region=_FakeRegion,
+        Phantom=object,
+        LAYOUT_BLOCK=0,
         set_timeout=lambda callback, delay=0: None,
         set_timeout_async=lambda callback, delay=0: None,
+        platform=lambda: "windows",
     )
     sys.modules["arena_forge.adapters.sublime.shared.messages"] = types.SimpleNamespace(
         product_log_message=lambda *args, **kwargs: None,
         translate=lambda key, **kwargs: key,
+        translate_status_code=lambda status: status,
+        translate_verdict=lambda verdict: str(verdict),
     )
     sys.modules["arena_forge.adapters.sublime.root_bridge"] = types.SimpleNamespace(
         get_debugger_info_module=lambda: None
@@ -184,7 +189,8 @@ def _patched_session_action_dependencies():
         plan_run_panel_launch=lambda *args, **kwargs: None,
     )
     sys.modules["arena_forge.adapters.sublime.run_panel.logic"] = types.SimpleNamespace(
-        build_run_panel_stop_plan=lambda *args, **kwargs: None
+        build_run_panel_stop_plan=lambda *args, **kwargs: None,
+        display_test_number=lambda test_id: str(test_id),
     )
     sys.modules["arena_forge.adapters.sublime.run_panel.process_actions"] = types.SimpleNamespace(
         schedule_test_manager_command=lambda *args, **kwargs: None,
@@ -196,15 +202,18 @@ def _patched_session_action_dependencies():
     sys.modules["arena_forge.adapters.sublime.run_panel.session_service"] = types.SimpleNamespace(
         create_run_backend=lambda *args, **kwargs: None,
         prepare_tests_for_run=lambda *args, **kwargs: [],
+        save_tests_for_run=lambda *args, **kwargs: None,
         select_run_backend=lambda *args, **kwargs: None,
     )
-    sys.modules["arena_forge.adapters.sublime.run_panel.state"] = types.SimpleNamespace(
+    sys.modules["arena_forge.adapters.sublime.run_panel.persistence"] = types.SimpleNamespace(
         append_run_history=lambda *args, **kwargs: None
     )
     sys.modules["arena_forge.adapters.sublime.shared.settings_bridge"] = types.SimpleNamespace(
         get_session_repository=lambda: None,
         get_settings=lambda: None,
         get_tests_file_path=lambda *args, **kwargs: None,
+        infer_language_name=lambda *args, **kwargs: None,
+        root_dir=".",
     )
     sys.modules.pop("arena_forge.adapters.sublime.run_panel.session_actions", None)
     try:

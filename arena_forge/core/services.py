@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Iterable, Optional
-
-from arena_forge.adapters.i18n.catalog import translate_catalog as translate
+from typing import Callable, Iterable, Optional
 
 from .domain import (
     LanguageProfile,
@@ -14,6 +12,19 @@ from .domain import (
     Verdict,
 )
 from .ports import OutputChecker
+
+
+def _default_translate(key: str, **kwargs: str) -> str:
+    from arena_forge.adapters.i18n.catalog import translate_catalog
+    return translate_catalog(key, **kwargs)
+
+
+_translate: Callable[..., str] = _default_translate
+
+
+def set_translate(fn: Callable[..., str]) -> None:
+    global _translate
+    _translate = fn
 
 
 def normalize_text(text: str) -> str:
@@ -110,7 +121,7 @@ class NormalizedTextOutputChecker:
 def get_output_checker(checker_name: str) -> OutputChecker:
     if checker_name == "normalized_text":
         return NormalizedTextOutputChecker()
-    raise ValueError(translate("error.unsupported_checker", checker_name=checker_name))
+    raise ValueError(_translate("error.unsupported_checker", checker_name=checker_name))
 
 
 def evaluate_output_result(test_case: TestCase, output_text: str) -> OutputEvaluation:
@@ -126,7 +137,7 @@ def infer_language(source_file: str, profiles: Iterable[LanguageProfile]) -> str
     for profile in profiles:
         if ext in profile.extensions:
             return profile.identifier
-    raise ValueError(translate("error.unsupported_source_extension", ext=ext))
+    raise ValueError(_translate("error.unsupported_source_extension", ext=ext))
 
 
 def select_language_profile(source_file: str, profiles: Iterable[LanguageProfile]) -> LanguageProfile:
@@ -134,4 +145,4 @@ def select_language_profile(source_file: str, profiles: Iterable[LanguageProfile
     for profile in profiles:
         if ext in profile.extensions:
             return profile
-    raise ValueError(translate("error.unsupported_source_extension", ext=ext))
+    raise ValueError(_translate("error.unsupported_source_extension", ext=ext))

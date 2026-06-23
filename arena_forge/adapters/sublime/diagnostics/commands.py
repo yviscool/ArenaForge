@@ -112,14 +112,7 @@ class IntelliSenseCommand(sublime_plugin.TextCommand):
         state.generation += 1
         generation = state.generation
 
-        def capture_snapshot(
-            self=self,
-            view=view,
-            compile_cmd=compile_cmd,
-            change_count=change_count,
-            generation=generation,
-            timeout_ms=timeout_ms,
-        ):
+        def capture_snapshot():
             if not _is_generation_current(view, generation):
                 return
             file_name = view.file_name()
@@ -214,33 +207,22 @@ class IntelliSenseCommand(sublime_plugin.TextCommand):
         view.erase_regions("warning_marks")
         view.erase_regions("error_marks")
 
-        for issue in errors:
-            if issue.severity is DiagnosticSeverity.ERROR:
-                view.set_status(
-                    "compile_error",
-                    translate(
-                        "status.compile_issue",
-                        line=issue.line,
-                        column=issue.column,
-                        message=issue.message,
-                    ),
-                )
-                break
+        priority_issue = next(
+            (i for i in errors if i.severity is DiagnosticSeverity.ERROR),
+            next((i for i in errors if i.severity is DiagnosticSeverity.WARNING), None),
+        )
+        if priority_issue is not None:
+            view.set_status(
+                "compile_error",
+                translate(
+                    "status.compile_issue",
+                    line=priority_issue.line,
+                    column=priority_issue.column,
+                    message=priority_issue.message,
+                ),
+            )
         else:
-            for issue in errors:
-                if issue.severity is DiagnosticSeverity.WARNING:
-                    view.set_status(
-                        "compile_error",
-                        translate(
-                            "status.compile_issue",
-                            line=issue.line,
-                            column=issue.column,
-                            message=issue.message,
-                        ),
-                    )
-                    break
-            else:
-                view.erase_status("compile_error")
+            view.erase_status("compile_error")
 
         warn_regions = []
         error_regions = []

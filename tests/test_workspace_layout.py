@@ -13,13 +13,6 @@ class WorkspaceLayoutTests(unittest.TestCase):
             str(session_path).replace("\\", "/").endswith(".arena-forge/tests/A.cpp.tests.json")
         )
 
-    def test_resolve_session_path_points_to_current_index(self) -> None:
-        with local_test_workspace("layout") as root:
-            source = root / "A.cpp"
-            source.write_text("", encoding="utf-8")
-            layout = WorkspaceLayout()
-            self.assertEqual(layout.resolve_session_path(str(source)), layout.session_path_for(str(source)))
-
     def test_snapshot_path_is_separate_from_tests_index(self) -> None:
         layout = WorkspaceLayout()
         source = "C:/work/A.cpp"

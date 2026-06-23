@@ -35,9 +35,8 @@ def _store_cached_compile_result(cache_key, compile_result):
         _COMPILE_CACHE.pop(cache_key, None)
 
 
-class ProcessManager(object):
+class ProcessManager:
     def __init__(self, file, syntax, run_settings=None):
-        super(ProcessManager, self).__init__()
         self.syntax = syntax
         self.file = file
         self.is_run = False
@@ -106,8 +105,8 @@ class ProcessManager(object):
             _store_cached_compile_result(cache_key, result)
             return result
 
-    def run_file(self, args=[]):
-        cmd = self.get_run_cmd(" ".join(args))
+    def run_file(self, args=None):
+        cmd = self.get_run_cmd(" ".join(args or ()))
         if cmd in {None, -1}:
             raise ValueError(translate("error.no_runnable_command_configured", file=self.file))
 

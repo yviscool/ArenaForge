@@ -31,3 +31,35 @@ class FormatterAdapter(ABC):
     @abstractmethod
     def build_install_help(self, platform_name: str, translate=None) -> str:
         raise NotImplementedError
+
+    @staticmethod
+    def _help_line(translate, key: str, fallback: str, **kwargs) -> str:
+        if translate:
+            return translate(key, **kwargs)
+        return fallback.format(**kwargs) if kwargs else fallback
+
+    def _build_standard_install_help(
+        self,
+        install_command: str,
+        *,
+        translate=None,
+        note_key: str = "",
+        note_fallback: str = "",
+        alternative_key: str = "",
+        alternative_fallback: str = "",
+        alternative_command: str = "",
+    ) -> str:
+        title = self._help_line(
+            translate, "formatting.install_guide_recommended_install", "Recommended install command:"
+        )
+        docs = self._help_line(
+            translate, "formatting.install_guide_docs", "Docs: {url}", url=self.docs_url
+        )
+        parts = [title, f"  {install_command}"]
+        if note_key:
+            parts.append(self._help_line(translate, note_key, note_fallback))
+        if alternative_key and alternative_command:
+            parts.append(self._help_line(translate, alternative_key, alternative_fallback))
+            parts.append(f"  {alternative_command}")
+        parts.append(docs)
+        return "\n".join(parts)

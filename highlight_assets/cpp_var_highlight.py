@@ -1,5 +1,3 @@
-# Not Implemented
-
 import re
 from os import path
 
@@ -7,26 +5,11 @@ css = open(path.join(path.dirname(__file__), 'cpp_styles.css')).read()
 
 DEF_TYPE = re.compile(r'int|float|double|char')
 NUMBER = re.compile(r'\d+')
-# STRING = re.compile('"\"')
 
-class Token(object):
-	"""docstring for Token"""
-	def __init__(self, regex, css_class):
-		self.regex = regex
-		self.css_class = css_class
-
-
-tokens = [
-	Token(NUMBER, 'number'),
-	Token(DEF_TYPE, 'def-type'),
-]
 
 def safety(s):
 	return s.replace('<', '&lt;').replace('>', '&gt;').replace('\n', '<br>').replace(' ', '&nbsp;')
 
-
-def highligh_regex(code, regex):
-	code = regex.split(code)
 
 def highlight(code):
 	rez = '''
@@ -61,20 +44,4 @@ def highlight(code):
 		rez += s
 
 	rez += '</body>'
-	# f = open(path.join(path.dirname(__file__), 'dbg.txt'), 'w')
-	# print(rez, file=f)
-	# f.close()
 	return rez
-
-
-def get_regions(code, pattern):
-	match = pattern.search(code)
-	regs = []
-	dx = 0
-	while match is not None:
-		start, end = match.regs[0]
-		regs.append((start + dx, end + dx))
-		dx += end
-		code = code[end:]
-		match = pattern.search(code)
-	return regs

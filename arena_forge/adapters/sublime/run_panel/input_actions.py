@@ -50,6 +50,18 @@ def _editable_region(command):
     return start, end
 
 
+def _clamped_cursor(command, *, require_single_selection=False):
+    region = _editable_region(command)
+    if region is None:
+        return None
+    if require_single_selection and len(command.view.sel()) != 1:
+        return None
+    start, end = region
+    selection = command.view.sel()[0]
+    cursor = min(max(selection.b, start), end)
+    return start, end, cursor
+
+
 def get_current_input(command):
     from sublime import Region
 
@@ -79,12 +91,10 @@ def clear_current_input(command, edit) -> None:
 def delete_previous_word(command, edit) -> None:
     from sublime import Region
 
-    region = _editable_region(command)
-    if region is None or len(command.view.sel()) != 1:
+    info = _clamped_cursor(command, require_single_selection=True)
+    if info is None:
         return
-    start, end = region
-    selection = command.view.sel()[0]
-    cursor = min(max(selection.b, start), end)
+    start, end, cursor = info
     if cursor <= start:
         return
     text = command.view.substr(Region(start, cursor))
@@ -121,12 +131,10 @@ def move_input_line_end(command) -> None:
 def move_input_backward_word(command) -> None:
     from sublime import Region
 
-    region = _editable_region(command)
-    if region is None or len(command.view.sel()) != 1:
+    info = _clamped_cursor(command, require_single_selection=True)
+    if info is None:
         return
-    start, end = region
-    selection = command.view.sel()[0]
-    cursor = min(max(selection.b, start), end)
+    start, end, cursor = info
     if cursor <= start:
         return
     text = command.view.substr(Region(start, cursor))
@@ -138,12 +146,10 @@ def move_input_backward_word(command) -> None:
 def move_input_forward_word(command) -> None:
     from sublime import Region
 
-    region = _editable_region(command)
-    if region is None or len(command.view.sel()) != 1:
+    info = _clamped_cursor(command, require_single_selection=True)
+    if info is None:
         return
-    start, end = region
-    selection = command.view.sel()[0]
-    cursor = min(max(selection.b, start), end)
+    start, end, cursor = info
     if cursor >= end:
         return
     text = command.view.substr(Region(cursor, end))

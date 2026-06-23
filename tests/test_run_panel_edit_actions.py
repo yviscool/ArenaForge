@@ -55,10 +55,47 @@ class _FakeView:
 def _patched_edit_actions():
     module_names = (
         "sublime",
+        "arena_forge.adapters.sublime.shared.messages",
+        "arena_forge.adapters.sublime.shared.settings_bridge",
+        "arena_forge.adapters.sublime.run_panel.input_actions",
+        "arena_forge.adapters.sublime.run_panel.rendering",
+        "arena_forge.adapters.sublime.run_panel.session_service",
         "arena_forge.adapters.sublime.run_panel.edit_actions",
     )
     originals = {name: sys.modules.get(name) for name in module_names}
-    sys.modules["sublime"] = types.SimpleNamespace(Region=_FakeRegion)
+    sys.modules["sublime"] = types.SimpleNamespace(
+        Region=_FakeRegion,
+        Phantom=object,
+        LAYOUT_BLOCK=0,
+        platform=lambda: "windows",
+    )
+    sys.modules["arena_forge.adapters.sublime.shared.messages"] = types.SimpleNamespace(
+        product_log_message=lambda *args, **kwargs: None,
+        translate=lambda key, **kwargs: key,
+        translate_status_code=lambda status: status,
+        translate_verdict=lambda verdict: str(verdict),
+    )
+    sys.modules["arena_forge.adapters.sublime.shared.settings_bridge"] = types.SimpleNamespace(
+        get_session_repository=lambda: None,
+        get_settings=lambda: None,
+        get_tests_file_path=lambda *args, **kwargs: None,
+        infer_language_name=lambda *args, **kwargs: None,
+        root_dir=".",
+    )
+    sys.modules["arena_forge.adapters.sublime.run_panel.input_actions"] = types.SimpleNamespace(
+        push_input_history=lambda *args, **kwargs: None
+    )
+    sys.modules["arena_forge.adapters.sublime.run_panel.rendering"] = types.SimpleNamespace(
+        build_accdec_phantom=lambda *args, **kwargs: None,
+        build_compile_bar_phantom=lambda *args, **kwargs: None,
+        build_test_config_phantom=lambda *args, **kwargs: None,
+    )
+    sys.modules["arena_forge.adapters.sublime.run_panel.session_service"] = types.SimpleNamespace(
+        create_run_backend=lambda *args, **kwargs: None,
+        prepare_tests_for_run=lambda *args, **kwargs: [],
+        select_run_backend=lambda *args, **kwargs: None,
+        save_tests_for_run=lambda *args, **kwargs: None
+    )
     sys.modules.pop("arena_forge.adapters.sublime.run_panel.edit_actions", None)
     try:
         yield
@@ -100,6 +137,7 @@ class RunPanelEditActionsTests(unittest.TestCase):
         with _patched_edit_actions():
             module = importlib.import_module("arena_forge.adapters.sublime.run_panel.edit_actions")
             captured = []
+            module.memorize_tests = lambda *args, **kwargs: captured.append(("memorized", None))
             view = _FakeView(
                 text="alpha\nbeta",
                 regions={
@@ -112,9 +150,12 @@ class RunPanelEditActionsTests(unittest.TestCase):
                 view=view,
                 REGION_BEGIN_KEY="begin_%d",
                 state=types.SimpleNamespace(
-                    tester=types.SimpleNamespace(set_tests=lambda tests: captured.append(("tests", tests)))
+                    source_file="main.cpp",
+                    tester=types.SimpleNamespace(
+                        set_tests=lambda tests: captured.append(("tests", tests)),
+                        get_tests=lambda: ["alpha\n", "beta\n"],
+                    ),
                 ),
-                memorize_tests=lambda: captured.append(("memorized", None)),
             )
 
             module.apply_edit_changes(command)

@@ -15,7 +15,8 @@ from arena_forge.core.domain import (
     TestCase,
 )
 
-USER_AGENT = "ArenaForge/3.0 (+https://example.invalid)"
+from .base import USER_AGENT
+
 LUOGU_BASE_URL = "https://www.luogu.com.cn"
 
 

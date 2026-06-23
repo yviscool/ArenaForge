@@ -4,6 +4,7 @@ from sublime import Region
 
 from ..shared.messages import status_message
 from .logic import resolve_visible_body_text
+from .session_actions import memorize_tests
 
 
 def toggle_test_fold(command, test_id):
@@ -12,7 +13,7 @@ def toggle_test_fold(command, test_id):
     text = resolve_visible_body_text(tester.tests[test_id], tester.prog_out[test_id])
     output_start_offset = getattr(tester.tests[test_id], "output_start_offset", None)
     if output_start_offset is None:
-        input_text = tester.tests[test_id].test_string
+        input_text = tester.tests[test_id].input_text
         separator = "" if not input_text or input_text.endswith("\n") else "\n"
         output_start_offset = len(input_text + separator)
     tie_pos = command.get_tie_pos(test_id)
@@ -54,7 +55,7 @@ def delete_selected_tests(command, edit):
         status_message("status.stop_process_before_delete")
         return
 
-    k = tester.test_iter + 1 if tester.proc_run else tester.test_iter
+    k = tester.test_iter
     to_delete = []
     for i in range(k):
         begin = command.get_tie_pos(i)
@@ -67,7 +68,7 @@ def delete_selected_tests(command, edit):
     status_message("status.tests_deleted", tests=", ".join(str(x + 1) for x in to_delete))
     for test in reversed(to_delete):
         command.delete_test(edit, test)
-    command.memorize_tests()
+    memorize_tests(command)
 
 
 def swap_selected_tests(command, edit, direction=-1):

@@ -62,5 +62,4 @@ def schedule_test_manager_command(
     *,
     delay: int = 0,
 ) -> None:
-    payload = dict(command_args)
-    sublime.set_timeout_async(lambda payload=payload: view.run_command("test_manager", payload), delay)
+    schedule_test_manager_action(view, delay=delay, **command_args)

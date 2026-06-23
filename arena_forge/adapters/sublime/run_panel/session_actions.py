@@ -8,7 +8,7 @@ from sublime import Region
 from arena_forge.core.domain import OutputEvaluation, Verdict
 
 from ..root_bridge import get_debugger_info_module
-from ..shared.messages import product_log_message, translate
+from ..shared.messages import product_log_message, translate, translate_status_code
 from ..shared.settings_bridge import get_session_repository, get_settings, get_tests_file_path
 from .launch_flow import RunPanelLaunchRequest, plan_run_panel_launch
 from .logic import (
@@ -19,8 +19,8 @@ from .process_actions import (
     terminate_command_tester_with_logging,
 )
 from .regions import clear_panel_view
-from .session_service import create_run_backend, prepare_tests_for_run, select_run_backend
-from .state import append_run_history
+from .session_service import create_run_backend, prepare_tests_for_run, save_tests_for_run, select_run_backend
+from .persistence import append_run_history
 
 
 def resolve_stop_evaluation(tester, test_id, rtcode, *, compile_failed=False):
@@ -31,12 +31,57 @@ def resolve_stop_evaluation(tester, test_id, rtcode, *, compile_failed=False):
     return None
 
 
+def _change_process_status(command, status: str) -> None:
+    callback = getattr(command, "change_process_status", None)
+    if callback is not None:
+        callback(status)
+        return
+    command.view.set_status("process_status_code", status)
+    command.view.set_status("process_status", translate_status_code(status))
+
+
+def _set_compile_bar(command, cmd: str, type: str = "") -> None:
+    callback = getattr(command, "set_compile_bar", None)
+    if callback is not None:
+        callback(cmd, type=type)
+        return
+    from .rendering import build_compile_bar_phantom
+
+    command.state.test_phantoms[0].update([build_compile_bar_phantom(command.view, cmd, type=type)])
+
+
+def memorize_tests(command) -> None:
+    callback = getattr(command, "memorize_tests", None)
+    if callback is not None:
+        callback()
+        return
+    from ..shared.settings_bridge import get_session_repository, get_tests_file_path, infer_language_name
+
+    save_tests_for_run(
+        command.state.source_file,
+        command.state.tester.get_tests(),
+        get_session_repository(),
+        infer_language_name,
+        get_tests_file_path,
+    )
+
+
+def _prepare_code_view(command) -> None:
+    callback = getattr(command, "prepare_code_view", None)
+    if callback is not None:
+        callback()
+        return
+    from .debug_actions import prepare_code_view
+
+    prepare_code_view(command)
+
+
 def handle_process_stop(command, rtcode, runtime, crash_line=None, compile_failed=False) -> None:
     view = command.view
     tester = command.state.tester
 
     test_id = tester.running_test
-    input_text = tester.tests[test_id].test_string
+    input_text = tester.tests[test_id].input_text
     evaluation = resolve_stop_evaluation(tester, test_id, rtcode, compile_failed=compile_failed)
     stop_plan = build_run_panel_stop_plan(
         return_code=rtcode,
@@ -88,7 +133,7 @@ def handle_process_stop(command, rtcode, runtime, crash_line=None, compile_faile
     )
     view.run_command("test_manager", {"action": "set_cursor_to_end"})
 
-    command.memorize_tests()
+    memorize_tests(command)
     append_run_history(
         get_session_repository(),
         command.state.source_file,
@@ -112,9 +157,9 @@ def handle_process_stop(command, rtcode, runtime, crash_line=None, compile_faile
 
 
 def handle_compile_failure(command, rtcode) -> None:
-    command.change_process_status("STOPPED")
+    _change_process_status(command, "STOPPED")
     handle_process_stop(command, rtcode, 0, compile_failed=True)
-    command.set_compile_bar(translate("error.compilation_error"), type="error")
+    _set_compile_bar(command, translate("error.compilation_error"), type="error")
 
 
 def clear_all(command) -> None:
@@ -157,7 +202,7 @@ def _build_run_backend_state(command, launch_session):
 def _schedule_compile_start(command, view, process_manager, tests, sync_out) -> None:
     def compile_step(command=command, view=view):
         compile_result = process_manager.compile()
-        command.change_process_status("COMPILED")
+        _change_process_status(command, "COMPILED")
         command.state.advance_panel_input(0)
         if compile_result is None or compile_result[0] == 0:
             command.state.tester = command.Tester(
@@ -165,7 +210,7 @@ def _schedule_compile_start(command, view, process_manager, tests, sync_out) -> 
                 command.on_insert,
                 command.on_out,
                 command.on_stop,
-                command.change_process_status,
+                lambda status: _change_process_status(command, status),
                 tests=tests,
                 sync_out=sync_out,
                 test_factory=command.Test,
@@ -175,9 +220,9 @@ def _schedule_compile_start(command, view, process_manager, tests, sync_out) -> 
             view.run_command("test_manager", {"action": "new_test"})
         else:
             view.run_command("test_manager", {"action": "insert_opd_out", "text": "\n" + compile_result[1]})
-            command.set_compile_bar(translate("error.compilation_error"), type="error")
+            _set_compile_bar(command, translate("error.compilation_error"), type="error")
 
-    command.set_compile_bar(translate("status.compiling"))
+    _set_compile_bar(command, translate("status.compiling"))
     sublime.set_timeout_async(compile_step, 10)
 
 
@@ -233,7 +278,7 @@ def make_opd(
                 "scroll_to_end": False,
             },
         )
-        command.set_compile_bar(translate("error.session_restore_failed"), type="error")
+        _set_compile_bar(command, translate("error.session_restore_failed"), type="error")
         return
 
     launch_session = launch_plan.session
@@ -244,11 +289,11 @@ def make_opd(
     if not request.load_session:
         product_log_message("status.session_saved")
 
-    command.prepare_code_view()
+    _prepare_code_view(command)
 
     if not view.settings().get("word_wrap"):
         view.run_command("toggle_setting", {"setting": "word_wrap"})
 
-    command.change_process_status("COMPILING")
+    _change_process_status(command, "COMPILING")
     tests, process_manager, sync_out = _build_run_backend_state(command, launch_session)
     _schedule_compile_start(command, view, process_manager, tests, sync_out)

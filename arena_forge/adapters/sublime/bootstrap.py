@@ -19,7 +19,7 @@ from arena_forge.adapters.settings_loader import normalize_settings
 from arena_forge.adapters.storage import JsonSessionRepository, WorkspaceLayout
 from arena_forge.adapters.workspace import ContestWorkspaceScaffolder
 from arena_forge.core.domain import LanguageProfile
-from arena_forge.core.usecases import RunSessionService, SessionService
+from arena_forge.core.usecases import SessionService
 from arena_forge.product import PRODUCT_SLUG
 
 
@@ -35,7 +35,6 @@ class SublimeApplication:
     submission_service: ProviderSubmissionService
     translator: JsonCatalogTranslator
     session_service: SessionService
-    run_session_service: RunSessionService
     workspace_scaffolder: ContestWorkspaceScaffolder
 
 
@@ -88,7 +87,6 @@ def build_sublime_application(
     )
     translator = JsonCatalogTranslator(str(locale_directory), default_locale=settings.get("preferred_locale", "en"))
     session_service = SessionService(repository=repository, runner=runner)
-    run_session_service = RunSessionService(runner=runner)
     workspace_scaffolder = ContestWorkspaceScaffolder(layout, repository, profiles)
     return SublimeApplication(
         settings=settings,
@@ -101,6 +99,5 @@ def build_sublime_application(
         submission_service=submission_service,
         translator=translator,
         session_service=session_service,
-        run_session_service=run_session_service,
         workspace_scaffolder=workspace_scaffolder,
     )

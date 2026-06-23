@@ -6,6 +6,7 @@ from .process_actions import (
     schedule_test_manager_action,
     terminate_command_tester_with_logging,
 )
+from .session_actions import memorize_tests
 
 
 def get_begin_region(command, test_id):
@@ -50,7 +51,7 @@ def apply_edit_changes(command) -> None:
         tests.append(view.substr(Region(start, end)).strip() + "\n")
         index += 1
     command.state.tester.set_tests(tests)
-    command.memorize_tests()
+    memorize_tests(command)
 
 
 def toggle_new_test(command) -> None:
