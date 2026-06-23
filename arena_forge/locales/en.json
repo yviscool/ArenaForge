@@ -24,6 +24,7 @@
   "formatting.install_guide_recommended_install": "Recommended install command:",
   "formatting.install_guide_recommended_project_install": "Recommended project-local install command:",
   "formatting.install_guide_recommended_command_override": "Recommended command override:",
+  "formatting.install_guide_project_auto_detect_path": "Project-local auto-detect path:",
   "formatting.install_guide_official_docs_pnpm": "Official docs show pnpm examples;",
   "formatting.install_guide_official_docs_equivalent": "the command above is the equivalent inference.",
   "formatting.install_guide_docs": "Docs: {url}",

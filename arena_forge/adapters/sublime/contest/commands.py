@@ -34,6 +34,11 @@ class ContestHandlerCommand(sublime_plugin.TextCommand):
             return False
         return parameter.kind in (Parameter.KEYWORD_ONLY, Parameter.POSITIONAL_OR_KEYWORD)
 
+    @staticmethod
+    def _problem_id_from_source_file(source_file: str) -> str:
+        file_name = source_file.rsplit("/", 1)[-1].rsplit("\\", 1)[-1]
+        return path.splitext(file_name)[0]
+
     def _open_contest_workspace(self, base):
         sublime.run_command("new_window")
         sublime.active_window().set_project_data({"folders": [{"path": str(base)}]})
@@ -150,9 +155,9 @@ class ContestHandlerCommand(sublime_plugin.TextCommand):
 
         provider_name = str(settings["provider"])
         code = self.view.substr(Region(0, self.view.size()))
-        last = path.basename(self.view.file_name())
-        problem_id = path.splitext(last)[0]
-        language_name = app.session_service.ensure_session(self.view.file_name(), app.profiles).language
+        source_file = self.view.file_name()
+        problem_id = self._problem_id_from_source_file(source_file)
+        language_name = app.session_service.ensure_session(source_file, app.profiles).language
         request = SubmissionRequest(
             provider_name=provider_name,
             contest_id=str(settings["contestID"]),

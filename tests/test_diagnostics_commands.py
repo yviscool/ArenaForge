@@ -95,7 +95,7 @@ def _patched_sublime():
 
 
 class DiagnosticsCommandsTests(unittest.TestCase):
-    def test_run_sense_reuses_a_stable_scratch_label_for_the_same_view(self) -> None:
+    def test_run_sense_uses_unique_scratch_labels_per_generation(self) -> None:
         with _patched_sublime():
             module = importlib.import_module("arena_forge.adapters.sublime.diagnostics.commands")
             module._VIEW_STATES.clear()
@@ -107,20 +107,66 @@ class DiagnosticsCommandsTests(unittest.TestCase):
             command.get_compile_cmd = lambda: "g++ {source_file}"
             command._diagnostics_service = lambda: types.SimpleNamespace(
                 run=lambda **kwargs: labels.append(kwargs["scratch_label"])
-                or types.SimpleNamespace(issues=(), output="", command=())
+                or types.SimpleNamespace(issues=(), output="", command=(), runtime_ms=0, timed_out=False)
             )
 
             command.run_sense(force=True)
             view.set_change_count(2)
             command.run_sense(force=True)
 
-            self.assertEqual(labels, ["view-7", "view-7"])
+            self.assertEqual(labels, ["view-7-1", "view-7-2"])
+
+    def test_run_sense_clears_existing_marks_before_failed_refresh(self) -> None:
+        with _patched_sublime():
+            module = importlib.import_module("arena_forge.adapters.sublime.diagnostics.commands")
+            module._VIEW_STATES.clear()
+            view = _FakeDiagnosticsView(9)
+            view.set_change_count(3)
+            command = module.IntelliSenseCommand.__new__(module.IntelliSenseCommand)
+            command.view = view
+            command.get_compile_cmd = lambda: "g++ {source_file}"
+            command._diagnostics_service = lambda: types.SimpleNamespace(
+                run=lambda **kwargs: (_ for _ in ()).throw(OSError("boom"))
+            )
+
+            command.run_sense()
+
+            self.assertEqual(view.erased_regions[:2], ["error_marks", "warning_marks"])
+            self.assertEqual(view.statuses[0], ("erase", "compile_error"))
+
+    def test_collect_diagnostics_skips_stale_generations_before_running_subprocess(self) -> None:
+        with _patched_sublime():
+            module = importlib.import_module("arena_forge.adapters.sublime.diagnostics.commands")
+            module._VIEW_STATES.clear()
+            calls = []
+            view = _FakeDiagnosticsView(13)
+            module._VIEW_STATES[13] = module._DiagnosticsState(enabled=True, generation=5)
+            command = module.IntelliSenseCommand.__new__(module.IntelliSenseCommand)
+            command._diagnostics_service = lambda: types.SimpleNamespace(
+                run=lambda **kwargs: calls.append(kwargs)
+                or types.SimpleNamespace(issues=(), output="", command=(), runtime_ms=0, timed_out=False)
+            )
+
+            command._collect_diagnostics(
+                view=view,
+                compile_cmd="g++ {source_file}",
+                source="int main() {}\n",
+                source_file=r"C:\repo\main.cpp",
+                file_dir_path="C:\\repo",
+                change_count=1,
+                generation=4,
+                timeout_ms=3000,
+            )
+
+            self.assertEqual(calls, [])
 
     def test_collect_diagnostics_logs_expected_run_failures(self) -> None:
         with _patched_sublime():
             module = importlib.import_module("arena_forge.adapters.sublime.diagnostics.commands")
+            module._VIEW_STATES.clear()
             logs = []
             module.product_log_message = lambda key, **kwargs: logs.append((key, kwargs))
+            module._VIEW_STATES[7] = module._DiagnosticsState(enabled=True, generation=2)
             command = module.IntelliSenseCommand.__new__(module.IntelliSenseCommand)
             command._diagnostics_service = lambda: types.SimpleNamespace(
                 run=lambda **kwargs: (_ for _ in ()).throw(OSError("boom"))
@@ -130,9 +176,11 @@ class DiagnosticsCommandsTests(unittest.TestCase):
                 view=_FakeDiagnosticsView(7),
                 compile_cmd="g++ {source_file}",
                 source="int main() {}\n",
+                source_file=r"C:\repo\main.cpp",
                 file_dir_path="C:\\repo",
                 change_count=1,
                 generation=2,
+                timeout_ms=3000,
             )
 
             self.assertEqual(logs, [("error.parse_errors_failed", {})])

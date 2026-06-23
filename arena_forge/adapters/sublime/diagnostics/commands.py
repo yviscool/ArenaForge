@@ -38,16 +38,32 @@ def _clear_marks(view) -> None:
     view.erase_status("compile_error")
 
 
+def _is_generation_current(view, generation: int) -> bool:
+    state = _VIEW_STATES.get(view.id())
+    return state is not None and state.enabled and state.generation == generation
+
+
 def _log_parse_errors_failed() -> None:
     product_log_message("error.parse_errors_failed")
 
 
 class IntelliSenseCommand(sublime_plugin.TextCommand):
     def get_compile_cmd(self):
+        file_name = self.view.file_name()
+        if not file_name:
+            return None
+        extension = Path(file_name).suffix.lstrip(".")
         for option in get_settings().get("run_settings", []):
-            if option["name"] == "C++":
+            if extension in option.get("extensions", ()) and option.get("lint_compile_cmd"):
+                return option.get("lint_compile_cmd", None)
+        for option in get_settings().get("run_settings", []):
+            if option.get("id") == "cpp" or option["name"] == "C++":
                 return option.get("lint_compile_cmd", None)
         return None
+
+    @staticmethod
+    def _lint_timeout_ms() -> int:
+        return max(0, int(get_settings().get("lint_timeout_ms") or 0))
 
     def stop_sense(self):
         state = _state_for(self.view)
@@ -74,17 +90,24 @@ class IntelliSenseCommand(sublime_plugin.TextCommand):
 
     def run_sense(self, *, force: bool = False):
         view = self.view
+        state = _state_for(view)
         compile_cmd = self.get_compile_cmd()
         if compile_cmd is None or not get_settings().get("lint_enabled"):
+            state.last_change_count = None
+            _clear_marks(view)
             return 0
 
-        state = _state_for(view)
         if not state.enabled:
             return 0
 
         change_count = view.change_count()
         if not force and state.last_change_count == change_count:
             return 0
+
+        if state.last_change_count != change_count:
+            _clear_marks(view)
+
+        timeout_ms = self._lint_timeout_ms()
 
         state.generation += 1
         generation = state.generation
@@ -95,9 +118,9 @@ class IntelliSenseCommand(sublime_plugin.TextCommand):
             compile_cmd=compile_cmd,
             change_count=change_count,
             generation=generation,
+            timeout_ms=timeout_ms,
         ):
-            current = _VIEW_STATES.get(view.id())
-            if current is None or not current.enabled or current.generation != generation:
+            if not _is_generation_current(view, generation):
                 return
             file_name = view.file_name()
             if not file_name:
@@ -108,11 +131,13 @@ class IntelliSenseCommand(sublime_plugin.TextCommand):
             sublime.set_timeout_async(
                 lambda: self._collect_diagnostics(
                     view=view,
-                compile_cmd=compile_cmd,
-                source=source,
-                file_dir_path=file_dir_path,
-                change_count=change_count,
-                generation=generation,
+                    compile_cmd=compile_cmd,
+                    source=source,
+                    source_file=file_name,
+                    file_dir_path=file_dir_path,
+                    change_count=change_count,
+                    generation=generation,
+                    timeout_ms=timeout_ms,
                 ),
                 0,
             )
@@ -126,16 +151,22 @@ class IntelliSenseCommand(sublime_plugin.TextCommand):
         view,
         compile_cmd: str,
         source: str,
+        source_file: str,
         file_dir_path: str,
         change_count: int,
         generation: int,
+        timeout_ms: int,
     ) -> None:
+        if not _is_generation_current(view, generation):
+            return
         try:
             report = self._diagnostics_service().run(
                 compile_cmd=compile_cmd,
                 source_text=source,
+                source_file=source_file,
                 source_file_dir=file_dir_path,
-                scratch_label=f"view-{view.id()}",
+                scratch_label=f"view-{view.id()}-{generation}",
+                timeout_ms=timeout_ms,
             )
         except _DIAGNOSTIC_RUN_FAILURES:
             sublime.set_timeout(_log_parse_errors_failed, 0)
@@ -170,9 +201,9 @@ class IntelliSenseCommand(sublime_plugin.TextCommand):
         )
 
     def _apply_diagnostics(self, *, view, report, change_count: int, generation: int) -> None:
-        state = _VIEW_STATES.get(view.id())
-        if state is None or not state.enabled or state.generation != generation:
+        if not _is_generation_current(view, generation):
             return
+        state = _VIEW_STATES[view.id()]
 
         errors = getattr(report, "issues", None)
         if errors is None:
@@ -214,7 +245,7 @@ class IntelliSenseCommand(sublime_plugin.TextCommand):
         warn_regions = []
         error_regions = []
         for issue in errors:
-            pt = view.text_point(issue.line - 1, issue.column)
+            pt = view.text_point(max(issue.line - 1, 0), max(issue.column - 1, 0))
             if issue.severity is DiagnosticSeverity.WARNING:
                 warn_regions.append(view.word(pt))
             elif issue.severity is DiagnosticSeverity.ERROR:

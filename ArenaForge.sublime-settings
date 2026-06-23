@@ -9,6 +9,7 @@
 	"credential_backend": "keyring",
 
 	"lint_enabled": true,
+	"lint_timeout_ms": 3000,
 	"lint_error_region_scope": "invalid.illegal",
 	"lint_warning_region_scope": "constant",
 

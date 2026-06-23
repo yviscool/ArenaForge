@@ -27,6 +27,11 @@ class SettingsLoaderTests(unittest.TestCase):
         self.assertEqual(normalized["default_contest_language"], "cpp")
         self.assertIn("formatting", normalized)
         self.assertEqual(normalized["formatting"]["timeout_ms"], 10000)
+        self.assertEqual(normalized["lint_timeout_ms"], 3000)
+
+    def test_negative_lint_timeout_clamps_to_zero(self) -> None:
+        normalized = normalize_settings({"lint_timeout_ms": -1}, "linux")
+        self.assertEqual(normalized["lint_timeout_ms"], 0)
 
     def test_formatting_maps_normalize_to_lists(self) -> None:
         normalized = normalize_settings(

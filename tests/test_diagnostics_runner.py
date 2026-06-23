@@ -25,6 +25,17 @@ class DiagnosticsRunnerTests(unittest.TestCase):
         self.assertEqual(issues[1].severity, DiagnosticSeverity.ERROR)
         self.assertEqual(issues[1].line, 8)
 
+    def test_parse_compiler_issues_strips_ansi_escape_codes(self) -> None:
+        source = r"C:\repo\cmp_sense\amin.cpp"
+        output = (
+            "\x1b[01m"
+            r"C:\repo\cmp_sense\amin.cpp:8:4:"
+            "\x1b[0m \x1b[31merror:\x1b[0m expected ';' after expression"
+        )
+        issues = parse_compiler_issues(output, source)
+        self.assertEqual(len(issues), 1)
+        self.assertEqual(issues[0].severity, DiagnosticSeverity.ERROR)
+
     def test_scratch_workspace_writes_source_under_cmp_sense(self) -> None:
         with local_test_workspace("diagnostics-scratch") as root:
             workspace = DiagnosticsScratchWorkspace(root)
@@ -54,12 +65,56 @@ class DiagnosticsRunnerTests(unittest.TestCase):
             report = service.run(
                 compile_cmd=compile_cmd,
                 source_text="int main() {}\n",
+                source_file=str(root / "main.cpp"),
                 source_file_dir=str(root),
             )
             self.assertEqual(len(report.command), 3)
             self.assertEqual(len(report.issues), 2)
             self.assertEqual(report.issues[0].severity, DiagnosticSeverity.WARNING)
             self.assertEqual(report.issues[1].message, "sample error")
+            self.assertFalse(report.timed_out)
+            self.assertGreaterEqual(report.runtime_ms, 0)
+
+    def test_service_supports_standard_command_placeholders(self) -> None:
+        with local_test_workspace("diagnostics-placeholders") as root:
+            service = CompilerDiagnosticsService(
+                platform_name="windows",
+                scratch_workspace=DiagnosticsScratchWorkspace(root),
+            )
+            report = service.run(
+                compile_cmd=(
+                    'python -c "print(\'{file_name}\');'
+                    "print('{file}');"
+                    "print(r'{source_file_dir}')\""
+                ),
+                source_text="int main() {}\n",
+                source_file=str(root / "main.cpp"),
+                source_file_dir=str(root),
+            )
+            self.assertEqual(
+                report.output.splitlines(),
+                ["main", "main.cpp", str(root)],
+            )
+
+    def test_service_times_out_and_cleans_up_unique_scratch_file(self) -> None:
+        with local_test_workspace("diagnostics-timeout") as root:
+            workspace = DiagnosticsScratchWorkspace(root)
+            service = CompilerDiagnosticsService(
+                platform_name="windows",
+                scratch_workspace=workspace,
+            )
+            scratch_path = workspace.scratch_path(label="view-3-9")
+            report = service.run(
+                compile_cmd='python -c "import time; time.sleep(0.2)"',
+                source_text="int main() {}\n",
+                source_file=str(root / "main.cpp"),
+                source_file_dir=str(root),
+                scratch_label="view-3-9",
+                timeout_ms=10,
+            )
+            self.assertTrue(report.timed_out)
+            self.assertEqual(report.issues, ())
+            self.assertFalse(scratch_path.exists())
 
 
 if __name__ == "__main__":

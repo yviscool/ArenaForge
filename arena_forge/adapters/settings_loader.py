@@ -82,6 +82,7 @@ def normalize_settings(raw_settings: Optional[Mapping[str, Any]], platform_name:
     if default_contest_language not in known_language_ids:
         default_contest_language = defaults["default_contest_language"]
     merged["default_contest_language"] = default_contest_language
+    merged["lint_timeout_ms"] = max(0, int(merged.get("lint_timeout_ms") or defaults["lint_timeout_ms"]))
 
     formatting = deepcopy(defaults["formatting"])
     _deep_merge(formatting, merged.get("formatting", {}))

@@ -17,6 +17,7 @@ DEFAULT_TESTS_FILE_SUFFIX = ".tests.json"
 DEFAULT_ALGORITHM_PROPERTIES_SUFFIX = ".cpp.properties.json"
 DEFAULT_CONTESTS_ROOT = "~/Contests/ArenaForge"
 SUPPORTED_LOCALES = ("en", "zh-Hans", "ja", "ko", "ru")
+DEFAULT_LINT_TIMEOUT_MS = 3000
 
 
 def _binary_output(platform_name: str) -> tuple[str, str]:
@@ -79,7 +80,10 @@ def _default_run_settings(platform_name: str) -> list[dict[str, Any]]:
             syntax_selectors=["source.c++"],
             compile_cmd=f"g++ \"{{source_file}}\" -std=gnu++17 -O2 -pipe -o {native_binary}",
             run_cmd=native_run,
-            lint_compile_cmd="g++ -std=gnu++17 \"{source_file}\" -I \"{source_file_dir}\"",
+            lint_compile_cmd=(
+                "g++ -std=gnu++17 -fsyntax-only -fdiagnostics-color=never "
+                "\"{source_file}\" -I \"{source_file_dir}\""
+            ),
             formatter="clang-format",
             template_path="templates/contest/main.cpp",
             submission_key="cpp",
@@ -172,6 +176,7 @@ def build_default_settings(platform_name: str) -> dict[str, Any]:
         "close_sidebar": True,
         "stress_time_limit_seconds": 2,
         "lint_enabled": True,
+        "lint_timeout_ms": DEFAULT_LINT_TIMEOUT_MS,
         "lint_error_region_scope": "invalid.illegal",
         "lint_warning_region_scope": "constant",
         "cpp_complete_enabled": True,

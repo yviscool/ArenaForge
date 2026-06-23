@@ -34,7 +34,7 @@ def _settings_to_dict(settings_obj):
                 "ui_variant", "ui_density", "workspace_dirname",
                 "tests_relative_dir", "session_relative_dir", "tests_file_suffix",
                 "algorithm_properties_suffix", "contests_root", "close_sidebar",
-                "stress_time_limit_seconds", "lint_enabled", "lint_error_region_scope",
+                "stress_time_limit_seconds", "lint_enabled", "lint_timeout_ms", "lint_error_region_scope",
                 "lint_warning_region_scope", "cpp_complete_enabled", "algorithms_base",
                 "default_contest_language", "formatting",
                 "run_settings", "submission_language_ids", "cpp_complete_settings"):
