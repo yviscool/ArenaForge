@@ -3,44 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
-from arena_forge.adapters.i18n.catalog import translate_catalog as translate
-
 from .controller_state import RunPanelLaunchSession
-
-
-@dataclass(frozen=True)
-class RunPanelLaunchRequest:
-    run_file: Optional[str] = None
-    build_sys: Optional[str] = None
-    clr_tests: bool = False
-    sync_out: bool = False
-    code_view_id: Optional[int] = None
-    use_debugger: bool = False
-    load_session: bool = False
-
-    def to_command_args(self) -> Dict[str, Any]:
-        return {
-            "action": "make_opd",
-            "run_file": self.run_file,
-            "build_sys": self.build_sys,
-            "clr_tests": self.clr_tests,
-            "sync_out": self.sync_out,
-            "code_view_id": self.code_view_id,
-            "use_debugger": self.use_debugger,
-            "load_session": self.load_session,
-        }
-
-    def to_launch_session(self) -> RunPanelLaunchSession:
-        if self.run_file is None:
-            raise ValueError(translate("error.run_file_required"))
-        return RunPanelLaunchSession(
-            run_file=self.run_file,
-            build_sys=self.build_sys,
-            clr_tests=self.clr_tests,
-            sync_out=self.sync_out,
-            code_view_id=self.code_view_id,
-            use_debugger=self.use_debugger,
-        )
 
 
 @dataclass(frozen=True)
@@ -54,7 +17,7 @@ class RunPanelLaunchPlan:
 def plan_run_panel_launch(
     *,
     status_code: Optional[str],
-    request: RunPanelLaunchRequest,
+    request,
     saved_session: Optional[RunPanelLaunchSession],
 ) -> RunPanelLaunchPlan:
     normalized_status = status_code or ""

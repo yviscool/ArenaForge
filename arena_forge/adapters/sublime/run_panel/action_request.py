@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
+from arena_forge.adapters.i18n.catalog import translate_catalog as translate
+
 
 @dataclass(frozen=True)
 class RunPanelActionRequest:
@@ -33,3 +35,20 @@ class RunPanelActionRequest:
             "use_debugger": self.use_debugger,
             "load_session": self.load_session,
         }
+
+    def to_command_args(self) -> Dict[str, Any]:
+        return {"action": "make_opd", **self.to_make_opd_kwargs()}
+
+    def to_launch_session(self) -> Any:
+        from .controller_state import RunPanelLaunchSession
+
+        if self.run_file is None:
+            raise ValueError(translate("error.run_file_required"))
+        return RunPanelLaunchSession(
+            run_file=self.run_file,
+            build_sys=self.build_sys,
+            clr_tests=self.clr_tests,
+            sync_out=self.sync_out,
+            code_view_id=self.code_view_id,
+            use_debugger=self.use_debugger,
+        )

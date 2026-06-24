@@ -7,9 +7,9 @@ import sublime
 
 from arena_forge.adapters.sublime.bootstrap import SublimeApplication, build_sublime_application
 from arena_forge.core.services import infer_language
-from arena_forge.product import SETTINGS_FILE
+from arena_forge.product import SETTINGS_FILE, SETTINGS_KEYS
 
-from .messages import product_status_message, translate
+from .messages import product_status_message
 from .package_resources import get_plugin_package_name, get_plugin_root_dir, remap_package_syntax_resource
 
 root_dir = str(get_plugin_root_dir())
@@ -51,14 +51,7 @@ def _settings_to_dict(settings_obj):
     data = {}
     if settings_obj is None:
         return data
-    for key in ("product_name", "preferred_locale", "supported_locales", "credential_backend",
-                "ui_variant", "ui_density", "workspace_dirname",
-                "tests_relative_dir", "session_relative_dir", "tests_file_suffix",
-                "algorithm_properties_suffix", "contests_root", "close_sidebar",
-                "stress_time_limit_seconds", "lint_enabled", "lint_timeout_ms", "lint_error_region_scope",
-                "lint_warning_region_scope", "cpp_complete_enabled", "algorithms_base",
-                "default_contest_language", "formatting",
-                "run_settings", "submission_language_ids", "cpp_complete_settings"):
+    for key in SETTINGS_KEYS:
         value = settings_obj.get(key)
         if value is not None:
             data[key] = value
@@ -82,17 +75,17 @@ def get_application() -> SublimeApplication:
 
 
 def is_run_supported_ext(ext):
-    for option in get_settings().get("run_settings", []):
-        if ext in option["extensions"]:
+    for profile in get_application().profiles:
+        if ext in profile.extensions:
             return True
     return False
 
 
 def get_supported_exts(lang):
-    for option in get_settings().get("run_settings", []):
-        if lang in {option.get("name"), option.get("id")}:
-            return option["extensions"]
-    return []
+    for profile in get_application().profiles:
+        if lang in {profile.name, profile.id, profile.identifier}:
+            return profile.extensions
+    return ()
 
 
 def is_lang_view(view, lang):

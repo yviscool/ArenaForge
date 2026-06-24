@@ -7,7 +7,12 @@ from os import path
 
 from arena_forge.adapters.i18n.catalog import translate_catalog as translate
 
-from .subprocess_runner import build_command_argv, build_process_spawn_options, build_process_text_options
+from .subprocess_runner import (
+    build_command_argv,
+    build_process_spawn_options,
+    build_process_text_options,
+    render_command,
+)
 
 _COMPILE_CACHE = {}
 
@@ -44,40 +49,35 @@ class ProcessManager:
         self.write = self.insert
         self.run = self.run_file
         self.run_settings = run_settings
-        self.file_name = path.splitext(path.split(file)[1])[0]
 
     def format_command(self, cmd, args=""):
-        file = path.split(self.file)[1]
-        return cmd.format(
-            file=file,
-            source_file=self.file,
-            source_file_dir=path.dirname(self.file),
-            file_name=self.file_name,
-            args=args,
-        )
+        return render_command(cmd, self.file, args=args)
 
     def has_var_view_api(self):
         return False
 
-    def get_compile_cmd(self):
-        opt = self.run_settings
+    def _find_profile_setting(self, key):
         file_ext = path.splitext(self.file)[1][1:]
-        for x in opt:
+        for x in self.run_settings:
             if file_ext in x["extensions"]:
-                if x["compile_cmd"] is None:
-                    return None
-                return self.format_command(x["compile_cmd"])
+                return x.get(key)
         return -1
 
+    def get_compile_cmd(self):
+        value = self._find_profile_setting("compile_cmd")
+        if value is None:
+            return None
+        if value == -1:
+            return -1
+        return self.format_command(value)
+
     def get_run_cmd(self, args):
-        opt = self.run_settings
-        file_ext = path.splitext(self.file)[1][1:]
-        for x in opt:
-            if file_ext in x["extensions"]:
-                if x["run_cmd"] is None:
-                    return None
-                return self.format_command(x["run_cmd"], args=args)
-        return -1
+        value = self._find_profile_setting("run_cmd")
+        if value is None:
+            return None
+        if value == -1:
+            return -1
+        return self.format_command(value, args=args)
 
     def compile(self, wait_close=True):
         cmd = self.get_compile_cmd()

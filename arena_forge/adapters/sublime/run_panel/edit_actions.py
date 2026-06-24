@@ -6,6 +6,7 @@ from .process_actions import (
     schedule_test_manager_action,
     terminate_command_tester_with_logging,
 )
+from .regions import sync_read_only_mode
 from .session_actions import memorize_tests
 
 
@@ -35,7 +36,7 @@ def enable_edit_mode(command) -> None:
         view.erase_regions("line_%d" % index)
         view.erase_regions("test_error_%d" % index)
         view.run_command("test_manager", {"action": "erase", "region": (out_begin, out_end)})
-    command.sync_read_only()
+    sync_read_only_mode(command.view, command.state.tester, command.state.delta_input)
 
 
 def apply_edit_changes(command) -> None:

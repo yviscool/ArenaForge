@@ -256,24 +256,3 @@ def submit_and_confirm(
         confirmation_timeout_seconds=confirmation_timeout_seconds,
         poll_interval_seconds=poll_interval_seconds,
     )
-
-
-def perform_submission(contest_id: str, problem_id: str, code: str, user: dict[str, str]) -> None:
-    if requests is None:
-        raise ModuleNotFoundError(translate("error.requests_required_for_codeforces"))
-    session = requests.Session()
-    login(session, user)
-    submit_and_confirm(
-        session,
-        user["username"],
-        str(contest_id),
-        str(problem_id),
-        DEFAULT_LANGUAGE_ID,
-        code,
-    )
-
-
-def get_submission_callable():
-    if requests is None:
-        return None
-    return perform_submission

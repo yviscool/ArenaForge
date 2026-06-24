@@ -161,6 +161,7 @@ def _patched_session_action_dependencies():
         "arena_forge.adapters.sublime.run_panel.logic",
         "arena_forge.adapters.sublime.run_panel.process_actions",
         "arena_forge.adapters.sublime.run_panel.regions",
+        "arena_forge.adapters.sublime.run_panel.edit_actions",
         "arena_forge.adapters.sublime.run_panel.session_service",
         "arena_forge.adapters.sublime.run_panel.persistence",
         "arena_forge.adapters.sublime.shared.settings_bridge",
@@ -185,7 +186,7 @@ def _patched_session_action_dependencies():
         get_debugger_info_module=lambda: None
     )
     sys.modules["arena_forge.adapters.sublime.run_panel.launch_flow"] = types.SimpleNamespace(
-        RunPanelLaunchRequest=_FakeRequest,
+        RunPanelLaunchPlan=type("RunPanelLaunchPlan", (), {}),
         plan_run_panel_launch=lambda *args, **kwargs: None,
     )
     sys.modules["arena_forge.adapters.sublime.run_panel.logic"] = types.SimpleNamespace(
@@ -194,16 +195,21 @@ def _patched_session_action_dependencies():
     )
     sys.modules["arena_forge.adapters.sublime.run_panel.process_actions"] = types.SimpleNamespace(
         schedule_test_manager_command=lambda *args, **kwargs: None,
+        schedule_test_manager_action=lambda *args, **kwargs: None,
         terminate_command_tester_with_logging=lambda *args, **kwargs: None,
     )
     sys.modules["arena_forge.adapters.sublime.run_panel.regions"] = types.SimpleNamespace(
-        clear_panel_view=lambda *args, **kwargs: None
+        clear_panel_view=lambda *args, **kwargs: None,
+        sync_read_only_mode=lambda *args, **kwargs: None,
+    )
+    sys.modules["arena_forge.adapters.sublime.run_panel.edit_actions"] = types.SimpleNamespace(
+        apply_edit_changes=lambda *args, **kwargs: None,
+        get_begin_region=lambda *args, **kwargs: None,
     )
     sys.modules["arena_forge.adapters.sublime.run_panel.session_service"] = types.SimpleNamespace(
         create_run_backend=lambda *args, **kwargs: None,
         prepare_tests_for_run=lambda *args, **kwargs: [],
         save_tests_for_run=lambda *args, **kwargs: None,
-        select_run_backend=lambda *args, **kwargs: None,
     )
     sys.modules["arena_forge.adapters.sublime.run_panel.persistence"] = types.SimpleNamespace(
         append_run_history=lambda *args, **kwargs: None
@@ -561,7 +567,6 @@ class RunPanelSessionActionsTests(unittest.TestCase):
             command = types.SimpleNamespace(
                 view=view,
                 state=state,
-                apply_edit_changes=lambda: setattr(command, "applied", True),
             )
 
             module.make_opd(command, edit="EDIT", run_file="main.cpp", sync_out=True)
@@ -570,7 +575,6 @@ class RunPanelSessionActionsTests(unittest.TestCase):
             self.assertEqual(captured["command"], command)
             self.assertEqual(captured["request"].run_file, "main.cpp")
             self.assertTrue(captured["request"].sync_out)
-            self.assertFalse(hasattr(command, "applied"))
             self.assertEqual(view.commands, [])
             self.assertEqual(view.scratch_values, [])
 
@@ -580,6 +584,8 @@ class RunPanelSessionActionsTests(unittest.TestCase):
             view = _FakeView(statuses={"process_status_code": "STOPPED"}, settings={"edit_mode": True})
             state = _FakeState()
             calls = []
+            edit_actions_mock = sys.modules["arena_forge.adapters.sublime.run_panel.edit_actions"]
+            edit_actions_mock.apply_edit_changes = lambda command: calls.append(("apply", None))
             module.plan_run_panel_launch = lambda **kwargs: types.SimpleNamespace(
                 action="error",
                 error_key="error.custom_restore_failed",
@@ -589,7 +595,6 @@ class RunPanelSessionActionsTests(unittest.TestCase):
             command = types.SimpleNamespace(
                 view=view,
                 state=state,
-                apply_edit_changes=lambda: calls.append(("apply", None)),
                 set_compile_bar=lambda text, type="": calls.append(("bar", text, type)),
                 prepare_code_view=lambda: calls.append(("prepare", None)),
                 change_process_status=lambda status: calls.append(("status", status)),
@@ -629,6 +634,8 @@ class RunPanelSessionActionsTests(unittest.TestCase):
             )
             state = _FakeState(launch_session="saved-session")
             calls = []
+            edit_actions_mock = sys.modules["arena_forge.adapters.sublime.run_panel.edit_actions"]
+            edit_actions_mock.apply_edit_changes = lambda command: calls.append(("apply", None))
             module.plan_run_panel_launch = lambda **kwargs: types.SimpleNamespace(
                 action="launch",
                 session=launch_session,
@@ -644,7 +651,6 @@ class RunPanelSessionActionsTests(unittest.TestCase):
             command = types.SimpleNamespace(
                 view=view,
                 state=state,
-                apply_edit_changes=lambda: calls.append(("apply", None)),
                 set_compile_bar=lambda text, type="": calls.append(("bar", text, type)),
                 prepare_code_view=lambda: calls.append(("prepare", None)),
                 change_process_status=lambda status: calls.append(("status", status)),
@@ -692,7 +698,6 @@ class RunPanelSessionActionsTests(unittest.TestCase):
             command = types.SimpleNamespace(
                 view=view,
                 state=_FakeState(),
-                apply_edit_changes=lambda: None,
             )
 
             with self.assertRaisesRegex(RuntimeError, "error.no_launch_session"):

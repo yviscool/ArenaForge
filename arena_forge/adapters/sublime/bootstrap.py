@@ -40,26 +40,10 @@ class SublimeApplication:
 
 def build_provider_registry() -> ProviderRegistry:
     registry = ProviderRegistry()
-    registry.register(
-        CodeforcesProvider(),
-        hosts=("codeforces.com", "www.codeforces.com"),
-        contest_id_pattern=r"^/(?:contest|problemset/problem)/(\d+)(?:/|$)",
-    )
-    registry.register(
-        AtCoderProvider(),
-        hosts=("atcoder.jp", "www.atcoder.jp"),
-        contest_id_pattern=r"/contests/([^/?#]+)",
-    )
-    registry.register(
-        LuoguProvider(),
-        hosts=("luogu.com.cn", "www.luogu.com.cn"),
-        contest_id_pattern=r"/problem/([A-Za-z]\d+)",
-    )
-    registry.register(
-        AcWingProvider(),
-        hosts=("acwing.com", "www.acwing.com"),
-        contest_id_pattern=r"/problem/content/(?:description/)?(\d+)",
-    )
+    registry.register(CodeforcesProvider())
+    registry.register(AtCoderProvider())
+    registry.register(LuoguProvider())
+    registry.register(AcWingProvider())
     return registry
 
 
@@ -86,7 +70,7 @@ def build_sublime_application(
         submission_language_ids=settings.get("submission_language_ids", {}),
     )
     translator = JsonCatalogTranslator(str(locale_directory), default_locale=settings.get("preferred_locale", "en"))
-    session_service = SessionService(repository=repository, runner=runner)
+    session_service = SessionService(repository=repository)
     workspace_scaffolder = ContestWorkspaceScaffolder(layout, repository, profiles)
     return SublimeApplication(
         settings=settings,

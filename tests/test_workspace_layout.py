@@ -1,7 +1,6 @@
 import unittest
 
 from arena_forge.adapters.storage.workspace import WorkspaceLayout
-from tests.helpers import local_test_workspace
 
 
 class WorkspaceLayoutTests(unittest.TestCase):

@@ -55,3 +55,25 @@ class JvmJarFormatterAdapter(FormatterAdapter):
             f'  "formatting": {{ "commands": {{ "{self.id}": ["java", "-jar", '
             f'"{jar_path}"] }} }}'
         )
+
+
+class GoogleJavaFormatAdapter(JvmJarFormatterAdapter):
+    id = "google-java-format"
+    display_name = "google-java-format"
+    selectors = ("source.java",)
+    supports_range = False
+    binary_names = ("google-java-format", "google-java-format.exe")
+    project_jar_relpaths = ("tools/google-java-format.jar",)
+    docs_url = "https://github.com/google/google-java-format"
+    default_extension = ".java"
+
+
+class KtfmtAdapter(JvmJarFormatterAdapter):
+    id = "ktfmt"
+    display_name = "ktfmt"
+    selectors = ("source.kotlin",)
+    supports_range = False
+    binary_names = ("ktfmt", "ktfmt.exe")
+    project_jar_relpaths = ("tools/ktfmt.jar",)
+    docs_url = "https://github.com/facebook/ktfmt"
+    default_extension = ".kt"

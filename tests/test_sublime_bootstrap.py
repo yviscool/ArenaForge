@@ -1,7 +1,6 @@
 import unittest
 from pathlib import Path
 
-from arena_forge.adapters.providers import get_submission_callable
 from arena_forge.adapters.sublime import build_sublime_application
 
 
@@ -21,10 +20,6 @@ class SublimeBootstrapTests(unittest.TestCase):
         self.assertIsNotNone(app.submission_service)
         self.assertIsNotNone(app.credential_store)
         self.assertEqual(app.translator.translate("product.name"), "ArenaForge")
-
-    def test_submission_entry_point_resolves_without_root_contest_handlers(self) -> None:
-        submission_callable = get_submission_callable()
-        self.assertTrue(callable(submission_callable) or submission_callable is None)
 
 
 if __name__ == "__main__":

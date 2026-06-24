@@ -1,13 +1,6 @@
 import unittest
 
-from arena_forge.core.domain import (
-    CommandExecution,
-    OutputReferenceKind,
-    SessionSnapshot,
-    TestCase,
-    TestRunResult,
-    Verdict,
-)
+from arena_forge.core.domain import LanguageProfile, SessionSnapshot
 from arena_forge.core.usecases import SessionService
 
 
@@ -22,51 +15,23 @@ class _StubRepository:
         self._store[session.source_file] = session
 
 
-class _StubRunner:
-    def __init__(self, compile_result=None, run_results=None):
-        self.compile_result = compile_result
-        self.run_results = list(run_results or [])
-        self.compile_calls = []
-        self.run_calls = []
-
-    def compile(self, source_file: str, language: str):
-        self.compile_calls.append((source_file, language))
-        return self.compile_result
-
-    def run(self, source_file: str, language: str, input_text: str):
-        self.run_calls.append((source_file, language, input_text))
-        return self.run_results.pop(0)
-
-
 class UsecaseTests(unittest.TestCase):
-    def test_compile_failure_short_circuits_batch(self) -> None:
-        runner = _StubRunner(
-            compile_result=CommandExecution(argv=("g++",), return_code=1, stdout="boom", runtime_ms=10)
-        )
-        service = SessionService(repository=_StubRepository(), runner=runner)
-        session = SessionSnapshot(source_file="A.cpp", language="C++", tests=(TestCase(name="T1", input_text="1"),))
-        report = service.run_all_tests(session)
-        self.assertFalse(report.compile_succeeded)
-        self.assertEqual(report.test_results, ())
+    def test_ensure_session_creates_new_when_missing(self) -> None:
+        repo = _StubRepository()
+        profiles = (LanguageProfile(name="C++", extensions=("cpp",), compile_cmd="g++", run_cmd="./a.out"),)
+        service = SessionService(repository=repo)
+        session = service.ensure_session("A.cpp", profiles)
+        self.assertEqual(session.source_file, "A.cpp")
+        self.assertEqual(session.language, "cpp")
+        self.assertEqual(session.tests, ())
+        self.assertIs(service.ensure_session("A.cpp", profiles), session)
 
-    def test_batch_evaluates_unknown_outputs(self) -> None:
-        runner = _StubRunner(
-            compile_result=None,
-            run_results=[
-                TestRunResult(output_text="42\n", return_code=0, runtime_ms=5, verdict=Verdict.UNKNOWN),
-            ],
-        )
-        service = SessionService(repository=_StubRepository(), runner=runner)
-        session = SessionSnapshot(
-            source_file="A.cpp",
-            language="C++",
-            tests=(TestCase(name="T1", input_text="1", accepted_outputs=("42",)),),
-        )
-        report = service.run_all_tests(session)
-        self.assertTrue(report.compile_succeeded)
-        self.assertEqual(report.test_results[0].verdict, Verdict.ACCEPTED)
-        self.assertIsNotNone(report.test_results[0].evaluation)
-        self.assertEqual(report.test_results[0].evaluation.reference_kind, OutputReferenceKind.ACCEPTED)
+    def test_ensure_session_returns_existing(self) -> None:
+        repo = _StubRepository()
+        existing = SessionSnapshot(source_file="A.cpp", language="C++", tests=())
+        repo.save(existing)
+        service = SessionService(repository=repo)
+        self.assertIs(service.ensure_session("A.cpp", ()), existing)
 
 
 if __name__ == "__main__":

@@ -110,7 +110,10 @@ class TemplateBridgeCommand(sublime_plugin.TextCommand):
 
 class TemplateCompletionListener(sublime_plugin.EventListener):
     def try_expand(self, prefix):
-        return gen_template(prefix, get_settings().get("cpp_complete_settings"))
+        config = get_settings().get("cpp_complete_settings")
+        if config is None:
+            return None
+        return gen_template(prefix, config)
 
     def on_text_command(self, view, command_name, args):
         if command_name == "debug_overlay":

@@ -101,6 +101,8 @@ def extract_acwing_samples(html: str) -> tuple[tuple[str, str], ...]:
 @dataclass(frozen=True)
 class AcWingProvider:
     provider_name: str = "acwing"
+    hosts: tuple[str, ...] = ("acwing.com", "www.acwing.com")
+    contest_id_pattern: str = r"/problem/content/(?:description/)?(\d+)"
     capabilities: ProviderCapabilities = ProviderCapabilities(
         workspace_kind=ProviderWorkspaceKind.PROBLEM,
         supports_submission=False,

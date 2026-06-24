@@ -32,13 +32,15 @@ class ProviderRegistry:
         self,
         provider: ContestProvider,
         *,
-        hosts: tuple[str, ...],
-        contest_id_pattern: str = r"\d+",
+        hosts: tuple[str, ...] = (),
+        contest_id_pattern: str = "",
     ) -> None:
+        resolved_hosts = hosts or getattr(provider, "hosts", ())
+        resolved_pattern = contest_id_pattern or getattr(provider, "contest_id_pattern", r"\d+")
         self._bindings[provider.provider_name] = _ProviderBinding(
             provider=provider,
-            hosts=tuple(host.lower() for host in hosts),
-            contest_id_pattern=contest_id_pattern,
+            hosts=tuple(host.lower() for host in resolved_hosts),
+            contest_id_pattern=resolved_pattern,
         )
 
     def get(self, provider_name: str) -> ContestProvider:

@@ -92,35 +92,27 @@ class _FakeTester:
 
 
 @contextmanager
-def _patched_command_support_dependencies():
-    module_names = (
-        "sublime",
-        "arena_forge.adapters.sublime.run_panel.input_actions",
-        "arena_forge.adapters.sublime.run_panel.command_support",
-    )
-    originals = {name: sys.modules.get(name) for name in module_names}
+def _patched_input_actions_dependencies():
+    module_name = "arena_forge.adapters.sublime.run_panel.input_actions"
+    original = sys.modules.get(module_name)
     sys.modules["sublime"] = types.SimpleNamespace(
         Region=_FakeRegion,
         get_clipboard=lambda: "",
     )
-    sys.modules["arena_forge.adapters.sublime.run_panel.input_actions"] = types.SimpleNamespace(
-        push_input_history=lambda *args, **kwargs: None
-    )
-    sys.modules.pop("arena_forge.adapters.sublime.run_panel.command_support", None)
+    sys.modules.pop(module_name, None)
     try:
         yield
     finally:
-        for name, original in originals.items():
-            if original is None:
-                sys.modules.pop(name, None)
-            else:
-                sys.modules[name] = original
+        if original is None:
+            sys.modules.pop(module_name, None)
+        else:
+            sys.modules[module_name] = original
 
 
 class RunPanelCommandSupportTests(unittest.TestCase):
     def test_insert_panel_input_uses_explicit_text_and_records_history(self) -> None:
-        with _patched_command_support_dependencies():
-            module = importlib.import_module("arena_forge.adapters.sublime.run_panel.command_support")
+        with _patched_input_actions_dependencies():
+            module = importlib.import_module("arena_forge.adapters.sublime.run_panel.input_actions")
             history = []
             module.push_input_history = lambda command, text: history.append((command, text))
             view = _FakeView("input", selections=[_FakeRegion(5, 5)])
@@ -143,8 +135,8 @@ class RunPanelCommandSupportTests(unittest.TestCase):
             self.assertEqual(tester.inserts, [("42\n", False)])
 
     def test_insert_panel_input_uses_current_line_when_process_is_running(self) -> None:
-        with _patched_command_support_dependencies():
-            module = importlib.import_module("arena_forge.adapters.sublime.run_panel.command_support")
+        with _patched_input_actions_dependencies():
+            module = importlib.import_module("arena_forge.adapters.sublime.run_panel.input_actions")
             history = []
             module.push_input_history = lambda command, text: history.append(text)
             view = _FakeView("promptabc", selections=[_FakeRegion(9, 9)])
@@ -167,8 +159,8 @@ class RunPanelCommandSupportTests(unittest.TestCase):
             self.assertEqual(tester.inserts, [("abc\n", False)])
 
     def test_insert_panel_input_ignores_invalid_selection_or_stopped_process(self) -> None:
-        with _patched_command_support_dependencies():
-            module = importlib.import_module("arena_forge.adapters.sublime.run_panel.command_support")
+        with _patched_input_actions_dependencies():
+            module = importlib.import_module("arena_forge.adapters.sublime.run_panel.input_actions")
             history = []
             module.push_input_history = lambda command, text: history.append(text)
 
@@ -200,9 +192,9 @@ class RunPanelCommandSupportTests(unittest.TestCase):
             self.assertEqual(history, [])
 
     def test_insert_clipboard_input_sends_each_line(self) -> None:
-        with _patched_command_support_dependencies():
-            module = importlib.import_module("arena_forge.adapters.sublime.run_panel.command_support")
-            module.sublime.get_clipboard = lambda: "one\ntwo"
+        with _patched_input_actions_dependencies():
+            module = importlib.import_module("arena_forge.adapters.sublime.run_panel.input_actions")
+            sys.modules["sublime"].get_clipboard = lambda: "one\ntwo"
             history = []
             module.push_input_history = lambda command, text: history.append(text)
             tester = _FakeTester(proc_run=True)

@@ -31,7 +31,7 @@ def _normalize_string_map(value: object) -> dict[str, list[str]]:
 
 def normalize_settings(raw_settings: Optional[Mapping[str, Any]], platform_name: str) -> dict[str, Any]:
     defaults = clone_defaults(platform_name)
-    merged = clone_defaults(platform_name)
+    merged = deepcopy(defaults)
     payload = dict(raw_settings or {})
     _deep_merge(merged, payload)
 

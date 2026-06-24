@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from html import unescape
 from html.parser import HTMLParser
@@ -17,7 +16,7 @@ from arena_forge.core.domain import (
     TestCase,
 )
 
-from .base import extract_html_title, fetch_text
+from .base import extract_html_title, fetch_text, load_items_in_parallel
 from .codeforces_submit import login as login_codeforces
 from .codeforces_submit import submit_and_confirm as submit_codeforces
 
@@ -190,6 +189,8 @@ def extract_contest_title(html: str, contest_id: str) -> str:
 @dataclass(frozen=True)
 class CodeforcesProvider:
     provider_name: str = "codeforces"
+    hosts: tuple[str, ...] = ("codeforces.com", "www.codeforces.com")
+    contest_id_pattern: str = r"^/(?:contest|problemset/problem)/(\d+)(?:/|$)"
     capabilities: ProviderCapabilities = ProviderCapabilities(
         workspace_kind=ProviderWorkspaceKind.CONTEST,
         supports_submission=True,
@@ -225,30 +226,17 @@ class CodeforcesProvider:
         problem_summaries: tuple[ProblemSummary, ...],
         progress: Optional[Callable[[int, int, str], None]] = None,
     ) -> tuple[ContestProblem, ...]:
-        total = len(problem_summaries)
-        if total == 0:
-            return ()
+        def build_problem(position: int) -> ContestProblem:
+            summary = problem_summaries[position]
+            samples = self.load_problem_samples(contest_id, summary.index)
+            return ContestProblem(index=summary.index, title=summary.title, samples=samples)
 
-        results: Dict[int, ContestProblem] = {}
-        max_workers = min(8, total)
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures = {
-                executor.submit(self.load_problem_samples, contest_id, summary.index): (position, summary)
-                for position, summary in enumerate(problem_summaries)
-            }
-            completed = 0
-            for future in as_completed(futures):
-                position, summary = futures[future]
-                samples = future.result()
-                results[position] = ContestProblem(
-                    index=summary.index,
-                    title=summary.title,
-                    samples=samples,
-                )
-                completed += 1
-                if progress is not None:
-                    progress(completed, total, summary.index)
-        return tuple(results[position] for position in range(total))
+        return load_items_in_parallel(  # type: ignore[return-value]
+            problem_summaries,
+            build_problem,
+            label_fn=lambda i: problem_summaries[i].index,
+            progress=progress,
+        )
 
     def _load_problems_by_probe(self, contest_id: str) -> tuple[ContestProblem, ...]:
         problems = []

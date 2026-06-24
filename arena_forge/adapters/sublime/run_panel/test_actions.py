@@ -2,13 +2,57 @@ from __future__ import annotations
 
 from sublime import Region
 
-from .operations import delete_selected_tests, swap_selected_tests, toggle_test_fold
+from ..shared.messages import status_message
+from .edit_actions import get_begin_region
+from .logic import resolve_visible_body_text
 from .process_actions import terminate_tester_with_logging
-from .session_actions import memorize_tests
+from .session_actions import clear_all, memorize_tests
+
+
+def _get_test_range(view, command, test_id):
+    begin = view.get_regions(command.REGION_BEGIN_KEY % test_id)[0].begin()
+    end = view.line(view.get_regions(command.REGION_END_KEY % test_id)[0].begin()).end()
+    return begin, end
 
 
 def toggle_fold(command, test_id) -> None:
-    toggle_test_fold(command, test_id)
+    view = command.view
+    tester = command.state.tester
+    text = resolve_visible_body_text(tester.tests[test_id], tester.prog_out[test_id])
+    output_start_offset = getattr(tester.tests[test_id], "output_start_offset", None)
+    if output_start_offset is None:
+        input_text = tester.tests[test_id].input_text
+        separator = "" if not input_text or input_text.endswith("\n") else "\n"
+        output_start_offset = len(input_text + separator)
+    tie_pos = command.get_tie_pos(test_id)
+
+    if tester.tests[test_id].fold:
+        view.run_command("test_manager", {"action": "replace", "region": (tie_pos + 1, tie_pos + 1), "text": text})
+        view.add_regions(command.REGION_BEGIN_KEY % test_id, [Region(tie_pos + 1)], *command.REGION_BEGIN_PROP)
+        view.add_regions(
+            "test_end_%d" % test_id,
+            [Region(tie_pos + 1 + output_start_offset, tie_pos + 1 + output_start_offset)],
+            *command.REGION_END_PROP,
+        )
+        delta = len(text)
+        for index in range(test_id + 1, command.state.tester.test_iter):
+            command.state.tester.tests[index].tie_pos += delta
+        tester.tests[test_id].fold = False
+    else:
+        view.run_command(
+            "test_manager",
+            {"action": "replace", "region": (tie_pos + 1, tie_pos + 1 + len(text)), "text": ""},
+        )
+        view.erase_regions(command.REGION_BEGIN_KEY % test_id)
+        view.erase_regions("test_end_%d" % test_id)
+        delta = len(text)
+        for index in range(test_id + 1, tester.test_iter):
+            tester.tests[index].tie_pos -= delta
+        tester.tests[test_id].fold = True
+
+    view.sel().clear()
+    view.sel().add(Region(view.size()))
+    command.update_configs()
 
 
 def open_test_edit(command, test_id) -> None:
@@ -100,8 +144,7 @@ def set_test_status(command, test_id, accept=True, call_tester=True) -> None:
 def set_tests_status(command, accept=True) -> None:
     view = command.view
     for index in range(command.state.tester.test_iter):
-        begin = view.get_regions(command.REGION_BEGIN_KEY % index)[0].begin()
-        end = view.line(view.get_regions(command.REGION_END_KEY % index)[0].begin()).end()
+        begin, end = _get_test_range(view, command, index)
         region = Region(begin, end)
         for selection in view.sel():
             if selection.intersects(region):
@@ -113,8 +156,7 @@ def fold_accept_tests(command) -> None:
     view = command.view
     for index in range(command.state.tester.test_iter):
         if command.state.tester.check_test(index):
-            begin = view.get_regions(command.REGION_BEGIN_KEY % index)[0].begin()
-            end = view.line(view.get_regions(command.REGION_END_KEY % index)[0].begin()).end()
+            begin, end = _get_test_range(view, command, index)
             view.fold(Region(view.word(begin + 5).end(), end))
 
 
@@ -123,8 +165,8 @@ def delete_nth_test(command, edit, nth, fixed_end=None) -> None:
     begin = view.get_regions(command.REGION_BEGIN_KEY % nth)[0].begin()
     if fixed_end is not None:
         end = fixed_end
-    elif command.get_begin_region(nth + 1):
-        end = command.get_begin_region(nth + 1)[0].begin()
+    elif get_begin_region(command, nth + 1):
+        end = get_begin_region(command, nth + 1)[0].begin()
     else:
         end = view.size()
     view.replace(edit, Region(begin, end), "")
@@ -160,11 +202,73 @@ def delete_test(command, edit, test_id) -> None:
 
 
 def delete_tests(command, edit) -> None:
-    delete_selected_tests(command, edit)
+    view = command.view
+    tester = command.state.tester
+
+    if tester.proc_run:
+        status_message("status.stop_process_before_delete")
+        return
+
+    k = tester.test_iter
+    to_delete = []
+    for i in range(k):
+        begin = command.get_tie_pos(i)
+        end = view.size() if i == k - 1 else command.get_tie_pos(i + 1)
+        region = Region(begin, end)
+        for selection in view.sel():
+            if selection.intersects(region):
+                to_delete.append(i)
+
+    status_message("status.tests_deleted", tests=", ".join(str(x + 1) for x in to_delete))
+    for test in reversed(to_delete):
+        delete_test(command, edit, test)
+    memorize_tests(command)
 
 
 def swap_tests(command, edit, direction=-1) -> None:
-    swap_selected_tests(command, edit, direction=direction)
+    tester = command.state.tester
+    view = command.view
+    selected = []
+    selections_by_test = {}
+    fold_states = {}
+
+    for i in range(len(tester.tests)):
+        begin = command.get_tie_pos(i)
+        end = command.get_tie_pos(i + 1)
+        selections_by_test[i] = []
+
+        for reg in view.sel():
+            if reg.intersects(Region(begin, end)):
+                selected.append(i)
+                inter = reg.intersection(Region(begin, end))
+                selections_by_test[i].append(Region(inter.a - begin, inter.b - begin))
+                break
+
+    for i in range(len(tester.tests)):
+        if not tester.tests[i].fold:
+            fold_states[i] = True
+            toggle_fold(command, i)
+        else:
+            fold_states[i] = False
+
+    if direction == 1:
+        selected.reverse()
+    for sel in selected:
+        if 0 <= sel + direction < len(tester.tests):
+            tester.tests[sel], tester.tests[sel + direction] = tester.tests[sel + direction], tester.tests[sel]
+            tester.prog_out[sel], tester.prog_out[sel + direction] = (
+                tester.prog_out[sel + direction],
+                tester.prog_out[sel],
+            )
+
+    for i in range(len(tester.tests)):
+        if fold_states.get(i):
+            toggle_fold(command, i)
+    view.sel().clear()
+    for i in range(len(tester.tests)):
+        for reg in selections_by_test.get(i, []):
+            begin = command.get_tie_pos(i)
+            view.sel().add(Region(begin + reg.a, begin + reg.b))
 
 
 def toggle_hide_phantoms(command) -> None:
@@ -184,7 +288,7 @@ def clear_all_tests(command) -> None:
     tester.test_iter = 0
     tester.running_test = None
     tester.running_new = None
-    command.clear_all()
+    clear_all(command)
     command.state.reset_panel_runtime()
     memorize_tests(command)
     command.view.run_command("test_manager", {"action": "new_test"})

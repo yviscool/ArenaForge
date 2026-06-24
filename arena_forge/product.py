@@ -221,3 +221,6 @@ def build_default_settings(platform_name: str) -> dict[str, Any]:
 
 def clone_defaults(platform_name: str) -> dict[str, Any]:
     return copy.deepcopy(build_default_settings(platform_name))
+
+
+SETTINGS_KEYS = tuple(build_default_settings("windows").keys())

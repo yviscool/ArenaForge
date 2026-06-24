@@ -47,6 +47,8 @@ def extract_luogu_problem(payload: dict[str, object]) -> tuple[str, str, tuple[T
 @dataclass(frozen=True)
 class LuoguProvider:
     provider_name: str = "luogu"
+    hosts: tuple[str, ...] = ("luogu.com.cn", "www.luogu.com.cn")
+    contest_id_pattern: str = r"/problem/([A-Za-z]\d+)"
     capabilities: ProviderCapabilities = ProviderCapabilities(
         workspace_kind=ProviderWorkspaceKind.PROBLEM,
         supports_submission=False,

@@ -4,20 +4,19 @@ from dataclasses import dataclass
 from typing import Optional, Tuple
 
 from arena_forge.adapters.i18n.catalog import translate_catalog as translate
-from arena_forge.adapters.runners.subprocess_runner import execute_subprocess
+from arena_forge.adapters.runners.subprocess_runner import SubprocessExecution, execute_subprocess
 
 TIMEOUT_RETURN_CODE = -2
 SYSTEM_ERROR_RETURN_CODE = -1
 
 
 @dataclass(frozen=True)
-class ProcessResult:
-    returncode: int
-    stdout: str
-    stderr: str
-    elapsed_ms: int
-    timed_out: bool = False
+class ProcessResult(SubprocessExecution):
     system_error: Optional[str] = None
+
+    @property
+    def elapsed_ms(self) -> int:
+        return self.runtime_ms
 
 
 def run_subprocess(
@@ -37,10 +36,11 @@ def run_subprocess(
             detail=str(exc),
         )
         return ProcessResult(
+            argv=command,
             returncode=SYSTEM_ERROR_RETURN_CODE,
             stdout="",
             stderr=message,
-            elapsed_ms=0,
+            runtime_ms=0,
             system_error=message,
         )
 
@@ -49,16 +49,18 @@ def run_subprocess(
         stderr = result.stderr.strip()
         stderr = f"{message}\n\n{stderr}" if stderr else message
         return ProcessResult(
+            argv=result.argv,
             returncode=TIMEOUT_RETURN_CODE,
             stdout=result.stdout,
             stderr=stderr,
-            elapsed_ms=result.runtime_ms,
+            runtime_ms=result.runtime_ms,
             timed_out=True,
         )
 
     return ProcessResult(
+        argv=result.argv,
         returncode=result.returncode,
         stdout=result.stdout,
         stderr=result.stderr,
-        elapsed_ms=result.runtime_ms,
+        runtime_ms=result.runtime_ms,
     )

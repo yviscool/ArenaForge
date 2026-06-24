@@ -10,7 +10,6 @@ from ..shared.messages import status_message
 from ..shared.package_resources import ARROW_LEFT_ICON_RESOURCE, ARROW_RIGHT_ICON_RESOURCE
 from ..view_actions import erase_region, replace_all, replace_region, set_cursor_to_end
 from .action_request import RunPanelActionRequest
-from .command_support import insert_clipboard_input, insert_panel_input
 from .controller_state import RunPanelControllerState
 from .debug_actions import redirect_frames, redirect_var_value, select_frame
 from .display_actions import start_new_test, update_configs
@@ -20,6 +19,8 @@ from .input_actions import (
     delete_previous_word,
     history_next,
     history_previous,
+    insert_clipboard_input,
+    insert_panel_input,
     move_input_backward_word,
     move_input_forward_word,
     move_input_line_end,
@@ -80,38 +81,38 @@ def _toggle_debugger(command, edit, request):
 
 
 _ACTION_HANDLERS = {
-    "insert_line": (lambda cmd, edit, req: cmd.insert_text(edit), True),
-    "insert_cb": (lambda cmd, edit, req: cmd.insert_cb(edit), True),
+    "insert_line": (lambda cmd, edit, req: insert_panel_input(cmd, edit), True),
+    "insert_cb": (lambda cmd, edit, req: insert_clipboard_input(cmd, edit), True),
     "insert_opd_input": (_insert_panel_text, True),
     "insert_opd_out": (_insert_panel_text, True),
     "replace": (lambda cmd, edit, req: replace_region(cmd.view, edit, req.region, req.text), True),
     "erase": (lambda cmd, edit, req: erase_region(cmd.view, edit, req.region), True),
-    "apply_edit_changes": (lambda cmd, edit, req: cmd.apply_edit_changes(), True),
-    "clear_all_tests": (lambda cmd, edit, req: cmd.clear_all_tests(), True),
+    "apply_edit_changes": (lambda cmd, edit, req: apply_edit_changes(cmd), True),
+    "clear_all_tests": (lambda cmd, edit, req: clear_all_tests(cmd), True),
     "clear_current_input": (lambda cmd, edit, req: clear_current_input(cmd, edit), True),
     "history_next": (lambda cmd, edit, req: history_next(cmd, edit), True),
     "history_previous": (lambda cmd, edit, req: history_previous(cmd, edit), True),
-    "make_opd": (lambda cmd, edit, req: make_opd(cmd, edit, **req.to_make_opd_kwargs()), True),
-    "redirect_var_value": (lambda cmd, edit, req: cmd.redirect_var_value(req.var_name, pos=req.pos), True),
+    "make_opd": (lambda cmd, edit, req: make_opd(cmd, edit, request=req), True),
+    "redirect_var_value": (lambda cmd, edit, req: redirect_var_value(cmd, req.var_name, pos=req.pos), True),
     "close": (_terminate_command, True),
-    "redirect_frames": (lambda cmd, edit, req: cmd.redirect_frames(), True),
-    "select_frame": (lambda cmd, edit, req: cmd.select_frame(req.frame_id), True),
-    "new_test": (lambda cmd, edit, req: cmd.new_test(edit), True),
-    "toggle_new_test": (lambda cmd, edit, req: cmd.toggle_new_test(), True),
-    "delete_tests": (lambda cmd, edit, req: cmd.delete_tests(edit), True),
+    "redirect_frames": (lambda cmd, edit, req: redirect_frames(cmd), True),
+    "select_frame": (lambda cmd, edit, req: select_frame(cmd, req.frame_id), True),
+    "new_test": (lambda cmd, edit, req: start_new_test(cmd, edit), True),
+    "toggle_new_test": (lambda cmd, edit, req: toggle_new_test(cmd), True),
+    "delete_tests": (lambda cmd, edit, req: delete_tests(cmd, edit), True),
     "delete_previous_word": (lambda cmd, edit, req: delete_previous_word(cmd, edit), True),
-    "accept_test": (lambda cmd, edit, req: cmd.set_tests_status(), True),
-    "decline_test": (lambda cmd, edit, req: cmd.set_tests_status(accept=False), True),
+    "accept_test": (lambda cmd, edit, req: set_tests_status(cmd), True),
+    "decline_test": (lambda cmd, edit, req: set_tests_status(cmd, accept=False), True),
     "erase_all": (lambda cmd, edit, req: replace_all(cmd.view, edit, "\n"), True),
     "show_text": (_show_text, True),
     "hide_text": (_hide_text, True),
     "kill_proc": (_terminate_command, True),
-    "sync_read_only": (lambda cmd, edit, req: cmd.sync_read_only(), True),
-    "enable_edit_mode": (lambda cmd, edit, req: cmd.enable_edit_mode(), False),
-    "set_test_input": (lambda cmd, edit, req: cmd.set_test_input(id=req.id, test=req.data), True),
-    "delete_test": (lambda cmd, edit, req: cmd.delete_test(edit, req.id), True),
-    "swap_tests": (lambda cmd, edit, req: cmd.swap_tests(edit, dir=req.dir), True),
-    "toggle_hide_phantoms": (lambda cmd, edit, req: cmd.toggle_hide_phantoms(), True),
+    "sync_read_only": (lambda cmd, edit, req: sync_read_only_mode(cmd.view, cmd.state.tester, cmd.state.delta_input), True),
+    "enable_edit_mode": (lambda cmd, edit, req: enable_edit_mode(cmd), False),
+    "set_test_input": (lambda cmd, edit, req: set_test_input(cmd, test=req.data, test_id=req.id), True),
+    "delete_test": (lambda cmd, edit, req: delete_test(cmd, edit, req.id), True),
+    "swap_tests": (lambda cmd, edit, req: swap_tests(cmd, edit, direction=req.dir), True),
+    "toggle_hide_phantoms": (lambda cmd, edit, req: toggle_hide_phantoms(cmd), True),
     "toggle_using_debugger": (_toggle_debugger, True),
     "move_input_line_start": (lambda cmd, edit, req: move_input_line_start(cmd), True),
     "move_input_line_end": (lambda cmd, edit, req: move_input_line_end(cmd), True),
@@ -161,18 +162,6 @@ class TestManagerCommand(sublime_plugin.TextCommand):
 
     Tester = RunPanelTester
 
-    def insert_text(self, edit, text=None):
-        insert_panel_input(self, edit, text=text)
-
-    def insert_cb(self, edit):
-        insert_clipboard_input(self, edit)
-
-    def toggle_fold(self, index):
-        toggle_fold(self, index)
-
-    def open_test_edit(self, index):
-        open_test_edit(self, index)
-
     def get_tie_pos(self, index):
         return compute_tie_pos(self.state.tester, index)
 
@@ -186,14 +175,8 @@ class TestManagerCommand(sublime_plugin.TextCommand):
     def on_accdec_action(self, index, event):
         handle_accdec_event(self, index, event)
 
-    def set_test_input(self, test=None, id=None):
-        set_test_input(self, test=test, test_id=id)
-
     def update_configs(self, update_last=None):
         update_configs(self, update_last=update_last)
-
-    def new_test(self, edit):
-        start_new_test(self, edit)
 
     def on_insert(self, text):
         self.view.run_command("test_manager", {"action": "insert_opd_input", "text": text})
@@ -204,86 +187,6 @@ class TestManagerCommand(sublime_plugin.TextCommand):
     def on_stop(self, rtcode, runtime, crash_line=None):
         handle_process_stop(self, rtcode, runtime, crash_line=crash_line)
 
-    def redirect_var_value(self, var_name, pos=None):
-        redirect_var_value(self, var_name, pos=pos)
-
-    def redirect_frames(self):
-        redirect_frames(self)
-
-    def select_frame(self, id):
-        select_frame(self, id)
-
-    def toggle_side_bar(self):
-        self.view.window().run_command("toggle_side_bar")
-
-    def set_test_status(self, nth, accept=True, call_tester=True):
-        set_test_status(self, nth, accept=accept, call_tester=call_tester)
-
-    def set_tests_status(self, accept=True):
-        set_tests_status(self, accept=accept)
-
-    def fold_accept_tests(self):
-        fold_accept_tests(self)
-
-    def clear_all(self):
-        clear_all(self)
-
-    def make_opd(
-        self,
-        edit,
-        run_file=None,
-        build_sys=None,
-        clr_tests=False,
-        sync_out=False,
-        code_view_id=None,
-        use_debugger=False,
-        load_session=False,
-    ):
-        make_opd(
-            self,
-            edit,
-            run_file=run_file,
-            build_sys=build_sys,
-            clr_tests=clr_tests,
-            sync_out=sync_out,
-            code_view_id=code_view_id,
-            use_debugger=use_debugger,
-            load_session=load_session,
-        )
-
-    def delete_nth_test(self, edit, nth, fixed_end=None):
-        delete_nth_test(self, edit, nth, fixed_end=fixed_end)
-
-    def delete_test(self, edit, id):
-        delete_test(self, edit, id)
-
-    def delete_tests(self, edit):
-        delete_tests(self, edit)
-
-    def sync_read_only(self):
-        sync_read_only_mode(self.view, self.state.tester, self.state.delta_input)
-
-    def enable_edit_mode(self):
-        enable_edit_mode(self)
-
-    def get_begin_region(self, id):
-        return get_begin_region(self, id)
-
-    def apply_edit_changes(self):
-        apply_edit_changes(self)
-
-    def toggle_new_test(self):
-        toggle_new_test(self)
-
-    def swap_tests(self, edit, dir=-1):
-        swap_tests(self, edit, direction=dir)
-
-    def toggle_hide_phantoms(self):
-        toggle_hide_phantoms(self)
-
-    def clear_all_tests(self):
-        clear_all_tests(self)
-
     def run(
         self,
         edit,
@@ -293,7 +196,7 @@ class TestManagerCommand(sublime_plugin.TextCommand):
         request = RunPanelActionRequest(**kwargs)
         should_sync = _dispatch_action(self, edit, request)
         if should_sync:
-            self.sync_read_only()
+            sync_read_only_mode(self.view, self.state.tester, self.state.delta_input)
 
 
 class ModifiedListener(sublime_plugin.EventListener):

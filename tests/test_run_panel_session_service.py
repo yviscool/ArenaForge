@@ -1,20 +1,33 @@
+import sys
+import types
 import unittest
 
-from arena_forge.adapters.sublime.run_panel.session_service import (
-    RunPanelBackendSelection,
+_sublime_mock = types.SimpleNamespace(
+    Region=type("Region", (), {}),
+    Phantom=object,
+    LAYOUT_BLOCK=0,
+    set_timeout=lambda callback, delay=0: None,
+    set_timeout_async=lambda callback, delay=0: None,
+    platform=lambda: "windows",
+    HOVER_TEXT=1,
+    DRAW_NO_FILL=1,
+    DRAW_STIPPLED_UNDERLINE=2,
+    DRAW_NO_OUTLINE=4,
+    DRAW_EMPTY_AS_OVERWRITE=8,
+    HIDDEN=0,
+)
+if "sublime" not in sys.modules:
+    sys.modules["sublime"] = _sublime_mock
+if "sublime_plugin" not in sys.modules:
+    sys.modules["sublime_plugin"] = types.SimpleNamespace(TextCommand=type("TextCommand", (), {}))
+
+from arena_forge.adapters.sublime.run_panel.session_service import (  # noqa: E402
     create_run_backend,
-    plan_test_bootstrap,
     prepare_tests_for_run,
-    select_run_backend,
 )
 
 
 class RunPanelSessionServiceTests(unittest.TestCase):
-    def test_plan_test_bootstrap_uses_clear_action_when_requested(self) -> None:
-        plan = plan_test_bootstrap(clr_tests=True)
-
-        self.assertEqual(plan.action, "clear")
-
     def test_prepare_tests_for_run_loads_tests_when_not_clearing(self) -> None:
         loaded = []
 
@@ -48,30 +61,13 @@ class RunPanelSessionServiceTests(unittest.TestCase):
             test_factory="factory",
             repository="repo",
             tests_file_path_factory=fake_paths,
-            load_tests=lambda *args, **kwargs: ["unexpected"],
             write_empty_tests_file=writes.append,
         )
 
         self.assertEqual(result, [])
         self.assertEqual(writes, ["tests.json"])
 
-    def test_select_run_backend_prefers_debugger_only_when_available(self) -> None:
-        debugger = object()
-
-        self.assertEqual(
-            select_run_backend(use_debugger=False, debug_module=debugger),
-            RunPanelBackendSelection(kind="process_manager"),
-        )
-        self.assertEqual(
-            select_run_backend(use_debugger=True, debug_module=None),
-            RunPanelBackendSelection(kind="process_manager"),
-        )
-        self.assertEqual(
-            select_run_backend(use_debugger=True, debug_module=debugger),
-            RunPanelBackendSelection(kind="debugger", debug_module=debugger),
-        )
-
-    def test_create_run_backend_uses_selected_backend_factory(self) -> None:
+    def test_create_run_backend_uses_debugger_when_requested_and_available(self) -> None:
         process_calls = []
         debug_calls = []
 
@@ -84,14 +80,16 @@ class RunPanelSessionServiceTests(unittest.TestCase):
             return "debugger"
 
         process_backend = create_run_backend(
-            RunPanelBackendSelection(kind="process_manager"),
+            use_debugger=False,
+            debug_module=fake_debugger,
             run_file="main.cpp",
             build_sys="source.c++",
             run_settings=["cfg"],
             process_manager_factory=fake_process_manager,
         )
         debugger_backend = create_run_backend(
-            RunPanelBackendSelection(kind="debugger", debug_module=fake_debugger),
+            use_debugger=True,
+            debug_module=fake_debugger,
             run_file="main.cpp",
             build_sys="source.c++",
             run_settings=["cfg"],

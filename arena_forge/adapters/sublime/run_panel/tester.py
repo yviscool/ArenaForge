@@ -49,7 +49,7 @@ class RunPanelTester:
             self.prog_out.append("")
 
     def _uses_process_listener(self):
-        return type(self.process_manager).__name__ == "ProcessManager"
+        return not hasattr(self.process_manager, 'set_calls')
 
     def _schedule_process_listener_if_needed(self):
         if self._uses_process_listener():

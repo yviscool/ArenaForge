@@ -14,6 +14,8 @@ def _patched_test_actions():
         "arena_forge.adapters.sublime.run_panel.input_actions",
         "arena_forge.adapters.sublime.run_panel.rendering",
         "arena_forge.adapters.sublime.run_panel.session_service",
+        "arena_forge.adapters.sublime.run_panel.session_actions",
+        "arena_forge.adapters.sublime.run_panel.edit_actions",
         "arena_forge.adapters.sublime.run_panel.test_actions",
     )
     originals = {name: sys.modules.get(name) for name in module_names}
@@ -52,6 +54,13 @@ def _patched_test_actions():
         select_run_backend=lambda *args, **kwargs: None,
         save_tests_for_run=lambda *args, **kwargs: None
     )
+    sys.modules["arena_forge.adapters.sublime.run_panel.session_actions"] = types.SimpleNamespace(
+        memorize_tests=lambda *args, **kwargs: None,
+        clear_all=lambda *args, **kwargs: None,
+    )
+    sys.modules["arena_forge.adapters.sublime.run_panel.edit_actions"] = types.SimpleNamespace(
+        get_begin_region=lambda *args, **kwargs: None,
+    )
     sys.modules.pop("arena_forge.adapters.sublime.run_panel.test_actions", None)
     try:
         yield
@@ -81,6 +90,7 @@ class RunPanelTestActionsTests(unittest.TestCase):
             module = importlib.import_module("arena_forge.adapters.sublime.run_panel.test_actions")
             calls = []
             module.memorize_tests = lambda *args, **kwargs: calls.append(("memorize_tests", None))
+            module.clear_all = lambda *args, **kwargs: calls.append(("clear_all", None))
             tester = types.SimpleNamespace(
                 proc_run=True,
                 tests=[object()],
@@ -98,7 +108,6 @@ class RunPanelTestActionsTests(unittest.TestCase):
                     source_file="main.cpp",
                     reset_panel_runtime=lambda: calls.append(("reset_runtime", None)),
                 ),
-                clear_all=lambda: calls.append(("clear_all", None)),
             )
 
             module.clear_all_tests(command)

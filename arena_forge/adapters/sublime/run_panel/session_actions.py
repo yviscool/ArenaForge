@@ -10,17 +10,17 @@ from arena_forge.core.domain import OutputEvaluation, Verdict
 from ..root_bridge import get_debugger_info_module
 from ..shared.messages import product_log_message, translate, translate_status_code
 from ..shared.settings_bridge import get_session_repository, get_settings, get_tests_file_path
-from .launch_flow import RunPanelLaunchRequest, plan_run_panel_launch
+from .launch_flow import plan_run_panel_launch
 from .logic import (
     build_run_panel_stop_plan,
 )
+from .persistence import append_run_history
 from .process_actions import (
     schedule_test_manager_command,
     terminate_command_tester_with_logging,
 )
 from .regions import clear_panel_view
-from .session_service import create_run_backend, prepare_tests_for_run, save_tests_for_run, select_run_backend
-from .persistence import append_run_history
+from .session_service import create_run_backend, prepare_tests_for_run, save_tests_for_run
 
 
 def resolve_stop_evaluation(tester, test_id, rtcode, *, compile_failed=False):
@@ -76,6 +76,44 @@ def _prepare_code_view(command) -> None:
     prepare_code_view(command)
 
 
+def _update_test_from_stop_plan(tester, test_id, stop_plan, runtime, rtcode):
+    tester.tests[test_id].set_last_evaluation(stop_plan.evaluation)
+    tester.tests[test_id].set_display_layout(
+        None if stop_plan.clear_input else stop_plan.rendered_text,
+        None if stop_plan.clear_input else stop_plan.output_start_offset,
+    )
+    tester.tests[test_id].set_cur_runtime(runtime)
+    tester.tests[test_id].set_cur_rtcode(rtcode)
+
+
+def _render_stop_regions(view, command, test_id, stop_plan):
+    view.erase_regions("type")
+    line = view.line(command.state.input_start)
+    input_end = view.line(Region(command.state.delta_input)).end()
+
+    replacement_text = "" if stop_plan.clear_input else stop_plan.rendered_text
+    view.run_command(
+        "test_manager",
+        {"action": "replace", "region": (command.state.input_start, input_end), "text": replacement_text},
+    )
+
+    if not stop_plan.clear_input:
+        command.state.tester.tests[test_id].fold = False
+        view.add_regions(
+            command.REGION_BEGIN_KEY % test_id,
+            [Region(line.begin(), line.end())],
+            *command.REGION_BEGIN_PROP,
+        )
+
+    view.show(command.state.input_start + 20)
+    view.add_regions(
+        "test_end_%d" % test_id,
+        [Region(line.begin() + stop_plan.output_start_offset, line.begin() + stop_plan.output_start_offset)],
+        *command.REGION_END_PROP,
+    )
+    view.run_command("test_manager", {"action": "set_cursor_to_end"})
+
+
 def handle_process_stop(command, rtcode, runtime, crash_line=None, compile_failed=False) -> None:
     view = command.view
     tester = command.state.tester
@@ -91,47 +129,9 @@ def handle_process_stop(command, rtcode, runtime, crash_line=None, compile_faile
         have_pretests=tester.have_pretests(),
         evaluation=evaluation,
     )
-    tester.tests[test_id].set_last_evaluation(stop_plan.evaluation)
-    tester.tests[test_id].set_display_layout(
-        None if stop_plan.clear_input else stop_plan.rendered_text,
-        None if stop_plan.clear_input else stop_plan.output_start_offset,
-    )
 
-    tester.tests[test_id].set_cur_runtime(runtime)
-    tester.tests[test_id].set_cur_rtcode(rtcode)
-
-    view.erase_regions("type")
-    line = view.line(command.state.input_start)
-    input_end = view.line(Region(command.state.delta_input)).end()
-
-    if stop_plan.clear_input:
-        view.run_command(
-            "test_manager",
-            {"action": "replace", "region": (command.state.input_start, input_end), "text": ""},
-        )
-    else:
-        view.run_command(
-            "test_manager",
-            {
-                "action": "replace",
-                "region": (command.state.input_start, input_end),
-                "text": stop_plan.rendered_text,
-            },
-        )
-        tester.tests[test_id].fold = False
-        view.add_regions(
-            command.REGION_BEGIN_KEY % test_id,
-            [Region(line.begin(), line.end())],
-            *command.REGION_BEGIN_PROP,
-        )
-
-    view.show(command.state.input_start + 20)
-    view.add_regions(
-        "test_end_%d" % test_id,
-        [Region(line.begin() + stop_plan.output_start_offset, line.begin() + stop_plan.output_start_offset)],
-        *command.REGION_END_PROP,
-    )
-    view.run_command("test_manager", {"action": "set_cursor_to_end"})
+    _update_test_from_stop_plan(tester, test_id, stop_plan, runtime, rtcode)
+    _render_stop_regions(view, command, test_id, stop_plan)
 
     memorize_tests(command)
     append_run_history(
@@ -189,9 +189,9 @@ def _build_run_backend_state(command, launch_session):
     file_ext = path.splitext(launch_session.run_file)[1][1:]
     debugger_info = get_debugger_info_module()
     debug_module = debugger_info.get_best_debug_module(file_ext)
-    backend = select_run_backend(use_debugger=command.state.use_debugger, debug_module=debug_module)
     process_manager = create_run_backend(
-        backend,
+        use_debugger=command.state.use_debugger,
+        debug_module=debug_module,
         run_file=launch_session.run_file,
         build_sys=launch_session.build_sys,
         run_settings=get_settings().get("run_settings"),
@@ -230,6 +230,7 @@ def make_opd(
     command,
     edit,
     *,
+    request=None,
     run_file=None,
     build_sys=None,
     clr_tests=False,
@@ -239,15 +240,17 @@ def make_opd(
     load_session=False,
 ) -> None:
     view = command.view
-    request = RunPanelLaunchRequest(
-        run_file=run_file,
-        build_sys=build_sys,
-        clr_tests=clr_tests,
-        sync_out=sync_out,
-        code_view_id=code_view_id,
-        use_debugger=use_debugger,
-        load_session=load_session,
-    )
+    if request is None:
+        from .action_request import RunPanelActionRequest
+        request = RunPanelActionRequest(
+            run_file=run_file,
+            build_sys=build_sys,
+            clr_tests=clr_tests,
+            sync_out=sync_out,
+            code_view_id=code_view_id,
+            use_debugger=use_debugger,
+            load_session=load_session,
+        )
     launch_plan = plan_run_panel_launch(
         status_code=view.get_status("process_status_code"),
         request=request,
@@ -262,7 +265,8 @@ def make_opd(
         return
 
     if view.settings().get("edit_mode"):
-        command.apply_edit_changes()
+        from .edit_actions import apply_edit_changes
+        apply_edit_changes(command)
 
     view.set_scratch(True)
     view.run_command("set_setting", {"setting": "fold_buttons", "value": False})
