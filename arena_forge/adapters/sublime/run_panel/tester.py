@@ -207,7 +207,7 @@ class RunPanelTester:
         return self.tests[nth].is_correct_answer(self.prog_out[nth])
 
     def evaluate_test(self, nth):
-        return evaluate_output_result(self.tests[nth].to_core_test_case(nth + 1), self.prog_out[nth])
+        return evaluate_output_result(self.tests[nth].to_test_case(nth + 1), self.prog_out[nth])
 
     def terminate(self):
         self.process_manager.terminate()

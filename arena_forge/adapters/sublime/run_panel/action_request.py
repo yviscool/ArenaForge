@@ -25,19 +25,13 @@ class RunPanelActionRequest:
     id: Optional[int] = None
     dir: int = 1
 
-    def to_make_opd_kwargs(self) -> Dict[str, Any]:
-        return {
-            "run_file": self.run_file,
-            "build_sys": self.build_sys,
-            "clr_tests": self.clr_tests,
-            "sync_out": self.sync_out,
-            "code_view_id": self.code_view_id,
-            "use_debugger": self.use_debugger,
-            "load_session": self.load_session,
-        }
+    _LAUNCH_FIELDS = (
+        "run_file", "build_sys", "clr_tests", "sync_out",
+        "code_view_id", "use_debugger", "load_session",
+    )
 
     def to_command_args(self) -> Dict[str, Any]:
-        return {"action": "make_opd", **self.to_make_opd_kwargs()}
+        return {"action": "make_opd", **{k: getattr(self, k) for k in self._LAUNCH_FIELDS}}
 
     def to_launch_session(self) -> Any:
         from .controller_state import RunPanelLaunchSession

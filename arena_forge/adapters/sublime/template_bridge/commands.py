@@ -7,6 +7,7 @@ import sublime
 import sublime_plugin
 from sublime import Region
 
+from ..root_bridge import get_template_generator
 from ..shared.settings_bridge import (
     default_settings_file,
     get_algorithm_properties_path,
@@ -15,7 +16,6 @@ from ..shared.settings_bridge import (
     root_dir,
     settings_file,
 )
-from ..root_bridge import get_template_generator
 
 gen_template = get_template_generator()
 
@@ -57,9 +57,10 @@ class TemplateBridgeCommand(sublime_plugin.TextCommand):
                         for region in prop["fold"]:
                             view.fold(Region(word_selection.a + region[0], word_selection.a + region[1]))
                     if prop.get("move_cursor") is not None:
-                        view.show_at_center(word_selection.a + prop["move_cursor"])
+                        cursor_pos = word_selection.a + prop["move_cursor"]
+                        view.show_at_center(cursor_pos)
                         view.sel().clear()
-                        view.sel().add(Region(word_selection.a + prop["move_cursor"], word_selection.a + prop["move_cursor"]))
+                        view.sel().add(Region(cursor_pos, cursor_pos))
             else:
                 view.run_command("insert_best_completion", {"exact": False, "default": "\t"})
             return
@@ -90,7 +91,10 @@ class TemplateBridgeCommand(sublime_plugin.TextCommand):
                 if path.isfile(codes[ind]):
                     with open(codes[ind], "r", encoding="utf-8") as handle:
                         code = handle.read()
-                    view.run_command("template_bridge", {"text": code, "action": "insert", "reselect": True, "smart_fold": True})
+                    view.run_command(
+                        "template_bridge",
+                        {"text": code, "action": "insert", "reselect": True, "smart_fold": True},
+                    )
 
             wind.show_quick_panel(entries, on_done, 1, 0, on_highlight)
             return
@@ -99,7 +103,11 @@ class TemplateBridgeCommand(sublime_plugin.TextCommand):
             view.window().run_command("new_window")
             sublime.active_window().set_sidebar_visible(False)
             sublime.active_window().open_file(path.join(root_dir, default_settings_file))
-            sublime.active_window().set_layout({"cols": [0, 0.5, 1], "rows": [0, 1], "cells": [[0, 0, 1, 1], [1, 0, 2, 1]]})
+            sublime.active_window().set_layout({
+                "cols": [0, 0.5, 1],
+                "rows": [0, 1],
+                "cells": [[0, 0, 1, 1], [1, 0, 2, 1]],
+            })
             options_path = path.join(sublime.packages_path(), "User", settings_file)
             if not path.exists(options_path):
                 with open(options_path, "w", encoding="utf-8") as handle:

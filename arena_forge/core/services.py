@@ -132,14 +132,6 @@ def evaluate_output(test_case: TestCase, output_text: str) -> Verdict:
     return evaluate_output_result(test_case, output_text).verdict
 
 
-def infer_language(source_file: str, profiles: Iterable[LanguageProfile]) -> str:
-    ext = Path(source_file).suffix.lstrip(".")
-    for profile in profiles:
-        if ext in profile.extensions:
-            return profile.identifier
-    raise ValueError(_translate("error.unsupported_source_extension", ext=ext))
-
-
 def select_language_profile(source_file: str, profiles: Iterable[LanguageProfile]) -> LanguageProfile:
     ext = Path(source_file).suffix.lstrip(".")
     for profile in profiles:

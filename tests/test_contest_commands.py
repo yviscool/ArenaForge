@@ -57,8 +57,9 @@ class ContestCommandsTests(unittest.TestCase):
             statuses = []
             app = types.SimpleNamespace(
                 profiles=(),
-                session_service=types.SimpleNamespace(
-                    ensure_session=lambda source_file, profiles: types.SimpleNamespace(language="cpp")
+                repository=types.SimpleNamespace(
+                    load=lambda source_file: types.SimpleNamespace(language="cpp"),
+                    save=lambda session: None,
                 ),
                 submission_service=types.SimpleNamespace(submit=requests.append),
             )

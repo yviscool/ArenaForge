@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import Any, Mapping, Optional
+from typing import Any, Mapping, Optional, Type
 
 from arena_forge.product import clone_defaults
 
@@ -15,18 +15,26 @@ def _deep_merge(base: dict[str, Any], override: Mapping[str, Any]) -> dict[str, 
     return base
 
 
-def _normalize_string_map(value: object) -> dict[str, list[str]]:
-    normalized: dict[str, list[str]] = {}
+def normalize_string_map(
+    value: object,
+    *,
+    container: Type = list,
+) -> dict:
+    normalized: dict = {}
     if not isinstance(value, Mapping):
         return normalized
     for key, raw in value.items():
         if isinstance(raw, str) and raw.strip():
-            normalized[str(key)] = [raw.strip()]
+            normalized[str(key)] = container([raw.strip()])
         elif isinstance(raw, (list, tuple)):
-            items = [str(item).strip() for item in raw if str(item).strip()]
+            items = container(str(item).strip() for item in raw if str(item).strip())
             if items:
                 normalized[str(key)] = items
     return normalized
+
+
+def _normalize_string_map(value: object) -> dict[str, list[str]]:
+    return normalize_string_map(value, container=list)
 
 
 def normalize_settings(raw_settings: Optional[Mapping[str, Any]], platform_name: str) -> dict[str, Any]:

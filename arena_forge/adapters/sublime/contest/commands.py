@@ -12,6 +12,8 @@ from arena_forge.adapters.providers.submission_service import (
     SubmissionRequest,
     SubmissionServiceError,
 )
+from arena_forge.core.domain import SessionSnapshot
+from arena_forge.core.services import select_language_profile
 
 from ..shared.messages import product_log_message, product_status_message, translate
 from ..shared.settings_bridge import get_application, get_contests_root, get_default_contest_language
@@ -157,7 +159,12 @@ class ContestHandlerCommand(sublime_plugin.TextCommand):
         code = self.view.substr(Region(0, self.view.size()))
         source_file = self.view.file_name()
         problem_id = self._problem_id_from_source_file(source_file)
-        language_name = app.session_service.ensure_session(source_file, app.profiles).language
+        session = app.repository.load(source_file)
+        if session is None:
+            language = select_language_profile(source_file, app.profiles).identifier
+            session = SessionSnapshot(source_file=source_file, language=language, tests=())
+            app.repository.save(session)
+        language_name = session.language
         request = SubmissionRequest(
             provider_name=provider_name,
             contest_id=str(settings["contestID"]),

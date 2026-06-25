@@ -8,7 +8,7 @@ from ..shared.messages import product_log_message, translate
 
 
 def persist_panel_tests(source_file, tests, repository, infer_language_name, tests_file_path_factory):
-    tests_payload = [test.memorize() for test in tests]
+    tests_payload = [test.to_payload() for test in tests]
     encoded_tests = sublime.encode_value(tests_payload, True)
     tests_path = tests_file_path_factory(source_file, for_write=True)
     current_payload = _read_panel_tests_payload(tests_path)
@@ -17,7 +17,7 @@ def persist_panel_tests(source_file, tests, repository, infer_language_name, tes
             handle.write(encoded_tests)
 
     language_name = infer_language_name(source_file)
-    core_tests = tuple(test.to_core_test_case(index + 1) for index, test in enumerate(tests))
+    core_tests = tuple(test.to_test_case(index + 1) for index, test in enumerate(tests))
     snapshot = repository.load(source_file)
     if snapshot is not None and snapshot.language == language_name and snapshot.tests == core_tests:
         return

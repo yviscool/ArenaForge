@@ -41,7 +41,7 @@ class RunPanelActionRequestTests(unittest.TestCase):
         self.assertEqual(request.id, 7)
         self.assertEqual(request.dir, -1)
 
-    def test_to_make_opd_kwargs_keeps_only_launch_fields(self) -> None:
+    def test_to_command_args_keeps_only_launch_fields(self) -> None:
         request = RunPanelActionRequest(
             action="make_opd",
             run_file="main.cpp",
@@ -62,8 +62,9 @@ class RunPanelActionRequestTests(unittest.TestCase):
         )
 
         self.assertEqual(
-            request.to_make_opd_kwargs(),
+            request.to_command_args(),
             {
+                "action": "make_opd",
                 "run_file": "main.cpp",
                 "build_sys": "source.c++",
                 "clr_tests": True,

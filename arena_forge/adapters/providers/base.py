@@ -2,16 +2,27 @@ from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from html import unescape
+from time import sleep
 from typing import Callable, Dict, Optional, Tuple
 from urllib.request import Request, urlopen
 
 USER_AGENT = "ArenaForge/3.0 (+https://example.invalid)"
+_FETCH_MAX_RETRIES = 2
+_FETCH_BACKOFF_BASE = 1.0
 
 
 def fetch_text(url: str, timeout: int = 10) -> str:
     request = Request(url, headers={"User-Agent": USER_AGENT})
-    with urlopen(request, timeout=timeout) as response:
-        return response.read().decode("utf-8", "replace")
+    last_error: Optional[OSError] = None
+    for attempt in range(_FETCH_MAX_RETRIES + 1):
+        try:
+            with urlopen(request, timeout=timeout) as response:
+                return response.read().decode("utf-8", "replace")
+        except OSError as exc:
+            last_error = exc
+            if attempt < _FETCH_MAX_RETRIES:
+                sleep(_FETCH_BACKOFF_BASE * (2 ** attempt))
+    raise last_error  # type: ignore[misc]
 
 
 def extract_html_title(html: str, strip_suffix: str = "", strip_prefix: str = "") -> str:

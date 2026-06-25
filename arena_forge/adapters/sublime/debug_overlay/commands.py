@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import ast
 import os
-from os import path
 
 import sublime
 import sublime_plugin
@@ -41,10 +40,12 @@ def _schedule_sidebar_hide(window) -> None:
 
 
 class DebugOverlayCommand(sublime_plugin.TextCommand):
-    ROOT = path.dirname(__file__)
-    ruler_opd_panel = 0.68
-    have_tied_dbg = False
-    use_debugger = False
+    def __init__(self, view):
+        self.view = view
+        self.ruler_opd_panel = 0.68
+        self.have_tied_dbg = False
+        self.use_debugger = False
+        self.tied_dbg = None
 
     def create_opd(self, clr_tests=False, sync_out=True, use_debugger=False):
         view = self.view
@@ -153,7 +154,7 @@ class DebugOverlayCommand(sublime_plugin.TextCommand):
         show_var_popup(self.view, value, pos, get_highlight_function())
 
     def toggle_using_debugger(self):
-        self.use_debugger ^= 1
+        self.use_debugger = not self.use_debugger
         status_message("status.debugger_enabled" if self.use_debugger else "status.debugger_disabled")
 
     def run(

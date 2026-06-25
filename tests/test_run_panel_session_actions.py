@@ -569,7 +569,7 @@ class RunPanelSessionActionsTests(unittest.TestCase):
                 state=state,
             )
 
-            module.make_opd(command, edit="EDIT", run_file="main.cpp", sync_out=True)
+            module.make_opd(command, edit="EDIT", request=_FakeRequest(run_file="main.cpp", sync_out=True))
 
             self.assertEqual(captured["view"], view)
             self.assertEqual(captured["command"], command)
@@ -600,7 +600,7 @@ class RunPanelSessionActionsTests(unittest.TestCase):
                 change_process_status=lambda status: calls.append(("status", status)),
             )
 
-            module.make_opd(command, edit="EDIT", load_session=True)
+            module.make_opd(command, edit="EDIT", request=_FakeRequest(load_session=True))
 
             self.assertEqual(
                 calls,
@@ -659,10 +659,12 @@ class RunPanelSessionActionsTests(unittest.TestCase):
             module.make_opd(
                 command,
                 edit="EDIT",
-                run_file="main.cpp",
-                build_sys="ninja",
-                sync_out=True,
-                code_view_id=4,
+                request=_FakeRequest(
+                    run_file="main.cpp",
+                    build_sys="ninja",
+                    sync_out=True,
+                    code_view_id=4,
+                ),
             )
 
             self.assertEqual(state.set_launch_session_calls, [launch_session])
@@ -701,7 +703,7 @@ class RunPanelSessionActionsTests(unittest.TestCase):
             )
 
             with self.assertRaisesRegex(RuntimeError, "error.no_launch_session"):
-                module.make_opd(command, edit="EDIT", run_file="main.cpp")
+                module.make_opd(command, edit="EDIT", request=_FakeRequest(run_file="main.cpp"))
 
 
 if __name__ == "__main__":

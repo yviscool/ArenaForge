@@ -57,7 +57,7 @@ def _patched_sublime():
 
 
 class RunPanelStateTests(unittest.TestCase):
-    def test_panel_test_state_memorize_sorts_answer_sets(self) -> None:
+    def test_panel_test_state_to_payload_sorts_answer_sets(self) -> None:
         with _patched_sublime():
             module = importlib.import_module("arena_forge.adapters.sublime.run_panel.state")
 
@@ -70,7 +70,7 @@ class RunPanelStateTests(unittest.TestCase):
             )
 
             self.assertEqual(
-                test_state.memorize(),
+                test_state.to_payload(),
                 {
                     "test": "1 2\n",
                     "correct_answers": ["a", "z"],
@@ -85,7 +85,7 @@ class RunPanelStateTests(unittest.TestCase):
                 persist_module = importlib.import_module("arena_forge.adapters.sublime.run_panel.persistence")
                 test_state = state_module.PanelTestState({"test": "1 2\n", "correct_answers": ["ok", "alt"]})
                 tests_path = os.path.join(tempdir, "tests.json")
-                expected_payload = persist_module.sublime.encode_value([test_state.memorize()], True)
+                expected_payload = persist_module.sublime.encode_value([test_state.to_payload()], True)
                 with open(tests_path, "w", encoding="utf-8") as handle:
                     handle.write(expected_payload)
 
@@ -93,7 +93,7 @@ class RunPanelStateTests(unittest.TestCase):
                     SessionSnapshot(
                         source_file="main.cpp",
                         language="cpp",
-                        tests=(test_state.to_core_test_case(1),),
+                        tests=(test_state.to_test_case(1),),
                     )
                 )
                 real_open = open
@@ -141,9 +141,9 @@ class RunPanelStateTests(unittest.TestCase):
 
                 self.assertEqual(len(repository.save_calls), 1)
                 self.assertEqual(repository.save_calls[0].language, "cpp")
-                self.assertEqual(repository.save_calls[0].tests, (test_state.to_core_test_case(1),))
+                self.assertEqual(repository.save_calls[0].tests, (test_state.to_test_case(1),))
                 with open(tests_path, encoding="utf-8") as handle:
-                    self.assertEqual(handle.read(), persist_module.sublime.encode_value([test_state.memorize()], True))
+                    self.assertEqual(handle.read(), persist_module.sublime.encode_value([test_state.to_payload()], True))
 
     def test_persist_panel_tests_preserves_existing_run_history(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:

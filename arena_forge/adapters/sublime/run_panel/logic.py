@@ -175,10 +175,10 @@ def build_finished_display_layout(input_text: str, output_text: str, verdict: Ve
     return _default_finished_display_layout(input_text, output_text)
 
 
-def resolve_visible_body_text(test, output_text: str, *, running: bool = False) -> str:
+def resolve_visible_body_text(test: object, output_text: str, *, running: bool = False) -> str:
     if running:
         return _default_finished_display_layout(test.input_text, output_text).body_text
-    display_body_text = getattr(test, "display_body_text", None)
+    display_body_text: Optional[str] = getattr(test, "display_body_text", None)
     if display_body_text is not None:
         return display_body_text
     return _default_finished_display_layout(test.input_text, output_text).body_text

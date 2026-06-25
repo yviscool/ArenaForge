@@ -5,6 +5,7 @@ from typing import Dict, Tuple
 
 import sublime
 
+from arena_forge.adapters.settings_loader import normalize_string_map
 from arena_forge.formatting.core.contracts import RuntimeSettings
 from arena_forge.product import SETTINGS_FILE
 
@@ -29,19 +30,11 @@ def _mapping(value: object) -> Mapping[str, object]:
 
 
 def _normalize_string_map(value: object) -> Dict[str, Tuple[str, ...]]:
-    normalized = {}  # type: Dict[str, Tuple[str, ...]]
-    for key, raw in _mapping(value).items():
-        if isinstance(raw, str) and raw.strip():
-            normalized[str(key)] = (raw.strip(),)
-        elif isinstance(raw, (list, tuple)):
-            items = tuple(str(item).strip() for item in raw if str(item).strip())
-            if items:
-                normalized[str(key)] = items
-    return normalized
+    return normalize_string_map(value, container=tuple)
 
 
 def _merge_string_maps(*maps: object) -> Dict[str, Tuple[str, ...]]:
-    merged = {}  # type: Dict[str, Tuple[str, ...]]
+    merged: Dict[str, Tuple[str, ...]] = {}
     for value in maps:
         merged.update(_normalize_string_map(value))
     return merged

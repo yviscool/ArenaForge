@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-from sublime import Region
-
 import sublime
 import sublime_plugin
-from sublime import PhantomSet
+from sublime import PhantomSet, Region
 
 from ..shared.messages import status_message
 from ..shared.package_resources import ARROW_LEFT_ICON_RESOURCE, ARROW_RIGHT_ICON_RESOURCE
@@ -13,7 +11,7 @@ from .action_request import RunPanelActionRequest
 from .controller_state import RunPanelControllerState
 from .debug_actions import redirect_frames, redirect_var_value, select_frame
 from .display_actions import start_new_test, update_configs
-from .edit_actions import apply_edit_changes, enable_edit_mode, get_begin_region, toggle_new_test
+from .edit_actions import apply_edit_changes, enable_edit_mode, toggle_new_test
 from .input_actions import (
     clear_current_input,
     delete_previous_word,
@@ -29,22 +27,17 @@ from .input_actions import (
 from .logic import should_block_test_action
 from .process_actions import terminate_command_tester_with_logging
 from .regions import compute_tie_pos, sync_read_only_mode
-from .session_actions import clear_all, handle_process_stop, make_opd
+from .session_actions import handle_process_stop, make_opd
 from .state import PanelTestState
 from .test_actions import (
     clear_all_tests,
-    delete_nth_test,
     delete_test,
     delete_tests,
-    fold_accept_tests,
     handle_accdec_event,
     handle_test_event,
-    open_test_edit,
     set_test_input,
-    set_test_status,
     set_tests_status,
     swap_tests,
-    toggle_fold,
     toggle_hide_phantoms,
 )
 from .tester import RunPanelTester
@@ -107,7 +100,9 @@ _ACTION_HANDLERS = {
     "show_text": (_show_text, True),
     "hide_text": (_hide_text, True),
     "kill_proc": (_terminate_command, True),
-    "sync_read_only": (lambda cmd, edit, req: sync_read_only_mode(cmd.view, cmd.state.tester, cmd.state.delta_input), True),
+    "sync_read_only": (
+        lambda cmd, edit, req: sync_read_only_mode(cmd.view, cmd.state.tester, cmd.state.delta_input), True
+    ),
     "enable_edit_mode": (lambda cmd, edit, req: enable_edit_mode(cmd), False),
     "set_test_input": (lambda cmd, edit, req: set_test_input(cmd, test=req.data, test_id=req.id), True),
     "delete_test": (lambda cmd, edit, req: delete_test(cmd, edit, req.id), True),

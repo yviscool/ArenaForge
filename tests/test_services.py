@@ -1,7 +1,13 @@
 import unittest
 
-from arena_forge.core.domain import OutputReferenceKind, TestCase, Verdict
-from arena_forge.core.services import evaluate_output, evaluate_output_result, find_first_mismatch, normalize_text
+from arena_forge.core.domain import LanguageProfile, OutputReferenceKind, TestCase, Verdict
+from arena_forge.core.services import (
+    evaluate_output,
+    evaluate_output_result,
+    find_first_mismatch,
+    normalize_text,
+    select_language_profile,
+)
 
 
 class ServiceTests(unittest.TestCase):
@@ -30,6 +36,17 @@ class ServiceTests(unittest.TestCase):
         self.assertIsNotNone(mismatch)
         self.assertEqual(mismatch.line, 2)
         self.assertEqual(mismatch.column, 1)
+
+    def test_select_language_profile_matches_by_extension(self) -> None:
+        cpp = LanguageProfile(name="C++", extensions=("cpp", "cc"), compile_cmd="g++", run_cmd="./a.out")
+        py = LanguageProfile(name="Python", extensions=("py",), compile_cmd=None, run_cmd="python {source_file}")
+        profile = select_language_profile("main.cpp", (cpp, py))
+        self.assertEqual(profile.name, "C++")
+
+    def test_select_language_profile_raises_for_unknown_extension(self) -> None:
+        cpp = LanguageProfile(name="C++", extensions=("cpp",), compile_cmd="g++", run_cmd="./a.out")
+        with self.assertRaises(ValueError):
+            select_language_profile("main.xyz", (cpp,))
 
 
 if __name__ == "__main__":

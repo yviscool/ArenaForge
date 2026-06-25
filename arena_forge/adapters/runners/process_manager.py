@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import signal
 import subprocess
+from collections import OrderedDict
 from os import path
 
 from arena_forge.adapters.i18n.catalog import translate_catalog as translate
@@ -14,7 +15,8 @@ from .subprocess_runner import (
     render_command,
 )
 
-_COMPILE_CACHE = {}
+_COMPILE_CACHE_MAX_SIZE = 64
+_COMPILE_CACHE: OrderedDict = OrderedDict()
 
 
 def _build_compile_cache_key(source_file, command):
@@ -28,7 +30,10 @@ def _build_compile_cache_key(source_file, command):
 def _get_cached_compile_result(cache_key):
     if cache_key is None:
         return None
-    return _COMPILE_CACHE.get(cache_key)
+    result = _COMPILE_CACHE.get(cache_key)
+    if result is not None:
+        _COMPILE_CACHE.move_to_end(cache_key)
+    return result
 
 
 def _store_cached_compile_result(cache_key, compile_result):
@@ -36,6 +41,9 @@ def _store_cached_compile_result(cache_key, compile_result):
         return
     if compile_result[0] == 0:
         _COMPILE_CACHE[cache_key] = compile_result
+        _COMPILE_CACHE.move_to_end(cache_key)
+        while len(_COMPILE_CACHE) > _COMPILE_CACHE_MAX_SIZE:
+            _COMPILE_CACHE.popitem(last=False)
     else:
         _COMPILE_CACHE.pop(cache_key, None)
 
@@ -46,8 +54,6 @@ class ProcessManager:
         self.file = file
         self.is_run = False
         self.test_counter = 0
-        self.write = self.insert
-        self.run = self.run_file
         self.run_settings = run_settings
 
     def format_command(self, cmd, args=""):
@@ -105,7 +111,7 @@ class ProcessManager:
             _store_cached_compile_result(cache_key, result)
             return result
 
-    def run_file(self, args=None):
+    def run(self, args=None):
         cmd = self.get_run_cmd(" ".join(args or ()))
         if cmd in {None, -1}:
             raise ValueError(translate("error.no_runnable_command_configured", file=self.file))
@@ -128,7 +134,7 @@ class ProcessManager:
             **text_options,
         )
 
-    def insert(self, s):
+    def write(self, s):
         if self.process.poll() is None:
             self.process.stdin.write(s)
             self.process.stdin.flush()
@@ -146,9 +152,9 @@ class ProcessManager:
 
     def new_test(self, input_data=None):
         self.test_counter += 1
-        self.run_file()
+        self.run()
         if input_data is not None:
-            self.insert(input_data)
+            self.write(input_data)
 
     def terminate(self):
         if os.name != "nt":

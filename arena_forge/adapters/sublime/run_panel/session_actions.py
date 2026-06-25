@@ -226,31 +226,8 @@ def _schedule_compile_start(command, view, process_manager, tests, sync_out) -> 
     sublime.set_timeout_async(compile_step, 10)
 
 
-def make_opd(
-    command,
-    edit,
-    *,
-    request=None,
-    run_file=None,
-    build_sys=None,
-    clr_tests=False,
-    sync_out=False,
-    code_view_id=None,
-    use_debugger=False,
-    load_session=False,
-) -> None:
+def make_opd(command, edit, *, request) -> None:
     view = command.view
-    if request is None:
-        from .action_request import RunPanelActionRequest
-        request = RunPanelActionRequest(
-            run_file=run_file,
-            build_sys=build_sys,
-            clr_tests=clr_tests,
-            sync_out=sync_out,
-            code_view_id=code_view_id,
-            use_debugger=use_debugger,
-            load_session=load_session,
-        )
     launch_plan = plan_run_panel_launch(
         status_code=view.get_status("process_status_code"),
         request=request,

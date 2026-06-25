@@ -26,9 +26,14 @@ class _DiagnosticsState:
 
 
 _VIEW_STATES: dict[int, _DiagnosticsState] = {}
+_MAX_VIEW_STATES = 256
 
 
 def _state_for(view) -> _DiagnosticsState:
+    if len(_VIEW_STATES) > _MAX_VIEW_STATES:
+        stale = [vid for vid in _VIEW_STATES if vid != view.id()]
+        for vid in stale[:len(stale) // 2]:
+            _VIEW_STATES.pop(vid, None)
     return _VIEW_STATES.setdefault(view.id(), _DiagnosticsState())
 
 

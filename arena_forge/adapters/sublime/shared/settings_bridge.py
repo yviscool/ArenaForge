@@ -6,7 +6,7 @@ from typing import Optional
 import sublime
 
 from arena_forge.adapters.sublime.bootstrap import SublimeApplication, build_sublime_application
-from arena_forge.core.services import infer_language
+from arena_forge.core.services import select_language_profile
 from arena_forge.product import SETTINGS_FILE, SETTINGS_KEYS
 
 from .messages import product_status_message
@@ -136,7 +136,7 @@ def get_language_profiles():
 
 
 def infer_language_name(file):
-    return infer_language(file, get_language_profiles())
+    return select_language_profile(file, get_language_profiles()).identifier
 
 
 def get_default_contest_language() -> str:
