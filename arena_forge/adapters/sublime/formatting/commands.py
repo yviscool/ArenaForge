@@ -107,7 +107,8 @@ class ArenaForgeFormatCommand(sublime_plugin.TextCommand):
             return
 
         if trigger == "save":
-            _schedule_apply(self.view, _execute_request(request), uuid.uuid4().hex)
+            token = uuid.uuid4().hex
+            _run_request_async(self.view, request, token)
             return
 
         if _buffer_has_pending_request(self.view):

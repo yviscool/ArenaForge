@@ -214,7 +214,7 @@ def test_build_request_uses_project_local_jvm_formatter_jar(
     assert executable_info.source == "project-local"
 
 
-def test_save_path_is_sync_and_manual_path_is_async(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_save_path_and_manual_path_are_both_async(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     project = tmp_path / "project"
     source_path = project / "main.py"
     source_path.parent.mkdir(parents=True)
@@ -263,10 +263,15 @@ def test_save_path_is_sync_and_manual_path_is_async(tmp_path: Path, monkeypatch:
         command = _make_text_command(module.ArenaForgeFormatCommand, view)
         command.run(None, mode="document", trigger="save")
 
-        assert view.commands and view.commands[0][0] == "arena_forge_format_apply_result"
-        assert not timeout_callbacks
-        assert not async_callbacks
+        assert len(async_callbacks) == 1
+        assert not view.commands
 
-        manual = _make_text_command(module.ArenaForgeFormatCommand, view)
+        async_callbacks.pop(0)()
+        assert len(timeout_callbacks) == 1
+        timeout_callbacks.pop(0)()
+        assert view.commands and view.commands[0][0] == "arena_forge_format_apply_result"
+
+        manual_view = _FakeView(source_path, "print('hi')\n", "Packages/Python/Python.sublime-syntax")
+        manual = _make_text_command(module.ArenaForgeFormatCommand, manual_view)
         manual.run(None, mode="document", trigger="manual")
         assert len(async_callbacks) == 1

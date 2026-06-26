@@ -143,7 +143,8 @@ class RunPanelStateTests(unittest.TestCase):
                 self.assertEqual(repository.save_calls[0].language, "cpp")
                 self.assertEqual(repository.save_calls[0].tests, (test_state.to_test_case(1),))
                 with open(tests_path, encoding="utf-8") as handle:
-                    self.assertEqual(handle.read(), persist_module.sublime.encode_value([test_state.to_payload()], True))
+                    expected = persist_module.sublime.encode_value([test_state.to_payload()], True)
+                    self.assertEqual(handle.read(), expected)
 
     def test_persist_panel_tests_preserves_existing_run_history(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:

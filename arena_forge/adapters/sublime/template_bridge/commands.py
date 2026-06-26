@@ -116,6 +116,10 @@ class TemplateBridgeCommand(sublime_plugin.TextCommand):
             sublime.active_window().set_view_index(options_view, 1, 0)
 
 
+_TEMPLATE_DEBOUNCE_MS = 80
+_pending_template: dict[int, object] = {}
+
+
 class TemplateCompletionListener(sublime_plugin.EventListener):
     def try_expand(self, prefix):
         config = get_settings().get("cpp_complete_settings")
@@ -139,6 +143,16 @@ class TemplateCompletionListener(sublime_plugin.EventListener):
         prefix = view.substr(view.word(view.sel()[0]))
         if len(prefix) <= 1:
             return
+        vid = view.id()
+        pending = _pending_template.get(vid)
+        if pending is not None:
+            sublime.cancel_timeout(pending)
+        _pending_template[vid] = sublime.set_timeout(
+            lambda: (_pending_template.pop(vid, None), self._try_trigger_completion(view, prefix)),
+            _TEMPLATE_DEBOUNCE_MS,
+        )
+
+    def _try_trigger_completion(self, view, prefix):
         if self.try_expand(prefix):
             view.run_command("hide_auto_complete")
 

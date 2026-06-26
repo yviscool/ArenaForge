@@ -205,6 +205,52 @@ class DiagnosticsCommandsTests(unittest.TestCase):
             self.assertEqual(logs, [("error.parse_errors_failed", {})])
             self.assertIsNone(module._VIEW_STATES[11].last_change_count)
 
+    def test_schedule_sense_bumps_generation_without_settings_lookup(self) -> None:
+        with _patched_sublime():
+            module = importlib.import_module("arena_forge.adapters.sublime.diagnostics.commands")
+            module._VIEW_STATES.clear()
+            call_log = []
+            view = _FakeDiagnosticsView(42)
+            view.set_change_count(1)
+
+            command = module.IntelliSenseCommand.__new__(module.IntelliSenseCommand)
+            command.view = view
+            command.get_compile_cmd = lambda: (call_log.append("get_compile_cmd"), "g++ {source_file}")[1]
+            command._diagnostics_service = lambda: types.SimpleNamespace(
+                run=lambda **kwargs: types.SimpleNamespace(issues=(), output="", command=(), runtime_ms=0, timed_out=False)
+            )
+
+            state = module._state_for(view)
+            state.enabled = True
+
+            call_log.clear()
+            command.schedule_sense()
+
+            self.assertEqual(state.generation, 2)
+            self.assertEqual(call_log.count("get_compile_cmd"), 1)
+            self.assertEqual(call_log[-1], "get_compile_cmd")
+
+    def test_schedule_sense_clears_marks_on_content_change(self) -> None:
+        with _patched_sublime():
+            module = importlib.import_module("arena_forge.adapters.sublime.diagnostics.commands")
+            module._VIEW_STATES.clear()
+            view = _FakeDiagnosticsView(55)
+            view.set_change_count(1)
+
+            command = module.IntelliSenseCommand.__new__(module.IntelliSenseCommand)
+            command.view = view
+            command.get_compile_cmd = lambda: None
+
+            state = module._state_for(view)
+            state.enabled = True
+            state.last_change_count = 0
+
+            command.schedule_sense()
+
+            self.assertIn("error_marks", view.erased_regions)
+            self.assertIn("warning_marks", view.erased_regions)
+            self.assertIn(("erase", "compile_error"), view.statuses)
+
 
 if __name__ == "__main__":
     unittest.main()

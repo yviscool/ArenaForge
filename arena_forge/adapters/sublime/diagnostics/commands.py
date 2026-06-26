@@ -143,6 +143,28 @@ class IntelliSenseCommand(sublime_plugin.TextCommand):
         sublime.set_timeout(capture_snapshot, _DIAGNOSTIC_DEBOUNCE_MS)
         return 0
 
+    def schedule_sense(self):
+        view = self.view
+        state = _state_for(view)
+        if not state.enabled:
+            return
+
+        change_count = view.change_count()
+        if state.last_change_count == change_count:
+            return
+
+        if state.last_change_count != change_count:
+            _clear_marks(view)
+
+        state.generation += 1
+        generation = state.generation
+
+        def deferred_run():
+            if _is_generation_current(view, generation):
+                self.run_sense(force=True)
+
+        sublime.set_timeout(deferred_run, _DIAGNOSTIC_DEBOUNCE_MS)
+
     def _collect_diagnostics(
         self,
         *,
@@ -191,6 +213,8 @@ class IntelliSenseCommand(sublime_plugin.TextCommand):
             self.sync()
         elif action == "sync_modified":
             self.run_sense()
+        elif action == "schedule_sense":
+            self.schedule_sense()
 
     def _diagnostics_service(self) -> CompilerDiagnosticsService:
         return CompilerDiagnosticsService(
@@ -265,7 +289,7 @@ class IntelliSenseListener(sublime_plugin.EventListener):
 
     def on_modified(self, view):
         if is_lang_view(view, "C++"):
-            view.run_command("intelli_sense", {"action": "sync_modified"})
+            view.run_command("intelli_sense", {"action": "schedule_sense"})
 
     def on_activated(self, view):
         if is_lang_view(view, "C++"):

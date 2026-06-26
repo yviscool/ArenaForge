@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import sys
 from importlib import import_module
+from pathlib import Path
 from typing import Optional
 
 
@@ -17,10 +19,17 @@ def _root_package_name() -> Optional[str]:
     return resolve_root_package_name(__name__)
 
 
+def _ensure_package_root_on_path() -> None:
+    package_root = str(Path(__file__).resolve().parents[3])
+    if package_root not in sys.path:
+        sys.path.insert(0, package_root)
+
+
 def import_root_module(module_name: str):
     root_package_name = _root_package_name()
     if root_package_name is not None:
         return import_module(f"{root_package_name}.{module_name}")
+    _ensure_package_root_on_path()
     return import_module(module_name)
 
 
