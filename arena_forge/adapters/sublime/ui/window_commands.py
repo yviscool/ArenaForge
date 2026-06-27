@@ -156,6 +156,7 @@ class ArenaForgeDoctorCommand(sublime_plugin.WindowCommand):
                 if sublime.find_resources("StressSyntax.sublime-syntax")
                 else [],
             },
+            profiles=application.profiles,
             settings=application.settings,
             contests_root=get_contests_root(),
             credential_backend=str(getattr(credential_store, "backend_name", "unknown")),

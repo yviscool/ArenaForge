@@ -5,6 +5,7 @@ import unittest
 from contextlib import contextmanager
 
 from arena_forge.core.domain import Verdict
+from arena_forge.core.domain import LanguageProfile
 
 
 class _FakeRequest:
@@ -215,6 +216,19 @@ def _patched_session_action_dependencies():
         append_run_history=lambda *args, **kwargs: None
     )
     sys.modules["arena_forge.adapters.sublime.shared.settings_bridge"] = types.SimpleNamespace(
+        get_language_profiles=lambda: {
+            "order": ["cpp"],
+            "profiles": {
+                "cpp": LanguageProfile(
+                    name="C++",
+                    id="cpp",
+                    extensions=("cpp",),
+                    syntax_selectors=("source.c++",),
+                    compile_cmd="g++",
+                    run_cmd="a.exe",
+                )
+            },
+        },
         get_session_repository=lambda: None,
         get_settings=lambda: None,
         get_tests_file_path=lambda *args, **kwargs: None,

@@ -53,7 +53,7 @@ def _profile(
     }
 
 
-def _default_run_settings(platform_name: str) -> list[dict[str, Any]]:
+def _default_language_profiles(platform_name: str) -> dict[str, Any]:
     platform_name = (platform_name or "windows").lower()
     native_binary, native_run = _binary_output(platform_name)
     kotlin_jar = (
@@ -61,8 +61,9 @@ def _default_run_settings(platform_name: str) -> list[dict[str, Any]]:
         if platform_name == "windows"
         else "\"{file_name}.jar\""
     )
-    return [
-        _profile(
+    order = ["c", "cpp", "python", "java", "kotlin", "go", "rust", "javascript"]
+    profiles = {
+        "c": _profile(
             id="c",
             name="C",
             extensions=["c"],
@@ -73,22 +74,26 @@ def _default_run_settings(platform_name: str) -> list[dict[str, Any]]:
             formatter="clang-format",
             template_path="templates/contest/main.c",
         ),
-        _profile(
+        "cpp": _profile(
             id="cpp",
             name="C++",
             extensions=["cpp", "cc", "cxx"],
             syntax_selectors=["source.c++"],
-            compile_cmd=f"g++ \"{{source_file}}\" -std=gnu++17 -O2 -pipe -o {native_binary}",
+            compile_cmd=(
+                f"g++ \"{{source_file}}\" -std=c++14 -g -Wall -Winvalid-pch "
+                f"-finput-charset=UTF-8 -fexec-charset=UTF-8 -o {native_binary}"
+            ),
             run_cmd=native_run,
             lint_compile_cmd=(
-                "g++ -std=gnu++17 -fsyntax-only -fdiagnostics-color=never "
+                "g++ -std=c++14 -g -Wall -fsyntax-only -fdiagnostics-color=never -Winvalid-pch "
+                "-finput-charset=UTF-8 -fexec-charset=UTF-8 "
                 "\"{source_file}\" -I \"{source_file_dir}\""
             ),
             formatter="clang-format",
             template_path="templates/contest/main.cpp",
             submission_key="cpp",
         ),
-        _profile(
+        "python": _profile(
             id="python",
             name="Python",
             extensions=["py"],
@@ -100,7 +105,7 @@ def _default_run_settings(platform_name: str) -> list[dict[str, Any]]:
             template_path="templates/contest/main.py",
             submission_key="py",
         ),
-        _profile(
+        "java": _profile(
             id="java",
             name="Java",
             extensions=["java"],
@@ -112,7 +117,7 @@ def _default_run_settings(platform_name: str) -> list[dict[str, Any]]:
             template_path="templates/contest/Main.java",
             submission_key="java",
         ),
-        _profile(
+        "kotlin": _profile(
             id="kotlin",
             name="Kotlin",
             extensions=["kt"],
@@ -123,7 +128,7 @@ def _default_run_settings(platform_name: str) -> list[dict[str, Any]]:
             formatter="ktfmt",
             template_path="templates/contest/main.kt",
         ),
-        _profile(
+        "go": _profile(
             id="go",
             name="Go",
             extensions=["go"],
@@ -134,7 +139,7 @@ def _default_run_settings(platform_name: str) -> list[dict[str, Any]]:
             formatter="gofmt",
             template_path="templates/contest/main.go",
         ),
-        _profile(
+        "rust": _profile(
             id="rust",
             name="Rust",
             extensions=["rs"],
@@ -145,7 +150,7 @@ def _default_run_settings(platform_name: str) -> list[dict[str, Any]]:
             formatter="rustfmt",
             template_path="templates/contest/main.rs",
         ),
-        _profile(
+        "javascript": _profile(
             id="javascript",
             name="JavaScript",
             extensions=["js"],
@@ -156,7 +161,8 @@ def _default_run_settings(platform_name: str) -> list[dict[str, Any]]:
             formatter="oxfmt",
             template_path="templates/contest/main.js",
         ),
-    ]
+    }
+    return {"order": order, "profiles": profiles}
 
 
 def build_default_settings(platform_name: str) -> dict[str, Any]:
@@ -182,7 +188,7 @@ def build_default_settings(platform_name: str) -> dict[str, Any]:
         "cpp_complete_enabled": True,
         "algorithms_base": None,
         "default_contest_language": "cpp",
-        "run_settings": _default_run_settings(platform_name),
+        "language_profiles": _default_language_profiles(platform_name),
         "formatting": {
             "format_on_save": False,
             "timeout_ms": 10000,

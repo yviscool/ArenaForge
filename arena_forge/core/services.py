@@ -39,38 +39,47 @@ def find_first_mismatch(expected_text: str, actual_text: str) -> Optional[Output
     if expected_text == actual_text:
         return None
 
-    expected_lines = expected_text.split("\n")
-    actual_lines = actual_text.split("\n")
-    total_lines = max(len(expected_lines), len(actual_lines))
+    expected_len = len(expected_text)
+    actual_len = len(actual_text)
+    expected_pos = 0
+    actual_pos = 0
+    line_index = 0
 
-    for line_index in range(total_lines):
-        expected_line = expected_lines[line_index] if line_index < len(expected_lines) else ""
-        actual_line = actual_lines[line_index] if line_index < len(actual_lines) else ""
-        if expected_line == actual_line:
-            continue
-        max_columns = max(len(expected_line), len(actual_line))
-        for column_index in range(max_columns):
-            expected_char = expected_line[column_index] if column_index < len(expected_line) else ""
-            actual_char = actual_line[column_index] if column_index < len(actual_line) else ""
-            if expected_char != actual_char:
-                return OutputMismatch(
-                    line=line_index + 1,
-                    column=column_index + 1,
-                    expected_excerpt=expected_line,
-                    actual_excerpt=actual_line,
-                )
-        return OutputMismatch(
-            line=line_index + 1,
-            column=max_columns + 1,
-            expected_excerpt=expected_line,
-            actual_excerpt=actual_line,
-        )
-    return OutputMismatch(
-        line=total_lines + 1,
-        column=1,
-        expected_excerpt="",
-        actual_excerpt="",
-    )
+    while expected_pos <= expected_len or actual_pos <= actual_len:
+        expected_nl = expected_text.find("\n", expected_pos)
+        actual_nl = actual_text.find("\n", actual_pos)
+        expected_end = expected_len if expected_nl == -1 else expected_nl
+        actual_end = actual_len if actual_nl == -1 else actual_nl
+        expected_line = expected_text[expected_pos:expected_end]
+        actual_line = actual_text[actual_pos:actual_end]
+
+        if expected_line != actual_line:
+            max_columns = max(len(expected_line), len(actual_line))
+            for column_index in range(max_columns):
+                expected_char = expected_line[column_index] if column_index < len(expected_line) else ""
+                actual_char = actual_line[column_index] if column_index < len(actual_line) else ""
+                if expected_char != actual_char:
+                    return OutputMismatch(
+                        line=line_index + 1,
+                        column=column_index + 1,
+                        expected_excerpt=expected_line,
+                        actual_excerpt=actual_line,
+                    )
+            return OutputMismatch(
+                line=line_index + 1,
+                column=max_columns + 1,
+                expected_excerpt=expected_line,
+                actual_excerpt=actual_line,
+            )
+
+        if expected_nl == -1 and actual_nl == -1:
+            break
+
+        expected_pos = expected_end + 1 if expected_nl != -1 else expected_len + 1
+        actual_pos = actual_end + 1 if actual_nl != -1 else actual_len + 1
+        line_index += 1
+
+    return OutputMismatch(line=line_index + 1, column=1, expected_excerpt="", actual_excerpt="")
 
 
 class NormalizedTextOutputChecker:
@@ -78,29 +87,34 @@ class NormalizedTextOutputChecker:
 
     def evaluate(self, test_case: TestCase, output_text: str) -> OutputEvaluation:
         normalized_output = normalize_text(output_text)
-        accepted = tuple(normalize_text(item) for item in test_case.accepted_outputs)
-        rejected = tuple(normalize_text(item) for item in test_case.rejected_outputs)
+        accepted_outputs = test_case.accepted_outputs
+        rejected_outputs = test_case.rejected_outputs
 
-        if normalized_output in accepted:
-            return OutputEvaluation(
-                checker_name=self.checker_name,
-                verdict=Verdict.ACCEPTED,
-                reference_kind=OutputReferenceKind.ACCEPTED,
-                normalized_actual=normalized_output,
-                normalized_expected=normalized_output,
-            )
+        if accepted_outputs:
+            for accepted_output in accepted_outputs:
+                normalized_accepted = normalize_text(accepted_output)
+                if normalized_output == normalized_accepted:
+                    return OutputEvaluation(
+                        checker_name=self.checker_name,
+                        verdict=Verdict.ACCEPTED,
+                        reference_kind=OutputReferenceKind.ACCEPTED,
+                        normalized_actual=normalized_output,
+                        normalized_expected=normalized_output,
+                    )
 
-        if normalized_output in rejected:
-            return OutputEvaluation(
-                checker_name=self.checker_name,
-                verdict=Verdict.REJECTED,
-                reference_kind=OutputReferenceKind.REJECTED,
-                normalized_actual=normalized_output,
-                normalized_expected=normalized_output,
-            )
+        if rejected_outputs:
+            for rejected_output in rejected_outputs:
+                if normalized_output == normalize_text(rejected_output):
+                    return OutputEvaluation(
+                        checker_name=self.checker_name,
+                        verdict=Verdict.REJECTED,
+                        reference_kind=OutputReferenceKind.REJECTED,
+                        normalized_actual=normalized_output,
+                        normalized_expected=normalized_output,
+                    )
 
-        if accepted:
-            expected_output = accepted[0]
+        if accepted_outputs:
+            expected_output = normalize_text(accepted_outputs[0])
             return OutputEvaluation(
                 checker_name=self.checker_name,
                 verdict=Verdict.REJECTED,

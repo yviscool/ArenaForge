@@ -4,160 +4,203 @@
 
 [![CI](https://github.com/yviscool/ArenaForge/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/yviscool/ArenaForge/actions/workflows/ci.yml)
 
-ArenaForge は Sublime Text 向けの競技プログラミングツールキットです。
-日々の問題解決で繰り返す作業、つまりソースを開く、素早く実行する、サンプルを整理する、問題やコンテストの URL からクリーンな作業ディレクトリを作る、という流れのために設計されています。
+ArenaForge は、Sublime Text 向けの競技プログラミング用ワークベンチです。ローカル実行、サンプル管理、コンテスト作成、整形、C++ 診断、対拍、Codeforces 提出を 1 つのパッケージにまとめます。
 
-このパッケージは、そのワークフローをエディタ内で完結させます。
-実行履歴、ストレステスト、診断、テンプレート挿入、コンテストセットアップ、Codeforces への提出まで、同じ作業画面の中で扱えます。
+## 主要リンク
 
-## できること
+- [Quickstart](docs/QUICKSTART.md)
+- [Configuration](docs/CONFIGURATION.md)
+- [PCH workflow](docs/PCH.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Sublime shell migration notes](docs/SUBLIME_SHELL_MIGRATION.md)
 
-- 現在のファイルを専用のテストパネルで実行します。
-- サンプルテストや詳細なセッションスナップショットを、ソースツリーの近くに JSON ファイルとして保存します。
-- 出力と期待値を比較し、最初に不一致になった位置を表示します。
-- 実行パネル内で対話入力の履歴を保持し、基本的なターミナル風編集を行えます。
-- 現在のソースファイル専用のテストエディタと、別個の実行履歴ビューを開けます。
-- Codeforces、AtCoder、Luogu、AcWing の URL から、コンテストまたは単問用の作業ディレクトリを生成します。
-- 認証情報を `keyring` に保存したうえで、Sublime Text から Codeforces の解答を提出できます。
-- `<task>__Good` と `<task>__Generator` を使ってストレステストを実行します。
-- ローカルのアルゴリズムテンプレートを挿入し、軽量な C++ 補完支援を提供します。
-- `lint_compile_cmd` を使って C++ の診断を実行します。
-- `Doctor` レポートで、パッケージファイル、リソース、実行プロファイル、認証バックエンドの利用可否を確認できます。
+## 機能
 
-## 現在の Provider サポート
+- 専用のテストパネルで現在のファイルを実行
+- テストとセッションをソースツリー近くの JSON に保存
+- 出力と期待値を比較し、最初の不一致を表示
+- 実行パネルで入力履歴と端末風編集を維持
+- 対応 OJ の URL からコンテスト / 単体問題ワークスペースを生成
+- コンテスト作成時に対象言語を選択
+- 対応言語を ArenaForge 内で直接整形
+- `lint_compile_cmd` で C++ の診断マークを表示
+- `<task>__Good` / `<task>__Generator` で対拍
+- `keyring` で資格情報を保存し、Codeforces に直接提出
+
+## 言語対応
+
+### 実行 / コンテストテンプレート
+
+| 言語 | 実行 | テンプレート | formatter |
+| --- | --- | --- | --- |
+| C | 対応 | 対応 | `clang-format` |
+| C++ | 対応 | 対応 | `clang-format` |
+| Python | 対応 | 対応 | `ruff format` |
+| Java | 対応 | 対応 | `google-java-format` |
+| Kotlin | 対応 | 対応 | `ktfmt` |
+| Go | 対応 | 対応 | `gofmt` |
+| Rust | 対応 | 対応 | `rustfmt` |
+| JavaScript | 対応 | 対応 | `oxfmt` |
+
+### 整形のみ `oxfmt` 対応
+
+- TypeScript / TSX
+- JSON / YAML / TOML
+- HTML / Vue / Svelte
+- CSS / SCSS / Less
+- Markdown / MDX
+- GraphQL
+
+## Provider
 
 | Provider | ワークスペース生成 | 提出 |
 | --- | --- | --- |
-| Codeforces | サンプル付きコンテストワークスペース | はい |
-| AtCoder | サンプル付きコンテストワークスペース | いいえ |
-| Luogu | 単問ワークスペース | いいえ |
-| AcWing | 単問ワークスペース | いいえ |
+| Codeforces | サンプル付きコンテストワークスペース | 対応 |
+| AtCoder | サンプル付きコンテストワークスペース | 非対応 |
+| Luogu | 単体問題ワークスペース | 非対応 |
+| AcWing | 単体問題ワークスペース | 非対応 |
 
-Codeforces への提出には `requests` と、動作する `keyring` バックエンドが必要です。
-リポジトリでは `dependencies.json` に `requests` を宣言しています。
-
-## プロジェクト構成
-
-- `arena_forge/core`: 型付けされたドメインモデル、出力比較、セッションユースケース
-- `arena_forge/adapters`: Sublime 連携、provider、ストレージ、runner、i18n、ワークスペース生成、認証情報保存
-- `tests`: provider、ストレージ、設定、実行パネルの挙動、コマンド面を対象にした pytest カバレッジ
-- `docs`: アーキテクチャ、移行、i18n に関するメモ
-- リポジトリルート: キーマップ、シンタックスファイル、HTML 描画アセット、アイコン、デバッガー、薄いラッパーコマンドなどの Sublime パッケージリソース
+Codeforces 提出には `requests` と利用可能な `keyring` backend が必要です。
 
 ## インストール
 
-1. このフォルダを Sublime Text の `Packages/` ディレクトリに配置します。
-2. 手動でインストールする場合は、外側のパッケージフォルダ名を `ArenaForge` に変更してください。
-3. Sublime Text を再起動します。
-4. コマンドパレットから `ArenaForge: Open Settings` を実行します。
+### 通常
 
-実行したい言語に応じて、`g++`、`python`、`javac` などのローカルツールチェーンも必要です。
+1. このフォルダを Sublime Text の `Packages/` に置く。
+2. 外側のパッケージ名は `ArenaForge` のままにする。
+3. Sublime Text を再起動、または `Tools -> Developer -> Reload Plugins` を実行。
+4. コマンドパレットで `ArenaForge: Open Settings` を開く。
 
-## 基本ワークフロー
+### Windows 開発用リンク
 
-1. `A.cpp` や `main.py` のようなソースファイルを開きます。
-2. `ArenaForge: Run` を実行します。
-3. 実行パネルでテストを追加または編集します。
-4. URL からコンテストや問題用のワークスペースを作る場合は `ArenaForge: Setup Contest` を使います。
-5. 初回の Codeforces 提出前に `ArenaForge: Configure Credentials` を実行します。
-6. コンテストワークスペース内のファイルから `ArenaForge: Submit` を実行します。
+ローカル開発では `Packages/` へのコピーより junction を推奨します。
 
-よく使うショートカット:
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\link_sublime_package.ps1
+```
 
-- 現在のファイルを実行: Windows/Linux は `Ctrl+Alt+B`、macOS は `Ctrl+B`
-- 新しいテストを追加: `Ctrl+Enter`
-- 現在のプロセスを停止: 全プラットフォームで `Ctrl+C`、Windows/Linux では `Ctrl+X` も利用可
-- 選択中のテストブロックを削除: `Ctrl+D`
-- テスト順を入れ替え: Windows/Linux は `Ctrl+Shift+Up` / `Ctrl+Shift+Down`、macOS は `Ctrl+Super+Up` / `Ctrl+Super+Down`
-- 右側のテスターパネルを切り替え: Windows/Linux は `Ctrl+K`、`Ctrl+P`、macOS は `Super+K`、`Super+P`
+## コマンド
 
-実行パネルでは、Windows/Linux で次のようなターミナル風編集キーも使えます。
+### 実行 / コンテスト
 
-- すべてのテストをクリア: `Ctrl+L`
-- 現在の入力行をクリア: `Ctrl+U`
-- 入力履歴を移動: `Ctrl+Up` / `Ctrl+Down`
-- 行頭または行末へ移動: `Ctrl+A` / `Ctrl+E`
-- 単語単位で移動または削除: `Alt+B`、`Alt+F`、`Ctrl+W`
+- `ArenaForge: Run`
+- `ArenaForge: Setup Contest`
+- `ArenaForge: Submit`
+- `ArenaForge: Configure Credentials`
+- `ArenaForge: Doctor`
+- `ArenaForge: Run History`
 
-macOS では追加で次も使えます。
+Windows では `Ctrl+Alt+B` が `ArenaForge: Run` に割り当てられています。
 
-- デバッガー付きで実行: `Ctrl+Shift+B`
-- インライン phantom 表示を切り替え: `Ctrl+Super+Shift+H`
+### 整形
 
-一覧は以下を参照してください。
+- `ArenaForge: Format`
+- `ArenaForge: Format Document`
+- `ArenaForge: Format Selection`
+- `ArenaForge: Diagnose Formatter`
+- `ArenaForge: Formatter Install Guide`
+- `ArenaForge: Create Format Config For Current File`
+- `ArenaForge: Create Workspace Format Configs`
 
-- `Default (Windows).sublime-keymap`
-- `Default (Linux).sublime-keymap`
-- `Default (OSX).sublime-keymap`
+## 推奨ワークフロー
 
-## 設定
+1. ローカル開発では junction で Sublime に接続する。
+2. 個人設定は `Packages/User/ArenaForge.sublime-settings` に書く。
+3. `A.cpp`、`main.py`、`Main.java` のようなソースを開く。
+4. `ArenaForge: Run` を実行し、右側の run panel でテストを編集する。
+5. 必要なら `ArenaForge: Format`、または `format_on_save` を使う。
+6. 新しいコンテスト用ディレクトリが必要なら `ArenaForge: Setup Contest` を使う。
+7. 初期化パネルで対象言語を選ぶ。
+8. コンパイラや formatter のパスを変えたら `ArenaForge: Doctor` を実行する。
 
-メインの設定ファイルは `ArenaForge.sublime-settings` です。
-リポジトリには、プラットフォーム別の推奨デフォルト設定も含まれています。
+## ユーザー設定
 
-- `ArenaForge (Windows).sublime-settings`
-- `ArenaForge (Linux).sublime-settings`
-- `ArenaForge (OSX).sublime-settings`
+メイン設定は `ArenaForge.sublime-settings` です。個人の上書きは次へ置きます。
 
-よく調整する設定項目は次のとおりです。
+```text
+Packages/User/ArenaForge.sublime-settings
+```
 
-- `run_settings`: 言語プロファイル、拡張子、コンパイルコマンド、実行コマンド、任意の `lint_compile_cmd`
-- `contests_root`: 生成したコンテストまたは問題ワークスペースの配置先
-- `tests_relative_dir`, `session_relative_dir`, `tests_file_suffix`: テストインデックスとセッションスナップショットの保存場所
-- `preferred_locale`: `en`、`zh-Hans`、`ja`、`ko`、`ru`
-- `credential_backend`: 現在は `keyring`
-- `stress_time_limit_seconds`: ストレステストで使うタイムアウト
-- `algorithms_base`: ローカル C++ テンプレートやスニペットのベースディレクトリ
-- `cpp_complete_enabled` と `cpp_complete_settings`: 軽量 C++ 補完の挙動
-- `submission_language_ids`: provider ごとの提出用言語 ID マッピング
-- `ui_variant` と `ui_density`: 実行パネルの基本的な表示設定
+推奨方針:
+
+- ユーザー設定には個人のパスとワークフロー切り替えだけを書く。
+- 言語ごとのスタイルは `.clang-format`、`pyproject.toml`、`rustfmt.toml` などに置く。
+- `formatting.commands` にはローカルの formatter パスやコマンドプレフィックスを書く。
 
 例:
 
 ```json
 {
   "preferred_locale": "ja",
-  "contests_root": "~/Contests/ArenaForge",
-  "tests_relative_dir": ".arena-forge/tests",
-  "session_relative_dir": ".arena-forge/sessions",
-  "stress_time_limit_seconds": 2,
-  "credential_backend": "keyring",
-  "algorithms_base": "Algorithms",
-  "run_settings": [
-    {
-      "name": "C++",
-      "extensions": ["cpp", "cc", "cxx"],
-      "compile_cmd": "g++ \"{source_file}\" -std=gnu++17 -O2 -pipe -o \"{file_name}\"",
-      "run_cmd": "./{file_name} {args}",
-      "lint_compile_cmd": "g++ -std=gnu++17 \"{source_file}\" -I \"{source_file_dir}\""
+  "default_contest_language": "cpp",
+  "close_sidebar": false,
+  "language_profiles": {
+    "profiles": {
+      "cpp": {
+        "compile_cmd": "g++ \"{source_file}\" -std=c++14 -g -Wall -Winvalid-pch -finput-charset=UTF-8 -fexec-charset=UTF-8 -o \"{source_file_dir}\\\\{file_name}.exe\"",
+        "lint_compile_cmd": "g++ -std=c++14 -g -Wall -fsyntax-only -fdiagnostics-color=never -Winvalid-pch -finput-charset=UTF-8 -fexec-charset=UTF-8 \"{source_file}\" -I \"{source_file_dir}\""
+      }
     },
-    {
-      "name": "Python",
-      "extensions": ["py"],
-      "compile_cmd": null,
-      "run_cmd": "python \"{source_file}\"",
-      "lint_compile_cmd": null
+    "order": ["c", "cpp", "python", "java", "kotlin", "go", "rust", "javascript"]
+  },
+  "formatting": {
+    "format_on_save": true,
+    "commands": {
+      "clang-format": ["C:/Program Files/LLVM/bin/clang-format.exe"]
     }
-  ]
+  }
 }
 ```
 
-### Formatter に関する補足
+## 重要な設定
 
-- Java / Kotlin では、プロジェクト内の `tools/google-java-format.jar` と `tools/ktfmt.jar` も自動検出されます。
-- JAR を別の場所に置く場合は、`formatting.commands` に `["java", "-jar", "..."]` を明示してください。
+- `language_profiles`
+- `formatting.format_on_save`
+- `formatting.commands`
+- `formatting.extra_args`
+- `formatting.selector_overrides`
+- `submission_language_ids`
+- `stress_time_limit_seconds`
+- `tests_relative_dir` / `session_relative_dir` / `tests_file_suffix`
 
-テストデータとセッションデータは、通常の JSON ファイルとして作業中のソースツリーの近くに保存されます。
-正確な場所は `tests_relative_dir` と `session_relative_dir` の設定によって決まります。
-同梱の設定ファイルはプラットフォームごとにディレクトリ構成が少し異なるため、上の例は固定の記述ではなくテンプレートとして扱ってください。
+## トラブルシュート
+
+### C++ の赤枠やエラー表示が出ない
+
+- `lint_enabled` が `true`
+- 対象が `.cpp` などの対応拡張子
+- `language_profiles.profiles.cpp.lint_compile_cmd` が有効
+- `g++` が Sublime から呼べる
+- 設定変更後にプラグインを再読み込み
+
+`bits/stdc++.h` を使うなら、先に `.gch` を作成してください。
+
+```bash
+bash scripts/pch.sh
+```
+
+### 整形が効かない
+
+- 対応 adapter に認識されているか
+- formatter が `PATH` か `formatting.commands` にあるか
+- Java / Kotlin は `tools/google-java-format.jar` / `tools/ktfmt.jar` を見つけられるか
+
+`ArenaForge: Diagnose Formatter` で詳細を確認できます。
+
+## プロジェクト構成
+
+- `arena_forge/core`: ドメインモデル、出力比較、セッションユースケース
+- `arena_forge/adapters`: Sublime 統合、provider、保存、runner、i18n、ワークスペース生成、認証保存
+- `arena_forge/formatting`: formatter adapter、実行ファイル探索、設定生成、整形実行時
+- `arena_forge/templates`: 標準コンテストテンプレート
+- `tests`: provider、保存、設定、run panel、整形の pytest
+- `docs`: アーキテクチャ、設定、quickstart
 
 ## 開発
 
 - Python: `3.8+`
 - 依存管理: `uv`
 - 実行時依存: `keyring`
-
-ローカルセットアップと確認:
 
 ```bash
 uv sync --group dev
@@ -166,18 +209,6 @@ uv run pytest -q
 uv run mypy
 ```
 
-CI と Release 自動化:
-
-- ワークフローファイル: `.github/workflows/ci.yml`
-- トリガー: `push`、`pull_request`、手動の `workflow_dispatch`
-- 品質チェックのマトリクス: `ubuntu-latest` と `windows-latest`
-- 両プラットフォームで実行するチェック: `ruff`、`pytest`
-- Ubuntu での追加チェック: `mypy`
-- リリース条件: `main` への push が品質チェックを通過すると、`ci-<short-sha>` というタグの GitHub プレリリースを自動公開
-- リリース資産: `ArenaForge.sublime-package`。追跡対象のパッケージファイルから生成し、そのプレリリースに添付
-
 ## 謝辞
 
-このプロジェクトは、Jatana による [FastOlympicCoding](https://github.com/Jatana/FastOlympicCoding) のアイデアとワークフローを土台にしています。
-
-現在のコードベースも競技プログラミングに焦点を当てていますが、実装は型付けされたコア、移植性の高い JSON ストレージ、より整理された Sublime アダプター構成へと再編されています。
+このプロジェクトは [FastOlympicCoding](https://github.com/Jatana/FastOlympicCoding) のアイデアとワークフローを参考にしています。

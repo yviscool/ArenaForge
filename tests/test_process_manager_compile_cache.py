@@ -8,6 +8,7 @@ import unittest
 from contextlib import contextmanager
 from pathlib import Path
 
+from arena_forge.core.domain import LanguageProfile
 
 class _FakePopen:
     calls = []
@@ -58,12 +59,13 @@ def _make_manager(module, source_file: str, compile_cmd):
     return module.ProcessManager(
         source_file,
         None,
-        run_settings=[
-            {
-                "extensions": ["cpp"],
-                "compile_cmd": compile_cmd,
-                "run_cmd": "runner",
-            }
+        profiles=[
+            LanguageProfile(
+                name="C++",
+                extensions=("cpp",),
+                compile_cmd=compile_cmd,
+                run_cmd="runner",
+            )
         ],
     )
 
@@ -138,12 +140,13 @@ class ProcessManagerCompileCacheTests(unittest.TestCase):
                 manager = module.ProcessManager(
                     str(source_file),
                     None,
-                    run_settings=[
-                        {
-                            "extensions": ["py"],
-                            "compile_cmd": None,
-                            "run_cmd": "python",
-                        }
+                    profiles=[
+                        LanguageProfile(
+                            name="Python",
+                            extensions=("py",),
+                            compile_cmd=None,
+                            run_cmd="python",
+                        )
                     ],
                 )
 

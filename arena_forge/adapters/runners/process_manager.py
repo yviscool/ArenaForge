@@ -5,8 +5,11 @@ import signal
 import subprocess
 from collections import OrderedDict
 from os import path
+from typing import Iterable
 
 from arena_forge.adapters.i18n.catalog import translate_catalog as translate
+from arena_forge.core.domain import LanguageProfile
+from arena_forge.core.services import select_language_profile
 
 from .subprocess_runner import (
     build_command_argv,
@@ -49,12 +52,12 @@ def _store_cached_compile_result(cache_key, compile_result):
 
 
 class ProcessManager:
-    def __init__(self, file, syntax, run_settings=None):
+    def __init__(self, file, syntax, profiles: Iterable[LanguageProfile] | None = None):
         self.syntax = syntax
         self.file = file
         self.is_run = False
         self.test_counter = 0
-        self.run_settings = run_settings
+        self.profiles = tuple(profiles or ())
 
     def format_command(self, cmd, args=""):
         return render_command(cmd, self.file, args=args)
@@ -63,11 +66,11 @@ class ProcessManager:
         return False
 
     def _find_profile_setting(self, key):
-        file_ext = path.splitext(self.file)[1][1:]
-        for x in self.run_settings:
-            if file_ext in x["extensions"]:
-                return x.get(key)
-        return -1
+        try:
+            profile = select_language_profile(self.file, self.profiles)
+        except ValueError:
+            return -1
+        return getattr(profile, key, -1)
 
     def get_compile_cmd(self):
         value = self._find_profile_setting("compile_cmd")

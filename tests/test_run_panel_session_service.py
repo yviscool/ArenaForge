@@ -71,8 +71,8 @@ class RunPanelSessionServiceTests(unittest.TestCase):
         process_calls = []
         debug_calls = []
 
-        def fake_process_manager(run_file, build_sys, run_settings):
-            process_calls.append((run_file, build_sys, run_settings))
+        def fake_process_manager(run_file, build_sys, profiles):
+            process_calls.append((run_file, build_sys, profiles))
             return "process"
 
         def fake_debugger(run_file):
@@ -84,7 +84,7 @@ class RunPanelSessionServiceTests(unittest.TestCase):
             debug_module=fake_debugger,
             run_file="main.cpp",
             build_sys="source.c++",
-            run_settings=["cfg"],
+            profiles=["cfg"],
             process_manager_factory=fake_process_manager,
         )
         debugger_backend = create_run_backend(
@@ -92,7 +92,7 @@ class RunPanelSessionServiceTests(unittest.TestCase):
             debug_module=fake_debugger,
             run_file="main.cpp",
             build_sys="source.c++",
-            run_settings=["cfg"],
+            profiles=["cfg"],
             process_manager_factory=fake_process_manager,
         )
 

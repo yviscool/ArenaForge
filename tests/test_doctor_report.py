@@ -2,6 +2,7 @@ import unittest
 from pathlib import Path
 
 from arena_forge.adapters.sublime.doctor_report import build_doctor_report
+from arena_forge.core.domain import LanguageProfile
 
 
 class DoctorReportTests(unittest.TestCase):
@@ -14,8 +15,8 @@ class DoctorReportTests(unittest.TestCase):
                 "TestSyntax.sublime-syntax": ["Packages/ArenaForge/TestSyntax.sublime-syntax"],
                 "StressSyntax.sublime-syntax": ["Packages/ArenaForge/StressSyntax.sublime-syntax"],
             },
+            profiles=(LanguageProfile(name="C++", extensions=("cpp",), compile_cmd="g++", run_cmd="a.exe"),),
             settings={
-                "run_settings": [{"name": "C++", "lint_compile_cmd": "g++"}],
                 "formatting": {"commands": {"ruff": ["ruff"]}},
             },
             contests_root="C:/Contests/ArenaForge",

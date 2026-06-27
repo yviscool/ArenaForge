@@ -9,10 +9,11 @@ import sublime_plugin
 
 from arena_forge.adapters.runners import CompilerDiagnosticsService, DiagnosticsScratchWorkspace
 from arena_forge.core.domain import DiagnosticSeverity
+from arena_forge.core.services import select_language_profile
 
 from ..shared.messages import product_log_message, status_message, translate
 from ..shared.package_resources import get_plugin_root_dir
-from ..shared.settings_bridge import get_settings, is_lang_view
+from ..shared.settings_bridge import get_language_profiles, get_settings, is_lang_view
 
 _DIAGNOSTIC_DEBOUNCE_MS = 250
 _DIAGNOSTIC_RUN_FAILURES = (IndexError, KeyError, OSError, ValueError)
@@ -57,14 +58,11 @@ class IntelliSenseCommand(sublime_plugin.TextCommand):
         file_name = self.view.file_name()
         if not file_name:
             return None
-        extension = Path(file_name).suffix.lstrip(".")
-        for option in get_settings().get("run_settings", []):
-            if extension in option.get("extensions", ()) and option.get("lint_compile_cmd"):
-                return option.get("lint_compile_cmd", None)
-        for option in get_settings().get("run_settings", []):
-            if option.get("id") == "cpp" or option["name"] == "C++":
-                return option.get("lint_compile_cmd", None)
-        return None
+        try:
+            profile = select_language_profile(file_name, get_language_profiles())
+        except ValueError:
+            return None
+        return profile.lint_compile_cmd
 
     @staticmethod
     def _lint_timeout_ms() -> int:

@@ -40,6 +40,8 @@ def parse_compiler_issues(output: str, source_file: Union[str, Path]) -> tuple[C
     normalized_source = _normalize_source_label(str(source_file))
     issues: list[CompilerIssue] = []
     for raw_line in output.splitlines():
+        if ":" not in raw_line:
+            continue
         line = _strip_ansi_escape_codes(raw_line)
         match = _DIAGNOSTIC_PATTERN.match(line)
         if match is None:

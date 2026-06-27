@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, Sequence
 
 from arena_forge.adapters.i18n.catalog import translate_catalog as translate
 from arena_forge.core.domain import LanguageProfile
@@ -21,9 +21,16 @@ class SettingsBackedRunner:
         self.timeout_seconds = timeout_seconds
 
     @classmethod
-    def from_settings(cls, run_settings: list[dict[str, object]], platform_name: str, timeout_seconds=None):
-        profiles = tuple(LanguageProfile.from_mapping(profile) for profile in run_settings)
+    def from_language_profiles(
+        cls,
+        language_profiles: Sequence[LanguageProfile],
+        platform_name: str,
+        timeout_seconds=None,
+    ):
+        profiles = tuple(language_profiles)
         return cls(profiles=profiles, platform_name=platform_name, timeout_seconds=timeout_seconds)
+
+    from_settings = from_language_profiles
 
     def profile_for_language(self, language: str) -> LanguageProfile:
         normalized = str(language).strip().lower()

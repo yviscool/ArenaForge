@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import Any, Mapping, Optional, Type
+from typing import Any, Mapping, Optional, Type, cast
 
 from arena_forge.product import clone_defaults
 
@@ -37,6 +37,95 @@ def _normalize_string_map(value: object) -> dict[str, list[str]]:
     return normalize_string_map(value, container=list)
 
 
+def _normalize_optional_string(value: object) -> Optional[str]:
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None
+
+
+def _normalize_string_list(value: object) -> list[str]:
+    if not isinstance(value, (list, tuple)):
+        return []
+    result = [str(item).strip() for item in value if str(item).strip()]
+    return result
+
+
+def _normalize_language_profile(
+    profile_id: str,
+    profile: Mapping[str, Any],
+    defaults: Optional[Mapping[str, Any]] = None,
+) -> dict[str, Any]:
+    normalized = deepcopy(defaults) if defaults is not None else {}
+    _deep_merge(normalized, profile)
+    normalized["id"] = str(normalized.get("id") or profile_id)
+    normalized["name"] = str(normalized.get("name") or profile_id)
+    normalized["extensions"] = _normalize_string_list(normalized.get("extensions", ()))
+    normalized["syntax_selectors"] = _normalize_string_list(normalized.get("syntax_selectors", ()))
+    normalized["compile_cmd"] = _normalize_optional_string(normalized.get("compile_cmd"))
+    normalized["run_cmd"] = _normalize_optional_string(normalized.get("run_cmd"))
+    normalized["lint_compile_cmd"] = _normalize_optional_string(normalized.get("lint_compile_cmd"))
+    normalized["formatter"] = _normalize_optional_string(normalized.get("formatter"))
+    normalized["template_path"] = _normalize_optional_string(normalized.get("template_path"))
+    normalized["submission_key"] = _normalize_optional_string(normalized.get("submission_key"))
+    return normalized
+
+
+def normalize_language_profiles(value: object, defaults: Mapping[str, Any]) -> dict[str, Any]:
+    default_profiles = cast(Mapping[str, Mapping[str, Any]], defaults.get("profiles", {}))
+    default_order = [str(item).strip() for item in defaults.get("order", ()) if str(item).strip()]
+    raw_profiles = value if isinstance(value, Mapping) else {}
+    normalized = deepcopy(defaults)
+    if isinstance(raw_profiles, Mapping):
+        _deep_merge(normalized, raw_profiles)
+
+    merged_profiles = cast(Mapping[str, Mapping[str, Any]], normalized.get("profiles", {}))
+    ordered_profiles: dict[str, dict[str, Any]] = {}
+    for profile_id, default_profile in default_profiles.items():
+        raw_profile = merged_profiles.get(profile_id, {})
+        if not isinstance(raw_profile, Mapping):
+            raw_profile = {}
+        ordered_profiles[str(profile_id)] = _normalize_language_profile(
+            str(profile_id),
+            raw_profile,
+            defaults=default_profile,
+        )
+
+    for profile_id, raw_profile in merged_profiles.items():
+        normalized_id = str(profile_id)
+        if normalized_id in ordered_profiles:
+            continue
+        if not isinstance(raw_profile, Mapping):
+            raw_profile = {}
+        ordered_profiles[normalized_id] = _normalize_language_profile(normalized_id, raw_profile)
+
+    order = [str(item).strip() for item in normalized.get("order", ()) if str(item).strip()]
+    if not order:
+        order = list(default_order)
+    order = list(dict.fromkeys(order))
+    for profile_id in ordered_profiles:
+        if profile_id not in order:
+            order.append(profile_id)
+
+    normalized["order"] = order
+    normalized["profiles"] = ordered_profiles
+    return normalized
+
+
+def iter_language_profile_mappings(language_profiles: Mapping[str, Any]) -> tuple[dict[str, Any], ...]:
+    profiles = language_profiles.get("profiles", {})
+    order = language_profiles.get("order", ())
+    if not isinstance(profiles, Mapping):
+        return ()
+    ordered_ids = [str(item).strip() for item in order if str(item).strip()]
+    ordered_ids = list(dict.fromkeys(ordered_ids))
+    for profile_id in profiles:
+        normalized_id = str(profile_id)
+        if normalized_id not in ordered_ids:
+            ordered_ids.append(normalized_id)
+    return tuple(deepcopy(profiles[profile_id]) for profile_id in ordered_ids if profile_id in profiles)
+
+
 def normalize_settings(raw_settings: Optional[Mapping[str, Any]], platform_name: str) -> dict[str, Any]:
     defaults = clone_defaults(platform_name)
     merged = deepcopy(defaults)
@@ -67,25 +156,12 @@ def normalize_settings(raw_settings: Optional[Mapping[str, Any]], platform_name:
         preferred_locale = defaults["preferred_locale"]
     merged["preferred_locale"] = preferred_locale
 
-    normalized_profiles = []
-    for profile in merged.get("run_settings", ()):
-        normalized_profiles.append(
-            {
-                "id": str(profile.get("id") or ""),
-                "name": str(profile["name"]),
-                "extensions": [str(item) for item in profile.get("extensions", ())],
-                "syntax_selectors": [str(item) for item in profile.get("syntax_selectors", ())],
-                "compile_cmd": profile.get("compile_cmd"),
-                "run_cmd": profile.get("run_cmd"),
-                "lint_compile_cmd": profile.get("lint_compile_cmd"),
-                "formatter": profile.get("formatter"),
-                "template_path": profile.get("template_path"),
-                "submission_key": profile.get("submission_key"),
-            }
-        )
-    merged["run_settings"] = normalized_profiles
+    merged["language_profiles"] = normalize_language_profiles(
+        merged.get("language_profiles", {}),
+        defaults["language_profiles"],
+    )
 
-    known_language_ids = {str(profile.get("id") or "").strip() for profile in normalized_profiles}
+    known_language_ids = set(merged["language_profiles"]["profiles"].keys())
     default_contest_language = str(merged.get("default_contest_language") or defaults["default_contest_language"])
     if default_contest_language not in known_language_ids:
         default_contest_language = defaults["default_contest_language"]

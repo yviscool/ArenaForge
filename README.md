@@ -10,6 +10,8 @@ It combines fast local runs, sample management, contest workspace generation, fo
 ## Quick Links
 
 - [Quickstart](docs/QUICKSTART.md)
+- [Configuration](docs/CONFIGURATION.md)
+- [PCH workflow](docs/PCH.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Sublime shell migration notes](docs/SUBLIME_SHELL_MIGRATION.md)
 
@@ -103,6 +105,8 @@ C:\software\Sublime Text 4\Data\Packages\ArenaForge
 - `ArenaForge: Doctor`
 - `ArenaForge: Run History`
 
+The default Windows keymap binds `Ctrl+Alt+B` to `ArenaForge: Run`.
+
 ### Formatting
 
 - `ArenaForge: Format`
@@ -139,6 +143,7 @@ Best practice:
 
 - Keep user settings focused on personal paths and workflow switches.
 - Keep formatting style policy in project-native config files such as `.clang-format`, `pyproject.toml`, and `rustfmt.toml`.
+- Keep ArenaForge formatter runtime settings in the `formatting` block of `ArenaForge.sublime-settings`.
 - Use `formatting.commands` for machine-local executable paths or command prefixes.
 - Avoid embedding long formatter style blobs in editor settings.
 
@@ -149,13 +154,14 @@ Example user settings:
   "preferred_locale": "zh-Hans",
   "default_contest_language": "cpp",
   "close_sidebar": false,
-  "formatting": {
-    "format_on_save": true,
-    "commands": {
-      "clang-format": [
-        "C:/Program Files/LLVM/bin/clang-format.exe"
-      ]
-    }
+  "language_profiles": {
+    "profiles": {
+      "cpp": {
+        "compile_cmd": "g++ \"{source_file}\" -std=c++14 -g -Wall -Winvalid-pch -finput-charset=UTF-8 -fexec-charset=UTF-8 -o \"{source_file_dir}\\\\{file_name}.exe\"",
+        "lint_compile_cmd": "g++ -std=c++14 -g -Wall -fsyntax-only -fdiagnostics-color=never -Winvalid-pch -finput-charset=UTF-8 -fexec-charset=UTF-8 \"{source_file}\" -I \"{source_file_dir}\""
+      }
+    },
+    "order": ["c", "cpp", "python", "java", "kotlin", "go", "rust", "javascript"]
   }
 }
 ```
@@ -168,7 +174,7 @@ Example user settings:
 ## Key Settings
 
 - `default_contest_language`: default language highlighted in `Setup Contest`
-- `run_settings`: language profiles for run / compile / template behavior
+- `language_profiles`: ordered language profile map for run / compile / template behavior
 - `formatting.format_on_save`: synchronous format before save
 - `formatting.commands`: machine-local formatter command prefixes
 - `formatting.extra_args`: extra runtime flags for formatters
@@ -186,13 +192,15 @@ Check:
 
 - `lint_enabled` is `true`
 - your active file is a supported C++ extension such as `.cpp`
-- the C++ profile in `run_settings` still has a valid `lint_compile_cmd`
+- the `language_profiles.profiles.cpp.lint_compile_cmd` setting is still valid
 - `g++` is callable in the same environment Sublime uses
+- the generated `bits/stdc++.h.gch` matches the active compiler and flags
 - you reloaded plugins after changing settings
 
 If needed, run:
 
 - `ArenaForge: Doctor`
+- `bash scripts/pch.sh`
 - `Tools -> Developer -> Reload Plugins`
 
 ### Format command does nothing

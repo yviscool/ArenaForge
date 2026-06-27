@@ -15,7 +15,10 @@ from arena_forge.adapters.providers import (
 )
 from arena_forge.adapters.runners import SettingsBackedRunner
 from arena_forge.adapters.security import build_credential_store
-from arena_forge.adapters.settings_loader import normalize_settings
+from arena_forge.adapters.settings_loader import (
+    iter_language_profile_mappings,
+    normalize_settings,
+)
 from arena_forge.adapters.storage import JsonSessionRepository, WorkspaceLayout
 from arena_forge.adapters.workspace import ContestWorkspaceScaffolder
 from arena_forge.core.domain import LanguageProfile
@@ -53,7 +56,10 @@ def build_sublime_application(
     locale_directory: Union[str, Path],
 ) -> SublimeApplication:
     settings = normalize_settings(raw_settings, platform_name)
-    profiles = tuple(LanguageProfile.from_mapping(profile) for profile in settings.get("run_settings", []))
+    profiles = tuple(
+        LanguageProfile.from_mapping(profile)
+        for profile in iter_language_profile_mappings(settings.get("language_profiles", {}))
+    )
     layout = WorkspaceLayout.from_settings(settings)
     repository = JsonSessionRepository(layout, profiles=profiles)
     runner = SettingsBackedRunner(

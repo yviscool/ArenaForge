@@ -9,7 +9,11 @@ from arena_forge.core.domain import OutputEvaluation, Verdict
 
 from ..root_bridge import get_debugger_info_module
 from ..shared.messages import product_log_message, translate, translate_status_code
-from ..shared.settings_bridge import get_session_repository, get_settings, get_tests_file_path
+from ..shared.settings_bridge import (
+    get_language_profiles,
+    get_session_repository,
+    get_tests_file_path,
+)
 from .launch_flow import plan_run_panel_launch
 from .logic import (
     build_run_panel_stop_plan,
@@ -194,7 +198,7 @@ def _build_run_backend_state(command, launch_session):
         debug_module=debug_module,
         run_file=launch_session.run_file,
         build_sys=launch_session.build_sys,
-        run_settings=get_settings().get("run_settings"),
+        profiles=get_language_profiles(),
     )
     return tests, process_manager, launch_session.sync_out
 

@@ -28,6 +28,28 @@ class SettingsLoaderTests(unittest.TestCase):
         self.assertIn("formatting", normalized)
         self.assertEqual(normalized["formatting"]["timeout_ms"], 10000)
         self.assertEqual(normalized["lint_timeout_ms"], 3000)
+        self.assertEqual(normalized["language_profiles"]["order"][1], "cpp")
+        self.assertIn("cpp", normalized["language_profiles"]["profiles"])
+
+    def test_language_profile_overrides_merge_by_id(self) -> None:
+        normalized = normalize_settings(
+            {
+                "language_profiles": {
+                    "profiles": {
+                        "cpp": {
+                            "compile_cmd": "g++ custom",
+                            "lint_compile_cmd": "g++ -fsyntax-only custom",
+                        }
+                    }
+                }
+            },
+            "linux",
+        )
+        cpp = normalized["language_profiles"]["profiles"]["cpp"]
+        self.assertEqual(cpp["compile_cmd"], "g++ custom")
+        self.assertEqual(cpp["lint_compile_cmd"], "g++ -fsyntax-only custom")
+        self.assertEqual(cpp["extensions"], ["cpp", "cc", "cxx"])
+        self.assertEqual(cpp["name"], "C++")
 
     def test_negative_lint_timeout_clamps_to_zero(self) -> None:
         normalized = normalize_settings({"lint_timeout_ms": -1}, "linux")

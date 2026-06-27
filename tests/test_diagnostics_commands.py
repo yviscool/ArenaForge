@@ -4,6 +4,8 @@ import types
 import unittest
 from contextlib import contextmanager
 
+from arena_forge.core.domain import LanguageProfile
+
 
 class _FakeDiagnosticsView:
     def __init__(
@@ -72,7 +74,16 @@ def _patched_sublime():
     )
     sys.modules["sublime_plugin"] = types.SimpleNamespace(TextCommand=object, EventListener=object)
     sys.modules["arena_forge.adapters.sublime.shared.settings_bridge"] = types.SimpleNamespace(
-        get_settings=lambda: {"lint_enabled": True, "run_settings": []},
+        get_settings=lambda: {"lint_enabled": True},
+        get_language_profiles=lambda: (
+            LanguageProfile(
+                name="C++",
+                extensions=("cpp",),
+                compile_cmd="g++",
+                run_cmd="main.exe",
+                lint_compile_cmd="g++ -fsyntax-only",
+            ),
+        ),
         is_lang_view=lambda view, lang: False,
     )
     sys.modules.pop("arena_forge.adapters.sublime.diagnostics.commands", None)

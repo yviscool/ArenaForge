@@ -3,6 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Callable, Mapping, Optional, Sequence, cast
 
+from arena_forge.core.domain import LanguageProfile
+
 Translator = Callable[..., str]
 
 _DOCTOR_FALLBACKS = {
@@ -48,6 +50,7 @@ def build_doctor_report(
     package_root: Path,
     package_resource_root: str,
     discovered_resources: Mapping[str, Sequence[str]],
+    profiles: Sequence[LanguageProfile],
     settings: Mapping[str, object],
     contests_root: str,
     credential_backend: str,
@@ -62,12 +65,9 @@ def build_doctor_report(
         "StressSyntax.sublime-syntax",
     )
     existing_files = {name: (package_root / name).exists() for name in required_files}
-    run_settings = cast(Sequence[Mapping[str, object]], settings.get("run_settings") or ())
-    lint_profiles = [
-        profile for profile in run_settings if isinstance(profile, dict) and profile.get("lint_compile_cmd")
-    ]
     formatting = cast(Mapping[str, object], settings.get("formatting") or {})
     formatter_commands = cast(Mapping[str, object], formatting.get("commands") or {})
+    lint_profiles = [profile for profile in profiles if profile.lint_compile_cmd]
     title = _translate(translate_text, "doctor.title")
     checks_title = _translate(translate_text, "doctor.checks")
     availability = _translate(
@@ -88,9 +88,9 @@ def build_doctor_report(
         checks_title,
         "-" * len(checks_title),
         _format_check(
-            bool(run_settings),
+            bool(profiles),
             _translate(translate_text, "doctor.run_profiles"),
-            _translate(translate_text, "doctor.configured", count=len(run_settings)),
+            _translate(translate_text, "doctor.configured", count=len(profiles)),
             translate_text=translate_text,
         ),
         _format_check(

@@ -12,7 +12,7 @@ from arena_forge.adapters.runners import ProcessManager
 
 from ..shared.messages import error_message, status_message
 from ..shared.package_resources import STRESS_SYNTAX_RESOURCE
-from ..shared.settings_bridge import get_settings
+from ..shared.settings_bridge import get_language_profiles, get_settings
 
 
 @dataclass(frozen=True)
@@ -143,10 +143,10 @@ class StressManagerCommand(sublime_plugin.TextCommand):
             base_dir = path.dirname(file)
             task_name = path.splitext(path.split(file)[1])[0]
 
-            def find_source(base_dir, name, run_settings):
+            def find_source(base_dir, name, profiles):
                 found = None
-                for lang in run_settings:
-                    for ext in lang["extensions"]:
+                for lang in profiles:
+                    for ext in lang.extensions:
                         src = path.join(base_dir, name + "." + ext)
                         if path.exists(src):
                             if found:
@@ -154,9 +154,10 @@ class StressManagerCommand(sublime_plugin.TextCommand):
                             found = src
                 return found
 
+            profiles = get_language_profiles()
             bad_source = file
-            good_source = find_source(base_dir, task_name + "__Good", get_settings().get("run_settings"))
-            gen_source = find_source(base_dir, task_name + "__Generator", get_settings().get("run_settings"))
+            good_source = find_source(base_dir, task_name + "__Good", profiles)
+            gen_source = find_source(base_dir, task_name + "__Generator", profiles)
 
             if not good_source:
                 error_message("error.file_not_found", file=task_name + "__Good")
@@ -179,9 +180,9 @@ class StressManagerCommand(sublime_plugin.TextCommand):
 
             if check_exist(good_source) and check_exist(bad_source) and check_exist(gen_source):
                 self.process = {
-                    "good": ProcessManager(good_source, None, run_settings=get_settings().get("run_settings")),
-                    "bad": ProcessManager(bad_source, None, run_settings=get_settings().get("run_settings")),
-                    "gen": ProcessManager(gen_source, None, run_settings=get_settings().get("run_settings")),
+                    "good": ProcessManager(good_source, None, profiles=profiles),
+                    "bad": ProcessManager(bad_source, None, profiles=profiles),
+                    "gen": ProcessManager(gen_source, None, profiles=profiles),
                 }
                 self.stop_stress = False
                 sublime.set_timeout_async(self._compile)

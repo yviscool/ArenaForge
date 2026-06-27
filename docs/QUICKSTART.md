@@ -26,12 +26,12 @@ Minimal example:
 {
   "preferred_locale": "zh-Hans",
   "default_contest_language": "cpp",
-  "formatting": {
-    "format_on_save": true,
-    "commands": {
-      "clang-format": [
-        "C:/Program Files/LLVM/bin/clang-format.exe"
-      ]
+  "language_profiles": {
+    "profiles": {
+      "cpp": {
+        "compile_cmd": "g++ \"{source_file}\" -std=c++14 -g -Wall -Winvalid-pch -finput-charset=UTF-8 -fexec-charset=UTF-8 -o \"{source_file_dir}\\\\{file_name}.exe\"",
+        "lint_compile_cmd": "g++ -std=c++14 -g -Wall -fsyntax-only -fdiagnostics-color=never -Winvalid-pch -finput-charset=UTF-8 -fexec-charset=UTF-8 \"{source_file}\" -I \"{source_file_dir}\""
+      }
     }
   }
 }
@@ -69,7 +69,26 @@ If anything looks wrong, run `ArenaForge: Doctor`.
 Notes:
 
 - C++ inline diagnostics depend on `lint_enabled` and the C++ profile's `lint_compile_cmd`.
+- If you use `bits/stdc++.h`, generate the matching `.gch` once with `bash scripts/pch.sh`.
 - If diagnostic markers do not appear, reload plugins and run `ArenaForge: Doctor`.
+
+### Run Panel Shortcuts
+
+The Windows keymap binds `Ctrl+Alt+B` to `ArenaForge: Run`.
+
+Inside the run panel, the most useful shortcuts are:
+
+- `Enter`: add a new test line
+- `Ctrl+Enter`: create or toggle a test
+- `Ctrl+C` / `Ctrl+X`: stop the current process
+- `Ctrl+L`: clear all tests
+- `Ctrl+U`: clear the current input
+- `Ctrl+W`: delete the previous word
+- `Alt+B` / `Alt+F`: move by word
+- `Ctrl+Up` / `Ctrl+Down`: browse input history
+- `Ctrl+Shift+Up` / `Ctrl+Shift+Down`: swap tests
+
+These bindings only apply while the run panel is active.
 
 ## 5. First Python Run
 
